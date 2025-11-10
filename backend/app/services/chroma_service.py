@@ -5,6 +5,7 @@ from openai import OpenAI
 from groq import Groq
 from typing import Optional, Dict
 from datetime import timedelta
+from app.utils import logger, log_error
 
 COLLECTION_NAME = "swimming_workouts"
 
@@ -16,7 +17,14 @@ def get_chroma_client():
     global _client
     if _client is None:
         chroma_path = os.getenv("CHROMA_DB_PATH", "./chroma_db")
-        _client = chromadb.PersistentClient(path=chroma_path)
+        logger.info(f"Initializing ChromaDB client at path: {chroma_path}")
+        try:
+            _client = chromadb.PersistentClient(path=chroma_path)
+            logger.info("ChromaDB client initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize ChromaDB client at {chroma_path}")
+            log_error(e, context="init_chromadb", chroma_path=chroma_path)
+            raise
     return _client
 
 SWIM_COACH_SYSTEM_PROMPT = """You are an expert swimming coach with deep knowledge of workout programming and swimming nomenclature. 
@@ -258,6 +266,8 @@ def build_athlete_context(best_times: Optional[Dict[str, str]] = None) -> str:
 
 def check_chromadb() -> tuple[bool, Optional[str]]:
     """Check if ChromaDB is available and collection exists"""
+    logger.debug("Checking ChromaDB connection and collection")
+    
     try:
         client = get_chroma_client()
         collections = client.list_collections()
@@ -266,19 +276,25 @@ def check_chromadb() -> tuple[bool, Optional[str]]:
         if COLLECTION_NAME in collection_names:
             collection = client.get_collection(name=COLLECTION_NAME)
             count = collection.count()
+            logger.info(f"ChromaDB connected: {count} workouts in collection '{COLLECTION_NAME}'")
             print(f"✓ ChromaDB connected: {count} workouts in collection")
             return True, None
         else:
             msg = f"Collection '{COLLECTION_NAME}' not found"
+            logger.warning(f"ChromaDB collection missing: {msg}")
             print(f"⚠ {msg}")
             return False, msg
     except Exception as e:
+        logger.error(f"ChromaDB connection error")
+        log_error(e, context="check_chromadb")
         print(f"ChromaDB connection error: {str(e)}")
         return False, str(e)
 
 
 def search_similar_workouts(query: str, n_results: int = 5) -> list[dict]:
     """Search ChromaDB for similar workouts"""
+    logger.debug(f"Searching ChromaDB for similar workouts | query_length={len(query)} | n_results={n_results}")
+    
     try:
         client = get_chroma_client()
         collection = client.get_collection(name=COLLECTION_NAME)
@@ -298,9 +314,13 @@ def search_similar_workouts(query: str, n_results: int = 5) -> list[dict]:
                     "distance": results["distances"][0][i] if results.get("distances") else 1.0,
                 })
         
+        logger.info(f"Found {len(workouts)} similar workouts from ChromaDB")
         print(f"✓ Found {len(workouts)} similar workouts")
         return workouts
+        
     except Exception as e:
+        logger.error("ChromaDB search failed")
+        log_error(e, context="search_similar_workouts", query_length=len(query))
         print(f"ChromaDB search error: {str(e)}")
         raise Exception(f"Failed to search workouts: {str(e)}")
 
@@ -457,43 +477,67 @@ def generate_workout(
     Returns:
         Dict with workout and examples
     """
-    # Step 1: Search ChromaDB
-    print("Searching ChromaDB for similar workouts...")
-    search_results = search_similar_workouts(prompt, num_examples)
+    logger.info(
+        f"Generating workout | provider={provider} | num_examples={num_examples} | "
+        f"has_best_times={bool(best_times)} | prompt_length={len(prompt)}"
+    )
     
-    # Step 2: Build context from examples
-    context = build_context(search_results)
+    try:
+        # Step 1: Search ChromaDB
+        print("Searching ChromaDB for similar workouts...")
+        logger.debug("Searching ChromaDB for similar workouts")
+        search_results = search_similar_workouts(prompt, num_examples)
+        
+        # Step 2: Build context from examples
+        logger.debug("Building context from search results")
+        context = build_context(search_results)
+        
+        # Step 3: Add athlete performance context
+        if best_times:
+            logger.debug(f"Adding athlete context with {len(best_times)} best times")
+            athlete_context = build_athlete_context(best_times)
+            context = athlete_context + "\n\n" + context
+            print(f"✓ Added athlete performance data with {len(best_times)} best times")
+        
+        # Step 4: Generate workout
+        print(f"Generating workout with {provider}...")
+        logger.info(f"Calling {provider} API to generate workout")
+        
+        if provider == "claude":
+            workout = generate_with_claude(prompt, context, api_key)
+        elif provider == "groq":
+            workout = generate_with_groq(prompt, context, api_key)
+        else:
+            workout = generate_with_openai(prompt, context, api_key)
+        
+        logger.info(f"Workout generated successfully | provider={provider} | workout_length={len(workout)}")
+        
+        # Step 5: Return response
+        return {
+            "workout": workout,
+            "examples": [
+                {
+                    "id": r["metadata"].get("workout_id", r["id"]),
+                    "title": r["metadata"].get("title", "Unknown"),
+                    "url": r["metadata"].get("workout_url", ""),
+                    "relevance": 1 - r["distance"],
+                }
+                for r in search_results
+            ],
+            "athlete_paces": build_athlete_context(best_times) if best_times else None,
+        }
     
-    # Step 3: Add athlete performance context
-    if best_times:
-        athlete_context = build_athlete_context(best_times)
-        context = athlete_context + "\n\n" + context
-        print(f"✓ Added athlete performance data with {len(best_times)} best times")
-    
-    # Step 4: Generate workout
-    print(f"Generating workout with {provider}...")
-    if provider == "claude":
-        workout = generate_with_claude(prompt, context, api_key)
-    elif provider == "groq":
-        workout = generate_with_groq(prompt, context, api_key)
-    else:
-        workout = generate_with_openai(prompt, context, api_key)
-    
-    # Step 5: Return response
-    return {
-        "workout": workout,
-        "examples": [
-            {
-                "id": r["metadata"].get("workout_id", r["id"]),
-                "title": r["metadata"].get("title", "Unknown"),
-                "url": r["metadata"].get("workout_url", ""),
-                "relevance": 1 - r["distance"],
-            }
-            for r in search_results
-        ],
-        "athlete_paces": build_athlete_context(best_times) if best_times else None,
-    }
-
+    except ValueError as e:
+        # Client errors (bad input, invalid API key, etc.)
+        logger.warning(f"Invalid workout generation request: {str(e)}")
+        log_error(e, context="generate_workout", provider=provider, error_type="validation")
+        raise
+        
+    except Exception as e:
+        # Server errors
+        logger.error(f"Failed to generate workout with {provider}")
+        log_error(e, context="generate_workout", provider=provider, num_examples=num_examples)
+        raise Exception(f"Failed to generate workout: {str(e)}")
 
 # import os
 # import chromadb

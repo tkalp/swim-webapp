@@ -1,4 +1,5 @@
 // services/intelligenceService.ts
+import { authenticatedFetch } from '../lib/apiClient'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -91,7 +92,7 @@ export async function getSwimmerPerformanceTimeline(
   swimmerId: string, 
   daysBack: number = 90
 ): Promise<PerformanceTimeline> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/swimmer-analytics/swimmer/${swimmerId}/performance-timeline?days_back=${daysBack}`
   );
   
@@ -107,7 +108,7 @@ export async function getSwimmerPerformanceTimeline(
  * Get coaching feedback patterns and predictions for a swimmer
  */
 export async function getCoachingFeedbackPatterns(swimmerId: string): Promise<CoachingPatterns> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/swimmer-analytics/swimmer/${swimmerId}/coaching-feedback-patterns`
   );
   
@@ -123,7 +124,7 @@ export async function getCoachingFeedbackPatterns(swimmerId: string): Promise<Co
  * Get workout effectiveness analysis
  */
 export async function getWorkoutEffectiveness(workoutId: string): Promise<WorkoutEffectiveness> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/swimmer-analytics/workout/${workoutId}/effectiveness`
   );
   
@@ -147,7 +148,7 @@ export async function getComprehensiveAnalysis(
   meta_insights: any;
   breakthrough_recommendations: string[];
 }> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/swimmer-analytics/swimmer/${swimmerId}/comprehensive-analysis?days_back=${daysBack}`
   );
   

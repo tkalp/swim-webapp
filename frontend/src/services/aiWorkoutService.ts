@@ -1,4 +1,5 @@
 // services/aiWorkoutService.ts
+import { authenticatedFetch } from '../lib/apiClient'
 
 export interface SquadPerformanceAnalysis {
   squad_id: string;
@@ -115,7 +116,7 @@ export class AIWorkoutService {
   private static readonly BASE_URL = `${API_BASE_URL}/api/ai-enhancement`;
 
   private static async fetchJSON(url: string, options?: RequestInit) {
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,

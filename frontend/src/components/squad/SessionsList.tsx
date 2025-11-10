@@ -1,5 +1,5 @@
 // components/squad/SessionsList.tsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Activity,
   Clock,
@@ -12,12 +12,14 @@ import {
   Calendar,
   Edit2,
   Trash2,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DateInput from "../ui/DateInput";
 import WorkoutMiniChart from "../workout/WorkoutMiniChart";
 import AddEditSessionModal from "./sessions/AddEditSessionModal";
 import CreateFromScheduleModal from "./sessions/CreateFromScheduleModal";
+import AttendanceModal from "./sessions/AttendanceModal";
 import { createSession, updateSession, createSessionsFromSchedules, deleteSession, type TrainingSchedule } from "../../services/sessionService";
 import "@/styles/SessionsList.css";
 
@@ -40,15 +42,47 @@ type SessionsListProps = {
 
 export default function SessionsList({ sessions, squadId, schedules, onRefresh }: SessionsListProps) {
   const navigate = useNavigate();
-  const [dateRange, setDateRange] = useState<DateRange>("week");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
-  const [isLegendExpanded, setIsLegendExpanded] = useState(false);
+  
+  // Load date range state from localStorage or use default
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const saved = localStorage.getItem('sessions-date-range');
+    return (saved as DateRange) || "week";
+  });
+  const [customStart, setCustomStart] = useState(() => {
+    return localStorage.getItem('sessions-custom-start') || "";
+  });
+  const [customEnd, setCustomEnd] = useState(() => {
+    return localStorage.getItem('sessions-custom-end') || "";
+  });
+  const [isLegendExpanded, setIsLegendExpanded] = useState(() => {
+    const saved = localStorage.getItem('sessions-legend-expanded');
+    return saved === 'true';
+  });
+
+  // Persist state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sessions-date-range', dateRange);
+  }, [dateRange]);
+
+  useEffect(() => {
+    localStorage.setItem('sessions-custom-start', customStart);
+  }, [customStart]);
+
+  useEffect(() => {
+    localStorage.setItem('sessions-custom-end', customEnd);
+  }, [customEnd]);
+
+  useEffect(() => {
+    localStorage.setItem('sessions-legend-expanded', String(isLegendExpanded));
+  }, [isLegendExpanded]);
 
   // Modal state
   const [addEditModalOpen, setAddEditModalOpen] = useState(false);
   const [createFromScheduleModalOpen, setCreateFromScheduleModalOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [attendanceSessionId, setAttendanceSessionId] = useState<string | null>(null);
+  const [attendanceSessionDate, setAttendanceSessionDate] = useState<string | null>(null);
 
   // Filter sessions by date range
   const filteredSessions = useMemo(() => {
@@ -171,6 +205,12 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
 
   const handleCreateFromSchedule = () => {
     setCreateFromScheduleModalOpen(true);
+  };
+
+  const handleTakeAttendance = (sessionId: string, sessionDate: string) => {
+    setAttendanceSessionId(sessionId);
+    setAttendanceSessionDate(sessionDate);
+    setAttendanceModalOpen(true);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -542,6 +582,13 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
                       </button>
                     )}
                     <button
+                      className="px-3 py-2 bg-background-secondary/80 border border-border/30 text-text-secondary hover:text-accent hover:bg-accent/10 hover:border-accent/50 rounded-lg transition-all duration-200"
+                      onClick={() => handleTakeAttendance(s.id, s.start_date)}
+                      title="Take attendance"
+                    >
+                      <Users size={16} />
+                    </button>
+                    <button
                       className="px-3 py-2 bg-background-secondary/80 border border-border/30 text-text-secondary hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
                       onClick={() => handleEditSession(s)}
                       title="Edit session"
@@ -596,6 +643,27 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
       schedules={schedules}
       onCreateBulkSessions={handleCreateFromScheduleSubmit}
       onSuccess={() => setCreateFromScheduleModalOpen(false)}
+    />
+
+    {/* Attendance Modal */}
+    <AttendanceModal
+      open={attendanceModalOpen}
+      onClose={() => {
+        setAttendanceModalOpen(false);
+        setAttendanceSessionId(null);
+        setAttendanceSessionDate(null);
+      }}
+      sessionId={attendanceSessionId || ''}
+      squadId={squadId}
+      sessionDate={attendanceSessionDate || undefined}
+      onSuccess={() => {
+        setAttendanceModalOpen(false);
+        setAttendanceSessionId(null);
+        setAttendanceSessionDate(null);
+        if (onRefresh) {
+          onRefresh();
+        }
+      }}
     />
     </>
   );

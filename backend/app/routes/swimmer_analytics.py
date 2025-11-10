@@ -8,6 +8,8 @@ import os
 from supabase import create_client, Client
 
 from app.services.swimmer_data_aggregator import SwimmerDataAggregator
+from app.middleware.auth import get_current_user_id
+from app.utils import logger, log_error, log_database_query
 
 router = APIRouter(prefix="/api/swimmer-analytics", tags=["swimmer-analytics"])
 
@@ -18,31 +20,49 @@ def get_supabase_client() -> Client:
     supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY")
     
     if not supabase_url or not supabase_key:
+        logger.error("Supabase configuration missing - cannot create client")
         raise HTTPException(status_code=500, detail="Supabase configuration missing")
     
+    logger.debug("Creating Supabase client for analytics")
     return create_client(supabase_url, supabase_key)
 
 def get_data_aggregator(supabase: Client = Depends(get_supabase_client)) -> SwimmerDataAggregator:
     """Get swimmer data aggregator instance"""
+    logger.debug("Creating SwimmerDataAggregator instance")
     return SwimmerDataAggregator(supabase)
 
 @router.get("/swimmer/{swimmer_id}/performance-timeline")
 async def get_swimmer_performance_timeline(
     swimmer_id: str,
     days_back: int = 90,
+    user_id: str = Depends(get_current_user_id),
     aggregator: SwimmerDataAggregator = Depends(get_data_aggregator)
 ) -> Dict[str, Any]:
     """
     Get comprehensive performance timeline analysis for a swimmer
     
+    Requires authentication. User must be logged in.
+    
     This is the intelligent analysis you've been waiting for - not just pretty charts,
     but actual insights into performance trends, plateaus, and actionable recommendations.
     """
+    logger.info(
+        f"Performance timeline requested | "
+        f"user={user_id} | swimmer={swimmer_id} | days_back={days_back}"
+    )
+    
     try:
         timeline = aggregator.get_swimmer_performance_timeline(swimmer_id, days_back)
         
         if "error" in timeline:
+            logger.warning(f"Performance timeline not found for swimmer {swimmer_id}")
             raise HTTPException(status_code=404, detail=timeline["error"])
+        
+        logger.info(
+            f"Performance timeline generated | "
+            f"swimmer={swimmer_id} | "
+            f"strokes_analyzed={len(timeline.get('stroke_trends', {}))}"
+        )
         
         return {
             "success": True,
@@ -55,24 +75,34 @@ async def get_swimmer_performance_timeline(
             }
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Failed to analyze performance timeline for swimmer {swimmer_id}")
+        log_error(e, context="performance_timeline", swimmer_id=swimmer_id, user_id=user_id)
         raise HTTPException(status_code=500, detail=f"Error analyzing performance timeline: {str(e)}")
 
 @router.get("/workout/{workout_id}/effectiveness")
 async def get_workout_effectiveness(
     workout_id: str,
+    user_id: str = Depends(get_current_user_id),
     aggregator: SwimmerDataAggregator = Depends(get_data_aggregator)
 ) -> Dict[str, Any]:
     """
     Get intelligent effectiveness analysis for a specific workout
     
+    Requires authentication. User must be logged in.
+    
     This analyzes performance impact, coach satisfaction, attendance patterns,
     and technique development to give you a complete picture of workout effectiveness.
     """
+    logger.info(f"Workout effectiveness requested | user={user_id} | workout={workout_id}")
+    
     try:
         effectiveness = aggregator.get_workout_effectiveness_scores(workout_id)
         
         if "error" in effectiveness:
+            logger.warning(f"Workout effectiveness data not found for workout {workout_id}")
             raise HTTPException(status_code=404, detail=effectiveness["error"])
         
         # Add intelligence summary
@@ -86,30 +116,46 @@ async def get_workout_effectiveness(
             "data_confidence": _assess_data_confidence(effectiveness)
         }
         
+        logger.info(
+            f"Workout effectiveness analyzed | "
+            f"workout={workout_id} | score={score:.2f} | "
+            f"grade={intelligence_summary['overall_grade']}"
+        )
+        
         return {
             "success": True,
             "data": effectiveness,
             "intelligence_summary": intelligence_summary
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Failed to analyze workout effectiveness for workout {workout_id}")
+        log_error(e, context="workout_effectiveness", workout_id=workout_id, user_id=user_id)
         raise HTTPException(status_code=500, detail=f"Error analyzing workout effectiveness: {str(e)}")
 
 @router.get("/swimmer/{swimmer_id}/coaching-feedback-patterns")
 async def get_coaching_feedback_patterns(
     swimmer_id: str,
+    user_id: str = Depends(get_current_user_id),
     aggregator: SwimmerDataAggregator = Depends(get_data_aggregator)
 ) -> Dict[str, Any]:
     """
     Get intelligent analysis of coaching feedback patterns
     
+    Requires authentication. User must be logged in.
+    
     This correlates qualitative coach feedback with quantitative performance outcomes
     to identify intervention effectiveness and predict future performance.
     """
+    logger.info(f"Coaching feedback patterns requested | user={user_id} | swimmer={swimmer_id}")
+    
     try:
         patterns = aggregator.get_coach_feedback_patterns(swimmer_id)
         
         if "error" in patterns:
+            logger.warning(f"Coaching feedback patterns not found for swimmer {swimmer_id}")
             raise HTTPException(status_code=404, detail=patterns["error"])
         
         # Add predictive insights
@@ -120,23 +166,36 @@ async def get_coaching_feedback_patterns(
             "confidence_level": _assess_prediction_confidence(patterns)
         }
         
+        logger.info(
+            f"Coaching feedback patterns analyzed | "
+            f"swimmer={swimmer_id} | "
+            f"trend={predictive_insights['trend_direction']}"
+        )
+        
         return {
             "success": True,
             "data": patterns,
             "predictive_insights": predictive_insights
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Failed to analyze coaching feedback patterns for swimmer {swimmer_id}")
+        log_error(e, context="coaching_feedback_patterns", swimmer_id=swimmer_id, user_id=user_id)
         raise HTTPException(status_code=500, detail=f"Error analyzing feedback patterns: {str(e)}")
 
 @router.get("/swimmer/{swimmer_id}/comprehensive-analysis")
 async def get_comprehensive_swimmer_analysis(
     swimmer_id: str,
     days_back: int = 90,
+    user_id: str = Depends(get_current_user_id),
     aggregator: SwimmerDataAggregator = Depends(get_data_aggregator)
 ) -> Dict[str, Any]:
     """
     Get comprehensive intelligent analysis combining all data sources
+    
+    Requires authentication. User must be logged in.
     
     This is the full intelligence suite - performance trends, coaching feedback correlation,
     and actionable recommendations for breakthrough performance.
