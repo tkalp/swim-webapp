@@ -1,0 +1,377 @@
+/* AttemptsModal.css - Dedicated styles for AttemptsModal component */
+
+:root {
+  --attempts-primary: #3197a7;
+  --attempts-primary-dark: #265D74;
+  --attempts-accent: #22D3EE;
+  --attempts-accent-purple: #8B5CF6;
+  --attempts-success: #10b981;
+  --attempts-warning: #F59E0B;
+  --attempts-danger: #ef4444;
+  
+  --attempts-bg-primary: #0A0B0F;
+  --attempts-bg-secondary: #111827;
+  --attempts-bg-tertiary: #1F2937;
+  --attempts-bg-elevated: #1e293b;
+  
+  --attempts-border: #374151;
+  --attempts-border-light: #475569;
+  
+  --attempts-text-primary: #F8FAFC;
+  --attempts-text-secondary: #cbd5e1;
+  --attempts-text-muted: #9CA3AF;
+  
+  --attempts-gradient-primary: linear-gradient(135deg, #265D74 0%, #3197a7 50%, #22D3EE 100%);
+  --attempts-gradient-accent: linear-gradient(135deg, #8B5CF6 0%, #22D3EE 100%);
+  
+  --attempts-radius-sm: 8px;
+  --attempts-radius-md: 12px;
+  --attempts-radius-lg: 16px;
+  --attempts-radius-xl: 20px;
+  
+  --attempts-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --attempts-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --attempts-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --attempts-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --attempts-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+/* Modal Backdrop */
+.attempts-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: attempts-fadeIn 0.2s ease-out;
+}
+
+@keyframes attempts-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Container */
+.attempts-modal {
+  background: var(--attempts-bg-secondary);
+  border: 1px solid var(--attempts-border);
+  border-radius: var(--attempts-radius-xl);
+  box-shadow: var(--attempts-shadow-xl);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: attempts-slideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes attempts-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.attempts-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--attempts-border);
+  background: var(--attempts-bg-elevated);
+  position: relative;
+}
+
+.attempts-modal-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--attempts-gradient-primary);
+}
+
+.attempts-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--attempts-text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.attempts-close-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--attempts-radius-md);
+  background: var(--attempts-bg-tertiary);
+  border: 1px solid var(--attempts-border);
+  color: var(--attempts-text-muted);
+  cursor: pointer;
+  transition: var(--attempts-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.attempts-close-btn:hover {
+  background: var(--attempts-bg-secondary);
+  border-color: var(--attempts-danger);
+  color: var(--attempts-danger);
+  transform: scale(1.05);
+}
+
+/* Modal Content */
+.attempts-modal-content {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Error Toast */
+.attempts-error-toast {
+  background: var(--attempts-bg-elevated);
+  border: 1px solid var(--attempts-danger);
+  border-radius: var(--attempts-radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--attempts-danger);
+  animation: attempts-slideDown 0.3s ease;
+}
+
+@keyframes attempts-slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading Shimmer */
+.attempts-shimmer {
+  height: 300px;
+  border-radius: var(--attempts-radius-lg);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-size: 300% 100%;
+  animation: attempts-shimmer 1.5s infinite;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes attempts-shimmer {
+  0% {
+    background-position: 300% 0;
+  }
+  100% {
+    background-position: -300% 0;
+  }
+}
+
+/* Empty State */
+.attempts-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--attempts-text-muted);
+  font-size: 1rem;
+  text-align: center;
+  background: var(--attempts-bg-elevated);
+  border: 2px dashed var(--attempts-border);
+  border-radius: var(--attempts-radius-lg);
+  padding: 3rem 2rem;
+}
+
+/* Stats Grid */
+.attempts-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.attempts-stat-card {
+  background: var(--attempts-bg-elevated);
+  border: 1px solid var(--attempts-border);
+  border-radius: var(--attempts-radius-lg);
+  padding: 1.5rem;
+  transition: var(--attempts-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.attempts-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--attempts-gradient-primary);
+  opacity: 0;
+  transition: var(--attempts-transition);
+}
+
+.attempts-stat-card:hover {
+  border-color: var(--attempts-border-light);
+  transform: translateY(-2px);
+  box-shadow: var(--attempts-shadow-md);
+}
+
+.attempts-stat-card:hover::before {
+  opacity: 1;
+}
+
+.attempts-stat-label {
+  color: var(--attempts-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.attempts-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--attempts-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.attempts-stat-value.accent {
+  background: var(--attempts-gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.attempts-stat-sub {
+  color: var(--attempts-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Chart Container */
+.attempts-chart-container {
+  background: var(--attempts-bg-elevated);
+  border: 1px solid var(--attempts-border);
+  border-radius: var(--attempts-radius-lg);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.attempts-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--attempts-gradient-primary);
+  opacity: 1;
+}
+
+.attempts-chart-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  background: var(--attempts-gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .attempts-modal {
+    margin: 0.5rem;
+    max-height: 95vh;
+  }
+
+  .attempts-modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .attempts-modal-content {
+    padding: 1.5rem;
+  }
+
+  .attempts-modal-title {
+    font-size: 1.125rem;
+  }
+
+  .attempts-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .attempts-stat-card {
+    padding: 1.25rem;
+  }
+
+  .attempts-chart-container {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .attempts-modal {
+    margin: 0.25rem;
+    border-radius: var(--attempts-radius-lg);
+  }
+
+  .attempts-modal-header {
+    padding: 1rem;
+  }
+
+  .attempts-modal-content {
+    padding: 1rem;
+  }
+
+  .attempts-modal-title {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .attempts-close-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .attempts-stat-value {
+    font-size: 1.25rem;
+  }
+}

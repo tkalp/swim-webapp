@@ -1,0 +1,127 @@
+:root {
+  --cs-bg: rgba(255, 255, 255, 0.04);
+  --cs-bg-hover: rgba(255, 255, 255, 0.07);
+  --cs-border: rgba(255, 255, 255, 0.12);
+  --cs-border-strong: rgba(255, 255, 255, 0.22);
+  --cs-text: var(--text, #f8fafc);
+  --cs-muted: var(--text-muted, #9ca3af);
+  --cs-ring: #22d3ee;
+  --cs-radius: 10px;
+  --cs-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --cs-dur: 160ms;
+  --cs-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.cs-field {
+  display: grid;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.cs-label {
+  font-size: 0.85rem;
+  color: var(--cs-muted);
+}
+
+.cs-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--cs-bg);
+  border: 1px solid var(--cs-border);
+  color: var(--cs-text);
+  border-radius: var(--cs-radius);
+  cursor: pointer;
+  transition: background var(--cs-dur) var(--cs-ease),
+    border-color var(--cs-dur) var(--cs-ease),
+    box-shadow var(--cs-dur) var(--cs-ease);
+}
+.cs-button:hover {
+  background: var(--cs-bg-hover);
+  border-color: var(--cs-border-strong);
+}
+.cs-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.cs-button.is-open {
+  border-color: var(--cs-ring);
+}
+
+.cs-value.is-placeholder {
+  color: var(--cs-muted);
+}
+
+.cs-caret {
+  width: 16px;
+  height: 16px;
+  color: var(--cs-muted);
+  transition: transform var(--cs-dur) var(--cs-ease),
+    color var(--cs-dur) var(--cs-ease);
+}
+.cs-button.is-open .cs-caret {
+  transform: rotate(180deg);
+  color: var(--cs-ring);
+}
+
+.cs-outline {
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--cs-radius) + 2px);
+  pointer-events: none;
+  opacity: 0;
+  transition: box-shadow var(--cs-dur) var(--cs-ease),
+    opacity var(--cs-dur) var(--cs-ease);
+}
+.cs-button:focus-visible + .cs-caret + .cs-outline {
+  box-shadow: 0 0 0 2px var(--cs-ring);
+  opacity: 1;
+}
+
+/* Floating menu (portal) */
+.cs-menu {
+  position: absolute;
+  z-index: 9999; /* on top of everything */
+  background: rgba(17, 24, 39, 0.98); /* near --card-bg */
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  padding: 6px;
+  overflow: auto;
+  box-shadow: var(--cs-shadow);
+  animation: cs-pop 0.18s var(--cs-ease);
+}
+@keyframes cs-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cs-option {
+  padding: 10px 10px;
+  border-radius: 8px;
+  color: var(--cs-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--cs-dur) var(--cs-ease),
+    color var(--cs-dur) var(--cs-ease);
+}
+.cs-option:hover,
+.cs-option.is-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cs-option.is-selected {
+  background: linear-gradient(135deg, #8b5cf6 0%, #22d3ee 100%);
+  color: #07171c;
+  font-weight: 700;
+}

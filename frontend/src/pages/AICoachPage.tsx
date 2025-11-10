@@ -1,0 +1,204 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Sparkles, Settings, ArrowLeft } from 'lucide-react'
+import { useAICoach } from '../hooks/useAICoach'
+import SettingsPanel from '../components/ai-coach/SettingsPanel'
+import TemplateSelector from '../components/ai-coach/TemplateSelector'
+import WorkoutOutput from '../components/ai-coach/WorkoutOutput'
+import PromptTips from '../components/ai-coach/PromptTips'
+import BestTimesInput from '../components/ai-coach/BestTimesInput'
+import type { BestTimes } from '../types/ai-coach/types'
+
+export default function AICoachPage() {
+  const [prompt, setPrompt] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
+  const [bestTimes, setBestTimes] = useState<BestTimes>({})
+
+  const {
+    settings,
+    loading,
+    error,
+    currentWorkout,
+    generate,
+    updateSettings,
+    clearError,
+  } = useAICoach()
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return
+    clearError()
+    await generate(prompt, bestTimes)
+  }
+
+  const handleSave = () => {
+    if (!currentWorkout) return
+
+    const text = `AI SWIM COACH - GENERATED WORKOUT
+Generated: ${new Date(currentWorkout.timestamp).toLocaleString()}
+
+REQUEST:
+${currentWorkout.prompt}
+
+${'='.repeat(80)}
+
+${currentWorkout.workout}`
+
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `workout_${Date.now()}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleCopy = () => {
+    if (!currentWorkout) return
+    navigator.clipboard.writeText(currentWorkout.workout)
+  }
+
+  return (
+    <div className="min-h-screen bg-[#191c29] text-white">
+      {/* Header */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-background-elevated/95 border-b border-border shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo and Navigation */}
+            <div className="flex items-center gap-3 sm:gap-5">
+              <Link 
+                to="/" 
+                className="flex items-center gap-2 hover:scale-105 transition-all duration-200"
+                title="Home"
+              >
+                <Sparkles size={24} className="text-primary" />
+                <span className="hidden md:inline text-lg font-bold bg-gradient-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
+                  aquilus
+                </span>
+              </Link>
+              
+              <span className="text-border text-xl hidden sm:inline">/</span>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-purple/30 via-accent-purple/40 to-accent/30 border-2 border-accent-purple/40 flex items-center justify-center shadow-lg">
+                  <Sparkles size={20} className="text-accent-purple" />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-accent-purple via-accent-purple to-accent bg-clip-text text-transparent drop-shadow-sm">
+                  AI Swim Coach
+                </h1>
+              </div>
+              
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 hover:border-gray-500 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10"
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <Settings size={18} className={`transition-transform duration-300 ${showSettings ? 'rotate-90' : ''}`} />
+                <span className="font-medium">Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="bg-background-secondary border-b border-gray-700 animate-in slide-in-from-top duration-300">
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            <SettingsPanel settings={settings} onUpdate={updateSettings} />
+          </div>
+        </div>
+      )}
+
+      {/* Error Toast */}
+      {error && (
+        <div className="fixed top-6 right-6 max-w-md bg-[#1e293b] border border-red-500 rounded-xl p-4 shadow-2xl z-50 animate-in slide-in-from-right duration-300">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <div className="font-semibold text-red-400 text-sm mb-1">Error</div>
+              <p className="text-gray-300 text-sm leading-relaxed">{error}</p>
+            </div>
+            <button 
+              className="text-gray-400 hover:text-white transition-colors duration-200"
+              onClick={clearError}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Left Column - Input */}
+          <div className="w-full lg:w-1/2 space-y-6">
+            {/* Main Input Card */}
+            <div className="bg-[#1e293b] border border-gray-700 rounded-2xl p-8 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500">
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-white mb-3">Describe Your Workout</h2>
+                <p className="text-gray-400 text-base leading-relaxed">
+                  Be specific about level, distance, focus, and any special requirements
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <TemplateSelector onSelect={setPrompt} />
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    Custom Prompt
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      className="w-full h-32 px-4 py-3 bg-[#0f172a] border border-gray-600 rounded-xl text-white placeholder-gray-500 resize-none focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300"
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Describe your ideal workout... (e.g., 'Create a 3000 yard sprint workout for competitive swimmers with focus on underwater kicks and starts')"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-primary to-accent-purple hover:from-accent hover:to-purple-500 text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1 active:translate-y-0 disabled:transform-none"
+                  onClick={handleGenerate}
+                  disabled={loading || !prompt.trim()}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Generating Workout...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={20} />
+                      <span>Generate Workout</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Best Times Input */}
+            <div className="animate-in fade-in slide-in-from-bottom duration-500 delay-100">
+              <BestTimesInput bestTimes={bestTimes} onChange={setBestTimes} />
+            </div>
+            
+            {/* Tips */}
+            <div className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
+              <PromptTips />
+            </div>
+          </div>
+
+          {/* Right Column - Output */}
+          <div className="w-full lg:w-1/2 animate-in fade-in slide-in-from-right duration-500 delay-300">
+            <WorkoutOutput
+              workout={currentWorkout}
+              loading={loading}
+              onSave={handleSave}
+              onCopy={handleCopy}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

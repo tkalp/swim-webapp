@@ -1,0 +1,12 @@
+.env
+
+**/__pycache__/
+
+# anything that ends in .bin
+**/*.bin
+
+# anything that ends in .pickle
+**/*.pickle
+
+# anything that ends in .sqlite3
+**/*.sqlite3
