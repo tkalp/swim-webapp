@@ -9,11 +9,12 @@ services:
       args:
         - VITE_SUPABASE_URL=${SUPABASE_URL}
         - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-        - VITE_API_URL=http://localhost/api
     container_name: aquilus-frontend
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - backend
     restart: unless-stopped
