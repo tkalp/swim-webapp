@@ -3,14 +3,11 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 RUN npm ci
 
-# Copy source
 COPY . .
 
-# Build with production env vars
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 ARG VITE_API_URL
@@ -24,11 +21,14 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx config (we'll create this next)
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy both config files
+COPY nginx-http.conf /etc/nginx/nginx-http.conf
+COPY nginx-https.conf /etc/nginx/nginx-https.conf
+
+# Default to HTTP config
+COPY nginx-http.conf /etc/nginx/nginx.conf
 
 EXPOSE 80 443
 
