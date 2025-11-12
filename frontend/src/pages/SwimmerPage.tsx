@@ -6,7 +6,6 @@ import SessionsPerWeekChart from "../components/charts/SessionsPerWeekChart";
 import SwimmerOverviewStats from "../components/stats/SwimmerOverviewStats";
 import RangeToolbar from "../components/range/RangeToolbar";
 import BestTimesTab from "../components/swimmers/BestTimesTab";
-import IntelligenceAnalysis from "../components/intelligence/IntelligenceAnalysis";
 import SwimmerProfileCard from "../components/swimmers/SwimmerProfileCard";
 
 import type { RangeKey } from "../types/stats";
@@ -17,7 +16,6 @@ import PageHeader from "../components/ui/PageHeader";
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
-  { key: 'intelligence', label: 'Insights' },
   { key: 'bestTimes', label: 'Records' },
 ];
 
@@ -154,13 +152,7 @@ export default function SwimmerPage() {
 
         {!loading && tab === "bestTimes" && swimmerId && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
-            <BestTimesTab swimmerId={swimmerId} />
-          </div>
-        )}
-
-        {!loading && tab === "intelligence" && swimmerId && (
-          <div className="animate-in fade-in slide-in-from-bottom duration-500">
-            <IntelligenceAnalysis swimmerId={swimmerId} />
+            <BestTimesTab swimmerId={swimmerId} swimmer={swimmer} />
           </div>
         )}
       </main>

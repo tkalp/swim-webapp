@@ -8,7 +8,7 @@ import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '../../servic
 type Props = {
   swimmers: Swimmer[]
   squadId: string
-  onAddSwimmer: (swimmer: CreateSwimmerData) => Promise<void>
+  onAddSwimmer: (swimmer: CreateSwimmerData) => Promise<Swimmer>
   onEditSwimmer: (id: string, swimmer: UpdateSwimmerData) => Promise<void>
   onDeleteSwimmer: (id: string) => Promise<void>
 }
@@ -59,7 +59,8 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
 
   const handleModalSubmit = async (swimmerData: CreateSwimmerData | UpdateSwimmerData, swimmerId?: string) => {
     if (modalMode === 'add') {
-      await onAddSwimmer(swimmerData as CreateSwimmerData)
+      const newSwimmer = await onAddSwimmer(swimmerData as CreateSwimmerData)
+      return newSwimmer
     } else if (swimmerId) {
       await onEditSwimmer(swimmerId, swimmerData as UpdateSwimmerData)
     }

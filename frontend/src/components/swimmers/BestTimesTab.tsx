@@ -8,20 +8,27 @@ import {
 import GroupedBestTimesView from "./bestTimes/GroupedBestTimesView";
 import AttemptsModal from "./bestTimes/AttemptsModal";
 import AddEditWorkoutResultModal from "./bestTimes/AddEditWorkoutResultModal";
+import SwimRankingsLink from "./SwimRankingsLink";
 import type { Option } from "../ui/CustomSelect";
 import CustomSelect from "../ui/CustomSelect";
 import { supabase } from "../../lib/supabase";
-import { Activity, TrendingUp, Filter, RotateCcw, Clock, Trophy, Plus } from "lucide-react";
+import { Activity, TrendingUp, Filter, RotateCcw, Plus } from "lucide-react";
 
 type SortOption = "time" | "event" | "date";
-type Filters = { activity?: string; resultUnits?: string; stroke?: string };
+type Filters = { activity?: string; resultUnits?: string; stroke?: string; distance?: number };
 
-export default function BestTimesTab({ swimmerId }: { swimmerId: string }) {
+type Swimmer = {
+  first_name?: string;
+  last_name?: string;
+};
+
+export default function BestTimesTab({ swimmerId, swimmer }: { swimmerId: string; swimmer?: Swimmer }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [allBest, setAllBest] = useState<BestTimeResult[]>([]);
   const [filters, setFilters] = useState<Filters>({});
   const [sortBy, setSortBy] = useState<SortOption>("time");
+  const [selectedStroke, setSelectedStroke] = useState<string>("all");
 
   const [query, setQuery] = useState<EventQuery | null>(null);
   const [open, setOpen] = useState(false);
@@ -64,13 +71,21 @@ export default function BestTimesTab({ swimmerId }: { swimmerId: string }) {
   }, [swimmerId]);
 
   const filtered = useMemo(() => {
-    return allBest.filter((r) => {
+    let result = allBest.filter((r) => {
       if (filters.activity && r.activity !== filters.activity) return false;
       if (filters.resultUnits && r.resultUnits !== filters.resultUnits) return false;
       if (filters.stroke && r.stroke !== filters.stroke) return false;
+      if (filters.distance && r.distance !== filters.distance) return false;
       return true;
     });
-  }, [allBest, filters]);
+
+    // Apply stroke tab filter
+    if (selectedStroke !== "all") {
+      result = result.filter(r => r.stroke === selectedStroke);
+    }
+
+    return result;
+  }, [allBest, filters, selectedStroke]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -145,7 +160,20 @@ export default function BestTimesTab({ swimmerId }: { swimmerId: string }) {
     setEditingResult(null);
   };
 
-  const hasActiveFilters = filters.activity || filters.resultUnits || filters.stroke;
+  const hasActiveFilters = filters.activity || filters.resultUnits || filters.stroke || filters.distance;
+
+  // Get available strokes from data
+  const availableStrokes = useMemo(() => {
+    const strokes = new Set(allBest.map(r => r.stroke));
+    return Array.from(strokes).sort();
+  }, [allBest]);
+
+  // Common distances for quick filters
+  const commonDistances = [50, 100, 200, 400, 800, 1500];
+  const availableDistances = useMemo(() => {
+    const distances = new Set(allBest.map(r => r.distance));
+    return commonDistances.filter(d => distances.has(d));
+  }, [allBest]);
 
   const strokeOptions: Option[] = [
     { value: "", label: "All Strokes" },
@@ -177,6 +205,15 @@ export default function BestTimesTab({ swimmerId }: { swimmerId: string }) {
   return (
     <>
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom duration-500">
+      {/* External Tracking Integration */}
+      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg">
+        <SwimRankingsLink
+          swimmerId={swimmerId}
+          firstName={swimmer?.first_name}
+          lastName={swimmer?.last_name}
+        />
+      </div>
+
       {/* Header with Stats */}
       <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-6 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
         <div className="flex items-start justify-between gap-4">
@@ -204,25 +241,77 @@ export default function BestTimesTab({ swimmerId }: { swimmerId: string }) {
 
       {/* Filters & Sort */}
       <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center shadow-md shadow-accent/25">
-            <Filter className="w-4 h-4 text-white" />
+        {/* Stroke Tabs */}
+        <div className="mb-4 pb-4 border-b border-border/50">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center shadow-md shadow-accent/25">
+              <Filter className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-text-primary">Filter by Stroke</h3>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-text-primary">Filters & Sorting</h3>
-            <p className="text-xs text-text-tertiary">Refine your results</p>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedStroke("all")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                selectedStroke === "all"
+                  ? "bg-gradient-to-r from-primary to-accent text-white shadow-md"
+                  : "bg-background-tertiary/50 text-text-secondary hover:bg-background-secondary hover:text-text-primary"
+              }`}
+            >
+              All Strokes
+            </button>
+            {availableStrokes.map(stroke => (
+              <button
+                key={stroke}
+                onClick={() => setSelectedStroke(stroke)}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  selectedStroke === stroke
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-md"
+                    : "bg-background-tertiary/50 text-text-secondary hover:bg-background-secondary hover:text-text-primary"
+                }`}
+              >
+                {strokeOptions.find(s => s.value === stroke)?.label || stroke}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <CustomSelect
-            label="Stroke"
-            value={filters.stroke ?? ""}
-            onChange={(v) => setFilters((f) => ({ ...f, stroke: v || undefined }))}
-            options={strokeOptions}
-            placeholder="All Strokes"
-          />
+        {/* Distance Quick Filters */}
+        {availableDistances.length > 0 && (
+          <div className="mb-4 pb-4 border-b border-border/50">
+            <h4 className="text-xs font-semibold text-text-tertiary mb-2 uppercase tracking-wider">Quick Distance Filter</h4>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilters(f => ({ ...f, distance: undefined }))}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  !filters.distance
+                    ? "bg-accent/20 text-accent border border-accent/30"
+                    : "bg-background-tertiary/30 text-text-muted hover:text-text-primary"
+                }`}
+              >
+                All
+              </button>
+              {availableDistances.map(distance => (
+                <button
+                  key={distance}
+                  onClick={() => setFilters(f => ({ ...f, distance }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filters.distance === distance
+                      ? "bg-accent/20 text-accent border border-accent/30"
+                      : "bg-background-tertiary/30 text-text-muted hover:text-text-primary"
+                  }`}
+                >
+                  {distance}m
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <CustomSelect
             label="Activity"
             value={filters.activity ?? ""}
@@ -251,10 +340,13 @@ export default function BestTimesTab({ swimmerId }: { swimmerId: string }) {
           <div className="mt-3 flex justify-end">
             <button 
               className="group px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 hover:scale-105 active:scale-95 bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-sm border border-border/30 flex items-center gap-2"
-              onClick={() => setFilters({})}
+              onClick={() => {
+                setFilters({});
+                setSelectedStroke("all");
+              }}
             >
               <RotateCcw size={14} />
-              Clear Filters
+              Clear All Filters
             </button>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getSquad, listSwimmers, listSchedules, listSessions, listCalendarEvents } from '../features/squads/detailApi'
 
-export type TabKey = 'swimmers' | 'schedule' | 'sessions' | 'calendar' | 'metrics' | 'rankings' | 'insights'
+export type TabKey = 'swimmers' | 'schedule' | 'sessions' | 'calendar' | 'metrics' | 'rankings'
 
 export function useSquadData(squadId?: string) {
   const [squad, setSquad] = useState<any>(null)

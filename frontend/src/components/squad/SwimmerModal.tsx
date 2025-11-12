@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import DateInput from '../ui/DateInput'
 import Modal from '../ui/Modal'
+import SwimRankingsLink from '../swimmers/SwimRankingsLink'
 import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '../../services/swimmerService'
 
 type SwimmerFormData = {
@@ -17,11 +18,13 @@ type Props = {
   swimmer?: Swimmer | null
   squadId: string
   onClose: () => void
-  onSubmit: (swimmer: CreateSwimmerData | UpdateSwimmerData, swimmerId?: string) => Promise<void>
+  onSubmit: (swimmer: CreateSwimmerData | UpdateSwimmerData, swimmerId?: string) => Promise<Swimmer | undefined | void>
 }
 
 export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, onSubmit }: Props) {
   const [loading, setLoading] = useState(false)
+  const [showTracking, setShowTracking] = useState(false)
+  const [createdSwimmerId, setCreatedSwimmerId] = useState<string | null>(null)
   const [formData, setFormData] = useState<SwimmerFormData>(() => ({
     first_name: swimmer?.first_name || '',
     last_name: swimmer?.last_name || '',
@@ -63,12 +66,18 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
       }
 
       if (mode === 'add') {
-        await onSubmit(swimmerData)
+        const result = await onSubmit(swimmerData)
+        // After creating, show tracking option if we got the swimmer back
+        if (result && 'id' in result) {
+          setCreatedSwimmerId(result.id)
+          setShowTracking(true)
+        } else {
+          onClose()
+        }
       } else if (swimmer) {
         await onSubmit(swimmerData, swimmer.id)
+        onClose()
       }
-      
-      onClose()
     } catch (error) {
       console.error('Error saving swimmer:', error)
     } finally {
@@ -77,13 +86,21 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
   }
 
   const handleClose = () => {
+    const wasTracking = showTracking
     setFormData({
       first_name: '',
       last_name: '',
       date_of_birth: '',
       sex: ''
     })
+    setShowTracking(false)
+    setCreatedSwimmerId(null)
     onClose()
+    
+    // If we were showing tracking, reload to show the new swimmer
+    if (wasTracking) {
+      window.location.reload()
+    }
   }
 
   if (!isOpen) return null
@@ -92,9 +109,10 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={mode === 'add' ? 'Add New Swimmer' : 'Edit Swimmer'}
+      title={showTracking ? 'Track Swimmer (Optional)' : mode === 'add' ? 'Add New Swimmer' : 'Edit Swimmer'}
       size="md"
     >
+      {!showTracking ? (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-text-secondary mb-2">
@@ -167,6 +185,33 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
           </button>
         </div>
       </form>
+      ) : (
+        <div className="space-y-4">
+          <div className="p-4 bg-success/10 border border-success/30 rounded-lg mb-4">
+            <p className="text-sm text-success">
+              Swimmer created successfully! You can now optionally track this swimmer to sync their competition results.
+            </p>
+          </div>
+
+          {createdSwimmerId && (
+            <SwimRankingsLink
+              swimmerId={createdSwimmerId}
+              firstName={formData.first_name}
+              lastName={formData.last_name}
+            />
+          )}
+
+          <div className="flex items-center gap-3 pt-4">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-all duration-200"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </Modal>
   )
 }

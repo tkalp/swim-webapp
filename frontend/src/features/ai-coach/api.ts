@@ -1,6 +1,7 @@
 // features/ai-coach/api.ts
 
 import type { BestTimes } from "../../types/ai-coach/types"
+import { getAuthHeaders } from "../../lib/apiClient"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -31,11 +32,11 @@ export interface GenerateWorkoutResponse {
 export async function generateWorkout(
   request: GenerateWorkoutRequest
 ): Promise<GenerateWorkoutResponse> {
+  const headers = await getAuthHeaders()
+  
   const response = await fetch(`${API_BASE_URL}/api/ai-coach/generate`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       prompt: request.prompt,
       provider: request.provider,

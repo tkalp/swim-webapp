@@ -1,2 +1,7 @@
 **/.env
 .venv
+
+# Experiments / R&D (comment this out when ready to commit)
+experiments/
+# For now, ignore
+jobs/

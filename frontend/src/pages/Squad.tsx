@@ -30,20 +30,19 @@ export default function SquadPage() {
   const handleAddSwimmer = async (swimmerData: CreateSwimmerData) => {
     if (!squadId) throw new Error('Squad ID is required')
     
-    await createSwimmer({
+    const newSwimmer = await createSwimmer({
       ...swimmerData,
       squad_id: squadId
     })
     
-    // For now, we'll let the parent component handle the refetch
-    // You might want to implement a refetch mechanism in useSquadData
-    window.location.reload()
+    // Return the created swimmer so modal can use its ID
+    return newSwimmer
   }
 
   const handleEditSwimmer = async (swimmerId: string, updates: UpdateSwimmerData) => {
     await updateSwimmer(swimmerId, updates)
     
-    // For now, we'll let the parent component handle the refetch
+    // Reload to show updated data
     window.location.reload()
   }
 

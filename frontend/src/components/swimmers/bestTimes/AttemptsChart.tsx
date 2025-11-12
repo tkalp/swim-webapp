@@ -1,4 +1,4 @@
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { formatTime } from '../../../features/swimmers/bestTimesApi';
 import { BarChart3 } from 'lucide-react';
 
@@ -10,10 +10,12 @@ type ChartDataPoint = {
 
 type AttemptsChartProps = {
   data: ChartDataPoint[];
-  bestTime: number;
 };
 
-export default function AttemptsChart({ data, bestTime }: AttemptsChartProps) {
+export default function AttemptsChart({ data }: AttemptsChartProps) {
+  // Only show dots if there are 20 or fewer attempts
+  const showDots = data.length <= 20;
+  
   return (
     <div className="bg-background-elevated border border-border rounded-2xl p-6 relative overflow-hidden">
       {/* Header bar */}
@@ -24,9 +26,16 @@ export default function AttemptsChart({ data, bestTime }: AttemptsChartProps) {
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center text-accent">
           <BarChart3 size={20} />
         </div>
-        <h3 className="text-xl font-bold bg-gradient-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
-          Progression Over Time
-        </h3>
+        <div className="flex-1">
+          <h3 className="text-xl font-bold bg-gradient-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
+            Progression Over Time
+          </h3>
+          {data.length > 20 && (
+            <p className="text-xs text-text-tertiary mt-1">
+              Showing {data.length} attempts • Dots hidden for clarity
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Chart */}
@@ -56,6 +65,7 @@ export default function AttemptsChart({ data, bestTime }: AttemptsChartProps) {
               domain={['dataMin - 2', 'dataMax + 2']}
               axisLine={{ stroke: "#374151" }}
               tickLine={{ stroke: "#374151" }}
+              tickFormatter={(value) => formatTime(value)}
             />
             <Tooltip
               contentStyle={{ 
@@ -83,34 +93,21 @@ export default function AttemptsChart({ data, bestTime }: AttemptsChartProps) {
               }}
               labelFormatter={(label) => `Attempt on ${label}`}
               formatter={(value: any) => [
-                `${formatTime(value as number)} (${(value as number).toFixed(2)}s)`, 
+                `${formatTime(value as number)}`, 
                 'Time'
               ]}
-            />
-            <ReferenceLine 
-              y={bestTime} 
-              strokeDasharray="4 4" 
-              stroke="#22D3EE"
-              strokeWidth={2}
-              label={{ 
-                value: "Best Time", 
-                position: "top",
-                fill: "#22D3EE",
-                fontSize: 12,
-                fontWeight: 600
-              }}
             />
             <Line 
               type="monotone" 
               dataKey="seconds" 
               stroke="#3197a7" 
               strokeWidth={3}
-              dot={{ 
+              dot={showDots ? { 
                 fill: '#22D3EE', 
                 strokeWidth: 2, 
                 stroke: '#3197a7',
                 r: 5
-              }}
+              } : false}
               activeDot={{ 
                 r: 7, 
                 fill: '#22D3EE',

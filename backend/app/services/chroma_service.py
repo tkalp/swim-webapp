@@ -352,7 +352,7 @@ def generate_with_claude(prompt: str, context: str, api_key: str) -> str:
     """Generate workout using Claude"""
     client = Anthropic(api_key=api_key)
     
-    full_prompt = f"""Based on the following request, generate a complete, detailed swimming workout.
+    full_prompt = f"""Based on the following request, generate a complete swimming workout.
 
 USER REQUEST:
 {prompt}
@@ -362,19 +362,39 @@ EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
 
 Generate a workout that:
 1. Matches the user's request and skill level
-2. Follows proper swimming workout nomenclature
-3. Is structured like the examples (warm-up, pre-set, main set, cool-down)
+2. Follows proper swimming workout nomenclature (e.g., "8 x 50 @ :50 Free")
+3. Is structured with warm-up, main set, cool-down
 4. Includes specific distances, intervals, and effort levels
-5. Has coaching notes explaining the purpose
-6. Is realistic and safe for the intended athlete
-7. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
-8. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50, and pull sets 5-10 seconds slower per 50 than regular swim paces**
+5. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
+6. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50 than regular swim paces**
 
-Format the workout clearly with sections and use proper swimming notation."""
+IMPORTANT FORMAT REQUIREMENTS:
+- Be CONCISE - focus on the workout itself, not extensive explanations
+- NO section purposes, no coaching philosophy paragraphs
+- Keep it to: Set name, distances/intervals, and BRIEF drill descriptions when needed
+- **CRITICAL: Put each set on its own line with a blank line between sets**
+- Example good format:
+  WARM-UP (400m)
+  200m Easy choice
+  
+  4 x 50 @ 1:15 (25m Kick, 25m Free)
+  
+  MAIN SET (1200m)
+  8 x 50 @ :50 Breaststroke Pull - Focus on high elbow catch
+  
+  4 x 100 @ 2:30 as: 25 Pull (strong), 25 Easy back, 25 Pull (strong), 25 Easy free
+  
+  COOL-DOWN (200m)
+  200m Easy choice
+  
+- Each set should be on its own line, separated by blank lines for readability
+- Only include drill descriptions if they're essential to the set
+- No "Purpose:" sections, no "Coaching Notes" sections at the end
+- Total distance and brief key focus is fine at the top"""
     
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=4000,
+        max_tokens=2000,
         system=SWIM_COACH_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": full_prompt}],
     )
@@ -386,7 +406,7 @@ def generate_with_openai(prompt: str, context: str, api_key: str) -> str:
     """Generate workout using OpenAI"""
     client = OpenAI(api_key=api_key)
     
-    full_prompt = f"""Based on the following request, generate a complete, detailed swimming workout.
+    full_prompt = f"""Based on the following request, generate a complete swimming workout.
 
 USER REQUEST:
 {prompt}
@@ -396,15 +416,35 @@ EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
 
 Generate a workout that:
 1. Matches the user's request and skill level
-2. Follows proper swimming workout nomenclature
-3. Is structured like the examples (warm-up, pre-set, main set, cool-down)
+2. Follows proper swimming workout nomenclature (e.g., "8 x 50 @ :50 Free")
+3. Is structured with warm-up, main set, cool-down
 4. Includes specific distances, intervals, and effort levels
-5. Has coaching notes explaining the purpose
-6. Is realistic and safe for the intended athlete
-7. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
-8. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50, and pull sets 5-10 seconds slower per 50 than regular swim paces**
+5. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
+6. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50 than regular swim paces**
 
-Format the workout clearly with sections and use proper swimming notation."""
+IMPORTANT FORMAT REQUIREMENTS:
+- Be CONCISE - focus on the workout itself, not extensive explanations
+- NO section purposes, no coaching philosophy paragraphs
+- Keep it to: Set name, distances/intervals, and BRIEF drill descriptions when needed
+- **CRITICAL: Put each set on its own line with a blank line between sets**
+- Example good format:
+  WARM-UP (400m)
+  200m Easy choice
+  
+  4 x 50 @ 1:15 (25m Kick, 25m Free)
+  
+  MAIN SET (1200m)
+  8 x 50 @ :50 Breaststroke Pull - Focus on high elbow catch
+  
+  4 x 100 @ 2:30 as: 25 Pull (strong), 25 Easy back, 25 Pull (strong), 25 Easy free
+  
+  COOL-DOWN (200m)
+  200m Easy choice
+  
+- Each set should be on its own line, separated by blank lines for readability
+- Only include drill descriptions if they're essential to the set
+- No "Purpose:" sections, no "Coaching Notes" sections at the end
+- Total distance and brief key focus is fine at the top"""
     
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -412,18 +452,18 @@ Format the workout clearly with sections and use proper swimming notation."""
             {"role": "system", "content": SWIM_COACH_SYSTEM_PROMPT},
             {"role": "user", "content": full_prompt},
         ],
-        max_tokens=4000,
+        max_tokens=2000,
         temperature=0.7,
     )
     
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
 def generate_with_groq(prompt: str, context: str, api_key: str) -> str:
     """Generate workout using Groq"""
     client = Groq(api_key=api_key)
     
-    full_prompt = f"""Based on the following request, generate a complete, detailed swimming workout.
+    full_prompt = f"""Based on the following request, generate a complete swimming workout.
 
 USER REQUEST:
 {prompt}
@@ -433,15 +473,35 @@ EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
 
 Generate a workout that:
 1. Matches the user's request and skill level
-2. Follows proper swimming workout nomenclature
-3. Is structured like the examples (warm-up, pre-set, main set, cool-down)
+2. Follows proper swimming workout nomenclature (e.g., "8 x 50 @ :50 Free")
+3. Is structured with warm-up, main set, cool-down
 4. Includes specific distances, intervals, and effort levels
-5. Has coaching notes explaining the purpose
-6. Is realistic and safe for the intended athlete
-7. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
-8. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50, and pull sets 5-10 seconds slower per 50 than regular swim paces**
+5. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
+6. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50 than regular swim paces**
 
-Format the workout clearly with sections and use proper swimming notation."""
+IMPORTANT FORMAT REQUIREMENTS:
+- Be CONCISE - focus on the workout itself, not extensive explanations
+- NO section purposes, no coaching philosophy paragraphs
+- Keep it to: Set name, distances/intervals, and BRIEF drill descriptions when needed
+- **CRITICAL: Put each set on its own line with a blank line between sets**
+- Example good format:
+  WARM-UP (400m)
+  200m Easy choice
+  
+  4 x 50 @ 1:15 (25m Kick, 25m Free)
+  
+  MAIN SET (1200m)
+  8 x 50 @ :50 Breaststroke Pull - Focus on high elbow catch
+  
+  4 x 100 @ 2:30 as: 25 Pull (strong), 25 Easy back, 25 Pull (strong), 25 Easy free
+  
+  COOL-DOWN (200m)
+  200m Easy choice
+  
+- Each set should be on its own line, separated by blank lines for readability
+- Only include drill descriptions if they're essential to the set
+- No "Purpose:" sections, no "Coaching Notes" sections at the end
+- Total distance and brief key focus is fine at the top"""
     
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -449,11 +509,11 @@ Format the workout clearly with sections and use proper swimming notation."""
             {"role": "system", "content": SWIM_COACH_SYSTEM_PROMPT},
             {"role": "user", "content": full_prompt},
         ],
-        max_tokens=4000,
+        max_tokens=2000,
         temperature=0.7,
     )
     
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
 def generate_workout(
