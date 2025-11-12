@@ -116,7 +116,7 @@ export default function WorkoutMiniChart({
       label: key === 'individualMedley' ? 'IM' : key.charAt(0).toUpperCase() + key.slice(1),
       value,
       color: STROKE_COLORS[key] || '#6B7280',
-      percentage: Math.round((value / workout.json_description.estimate.totalDistance) * 100)
+      percentage: Math.round((value / workout.json_description!.estimate.totalDistance) * 100)
     }));
 
   const activitySegments = Object.entries(activityBreakdown)
@@ -126,7 +126,7 @@ export default function WorkoutMiniChart({
       label: key.charAt(0).toUpperCase() + key.slice(1),
       value,
       color: ACTIVITY_COLORS[key] || '#6B7280',
-      percentage: Math.round((value / workout.json_description.estimate.totalDistance) * 100)
+      percentage: Math.round((value / workout.json_description!.estimate.totalDistance) * 100)
     }));
 
   return (

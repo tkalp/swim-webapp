@@ -7,9 +7,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export interface GenerateWorkoutRequest {
   prompt: string
-  provider: 'claude' | 'openai' | 'groq'
-  apiKey: string
-  numExamples?: number
   bestTimes?: BestTimes
 }
 
@@ -27,7 +24,7 @@ export interface GenerateWorkoutResponse {
 }
 
 /**
- * Generate a swimming workout using AI Coach
+ * Generate a swimming workout using AI Coach (Anthropic Claude)
  */
 export async function generateWorkout(
   request: GenerateWorkoutRequest
@@ -39,9 +36,6 @@ export async function generateWorkout(
     headers,
     body: JSON.stringify({
       prompt: request.prompt,
-      provider: request.provider,
-      apiKey: request.apiKey,
-      numExamples: request.numExamples ?? 3,
       bestTimes: request.bestTimes,
     }),
   })

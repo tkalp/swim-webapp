@@ -1,26 +1,9 @@
 // hooks/useAICoach.ts
 import { useState, useCallback } from 'react'
 import { generateWorkout } from '../features/ai-coach/api'
-import type { AICoachSettings, GeneratedWorkout, BestTimes } from '../types/ai-coach/types'
+import type { GeneratedWorkout, BestTimes } from '../types/ai-coach/types'
 
 export function useAICoach() {
-  const [settings, setSettings] = useState<AICoachSettings>({
-    provider: 'claude',
-    apiKey: '',
-    numExamples: 3,
-  })
-
-  const anthropicApiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string
-  const groqApiKey = import.meta.env.VITE_GROQ_KEY as string
-  
-  if (settings.provider === 'claude' && !settings.apiKey && anthropicApiKey) {
-    settings.apiKey = anthropicApiKey
-  }
-  if (settings.provider === 'groq' && !settings.apiKey && groqApiKey) {
-    console.log(groqApiKey)
-    settings.apiKey = groqApiKey
-  }
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [currentWorkout, setCurrentWorkout] = useState<GeneratedWorkout | null>(null)
@@ -28,11 +11,6 @@ export function useAICoach() {
   const generate = useCallback(async (prompt: string, bestTimes?: BestTimes) => {
     if (!prompt.trim()) {
       setError('Please enter a workout description')
-      return null
-    }
-
-    if (!settings.apiKey.trim()) {
-      setError('Please enter your API key in settings')
       return null
     }
 
@@ -49,9 +27,6 @@ export function useAICoach() {
 
       const response = await generateWorkout({
         prompt,
-        provider: settings.provider,
-        apiKey: settings.apiKey,
-        numExamples: settings.numExamples,
         bestTimes: Object.keys(filteredBestTimes || {}).length > 0 ? filteredBestTimes : undefined,
       })
 
@@ -59,7 +34,7 @@ export function useAICoach() {
         id: Date.now().toString(),
         prompt,
         workout: response.workout,
-        provider: settings.provider,
+        provider: 'claude',
         timestamp: new Date().toISOString(),
         examples: response.examples,
         athletePaces: response.athlete_paces,
@@ -74,10 +49,6 @@ export function useAICoach() {
     } finally {
       setLoading(false)
     }
-  }, [settings])
-
-  const updateSettings = useCallback((updates: Partial<AICoachSettings>) => {
-    setSettings(prev => ({ ...prev, ...updates }))
   }, [])
 
   const clearError = useCallback(() => setError(''), [])
@@ -85,14 +56,12 @@ export function useAICoach() {
 
   return {
     // State
-    settings,
     loading,
     error,
     currentWorkout,
 
     // Actions
     generate,
-    updateSettings,
     clearError,
     clearWorkout,
   }
