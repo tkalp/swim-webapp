@@ -1,7 +1,6 @@
 // services/workoutAnalysisService.ts
 import { authenticatedFetch } from '../lib/apiClient'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+import { API_BASE_URL } from '../lib/api';
 
 export interface WorkoutAnalysis {
   workout_id: string;
@@ -50,7 +49,7 @@ export interface QuickStats {
  * Analyze workout text and get complete breakdown
  */
 export async function analyzeWorkout(workoutText: string, workoutId: string = "CUSTOM"): Promise<WorkoutAnalysis> {
-  const response = await authenticatedFetch(`${API_BASE_URL}/api/workout-analysis/analyze`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/workout-analysis/analyze`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -78,7 +77,7 @@ export async function analyzeWorkout(workoutText: string, workoutId: string = "C
  * Get quick stats for form display (lighter analysis)
  */
 export async function getQuickWorkoutStats(workoutText: string, workoutId: string = "CUSTOM"): Promise<QuickStats> {
-  const response = await authenticatedFetch(`${API_BASE_URL}/api/workout-analysis/quick-stats`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/workout-analysis/quick-stats`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

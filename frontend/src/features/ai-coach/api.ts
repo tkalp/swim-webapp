@@ -2,8 +2,7 @@
 
 import type { BestTimes } from "../../types/ai-coach/types"
 import { getAuthHeaders } from "../../lib/apiClient"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../../lib/api';
 
 export interface GenerateWorkoutRequest {
   prompt: string
@@ -31,7 +30,7 @@ export async function generateWorkout(
 ): Promise<GenerateWorkoutResponse> {
   const headers = await getAuthHeaders()
   
-  const response = await fetch(`${API_BASE_URL}/api/ai-coach/generate`, {
+  const response = await fetch(`${API_BASE_URL}/ai-coach/generate`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -59,7 +58,7 @@ export async function checkAICoachHealth(): Promise<{
   chromadb?: string
   message?: string
 }> {
-  const response = await fetch(`${API_BASE_URL}/api/ai-coach/health`)
+  const response = await fetch(`${API_BASE_URL}/ai-coach/health`)
   return response.json()
 }
 
