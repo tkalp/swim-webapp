@@ -10,7 +10,7 @@ from app.services.workout_analyzer import WorkoutAnalyzer
 from app.middleware.auth import get_current_user_id
 from app.utils import logger, log_error
 
-router = APIRouter(prefix="/api/workout-analysis", tags=["workout-analysis"])
+router = APIRouter(prefix="/workout-analysis", tags=["workout-analysis"])
 
 # Create singleton analyzer instance to avoid repeated initialization
 _analyzer_instance = None

@@ -13,7 +13,7 @@ from app.services.chroma_service import (
 from app.middleware.auth import get_current_user, get_current_user_id
 from app.utils import logger, log_error
 
-router = APIRouter(prefix="/api/ai-coach", tags=["AI Coach"])
+router = APIRouter(prefix="/ai-coach", tags=["AI Coach"])
 
 
 @router.post("/generate", response_model=GenerateWorkoutResponse)
