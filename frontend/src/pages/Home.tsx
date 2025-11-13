@@ -127,41 +127,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Quick Actions */}
-        <section className="flex flex-col gap-6">
-          <h2 className="text-2xl font-bold text-text-primary">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button 
-              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex flex-col items-center gap-3 transition-all duration-200 hover:border-primary/30 hover:scale-105 hover:shadow-lg"
-              onClick={() => navigate("/ai-coach")}
-            >
-              <Sparkles size={24} className="text-primary" />
-              <span className="font-medium text-text-secondary">Generate Workout</span>
-            </button>
-            <button 
-              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex flex-col items-center gap-3 transition-all duration-200 hover:border-primary/30 hover:scale-105 hover:shadow-lg"
-              onClick={() => navigate("/squads")}
-            >
-              <Users size={24} className="text-primary" />
-              <span className="font-medium text-text-secondary">View Squads</span>
-            </button>
-            <button 
-              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex flex-col items-center gap-3 font-medium text-text-secondary opacity-50 cursor-not-allowed"
-              disabled
-            >
-              <TrendingUp size={24} className="text-primary" />
-              <span>View Analytics</span>
-            </button>
-            <button 
-              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex flex-col items-center gap-3 font-medium text-text-secondary opacity-50 cursor-not-allowed"
-              disabled
-            >
-              <SettingsIcon size={24} className="text-primary" />
-              <span>Settings</span>
-            </button>
-          </div>
-        </section>
-
         {/* User Info Card */}
         <section className="mt-auto pt-8">
           <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex items-center gap-5">
