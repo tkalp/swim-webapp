@@ -137,7 +137,7 @@ export async function searchSwimRankings(
   });
 
   const response = await fetch(
-    `${API_BASE_URL}/swimrankings/search?${params}`,
+    `${API_BASE_URL}/api/swimrankings/search?${params}`,
     {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -157,7 +157,7 @@ export async function linkSwimmer(
 ): Promise<LinkSwimmerResponse> {
   const token = await getAuthToken();
 
-  const response = await fetch(`${API_BASE_URL}/swimrankings/link`, {
+  const response = await fetch(`${API_BASE_URL}/api/swimrankings/link`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -180,7 +180,7 @@ export async function getSwimmerLinks(
   const token = await getAuthToken();
 
   const response = await fetch(
-    `${API_BASE_URL}/swimrankings/swimmer/${swimmerId}/links`,
+    `${API_BASE_URL}/api/swimrankings/swimmer/${swimmerId}/links`,
     {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -198,7 +198,7 @@ export async function getSwimmerLinks(
 export async function deleteLink(linkId: string): Promise<void> {
   const token = await getAuthToken();
 
-  const response = await fetch(`${API_BASE_URL}/swimrankings/link/${linkId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/swimrankings/link/${linkId}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -215,7 +215,7 @@ export async function importResults(
 ): Promise<ImportResultsResponse> {
   const token = await getAuthToken();
   
-  const response = await fetch(`${API_BASE_URL}/swimrankings/import-results`, {
+  const response = await fetch(`${API_BASE_URL}/api/swimrankings/import-results`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -237,7 +237,7 @@ export async function importEventAttempts(
 ): Promise<ImportEventAttemptsResponse> {
   const token = await getAuthToken();
   
-  const response = await fetch(`${API_BASE_URL}/swimrankings/fetch-event-attempts`, {
+  const response = await fetch(`${API_BASE_URL}/api/swimrankings/fetch-event-attempts`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
