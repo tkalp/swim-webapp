@@ -3,11 +3,9 @@ SwimRankings.net integration service - Search only
 Result scraping has been moved to the jobs folder (sync_swimrankings.py)
 """
 
-from playwright.sync_api import sync_playwright
+import httpx
 from bs4 import BeautifulSoup
 from typing import List, Dict
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from app.utils import logger, log_error
 
 
@@ -16,42 +14,9 @@ class SwimRankingsScraper:
     
     BASE_URL = "https://www.swimrankings.net"
     
-    def _search_swimmer_sync(self, firstname: str, lastname: str) -> List[Dict]:
-        """
-        Synchronous search function to run in thread pool
-        """
-        search_url = f"{self.BASE_URL}/index.php"
-        params = {
-            'internalRequest': 'athleteFind',
-            'athlete_clubId': '-1',  # Worldwide
-            'athlete_gender': '-1',  # All genders
-            'athlete_lastname': lastname,
-            'athlete_firstname': firstname,
-        }
-        
-        # Build full URL with params
-        param_string = '&'.join([f"{k}={v}" for k, v in params.items()])
-        full_url = f"{search_url}?{param_string}"
-        
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            
-            # Navigate to search URL
-            page.goto(full_url, wait_until="networkidle", timeout=30000)
-            
-            # Get the HTML content
-            html = page.content()
-            browser.close()
-            
-            soup = BeautifulSoup(html, 'lxml')
-            results = self._parse_search_results(soup)
-            
-            return results
-    
     async def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
         """
-        Search for swimmers on SwimRankings using Playwright in thread pool
+        Search for swimmers on SwimRankings using httpx with proper headers
         
         Args:
             firstname: Swimmer's first name
@@ -62,19 +27,49 @@ class SwimRankingsScraper:
         """
         logger.info(f"Searching SwimRankings for: {firstname} {lastname}")
         
+        search_url = f"{self.BASE_URL}/index.php"
+        params = {
+            'internalRequest': 'athleteFind',
+            'athlete_clubId': '-1',  # Worldwide
+            'athlete_gender': '-1',  # All genders
+            'athlete_lastname': lastname,
+            'athlete_firstname': firstname,
+        }
+        
+        # Headers to mimic a real browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0',
+        }
+        
         try:
-            # Run Playwright in thread pool to avoid event loop issues
-            loop = asyncio.get_event_loop()
-            with ThreadPoolExecutor() as executor:
-                results = await loop.run_in_executor(
-                    executor,
-                    self._search_swimmer_sync,
-                    firstname,
-                    lastname
-                )
-            
-            logger.info(f"Found {len(results)} swimmer(s) on SwimRankings")
-            return results
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                logger.info(f"Making request to {search_url} with params: {params}")
+                response = await client.get(search_url, params=params, headers=headers)
+                logger.info(f"Response status: {response.status_code}")
+                logger.info(f"Response URL: {response.url}")
+                logger.info(f"Response encoding: {response.encoding}")
+                
+                # Get the decoded text
+                html_text = response.text
+                logger.info(f"Response text length: {len(html_text)} chars")
+                logger.info(f"Response preview: {html_text[:500]}")
+                
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(html_text, 'lxml')
+                results = self._parse_search_results(soup)
+                
+                logger.info(f"Found {len(results)} swimmer(s) on SwimRankings")
+                return results
             
         except Exception as e:
             log_error(e, context="swimrankings_search", firstname=firstname, lastname=lastname)
