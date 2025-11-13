@@ -6,6 +6,8 @@ Result scraping has been moved to the jobs folder (sync_swimrankings.py)
 import httpx
 from bs4 import BeautifulSoup
 from typing import List, Dict
+import random
+import asyncio
 from app.utils import logger, log_error
 
 
@@ -16,7 +18,7 @@ class SwimRankingsScraper:
     
     async def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
         """
-        Search for swimmers on SwimRankings using httpx with proper headers
+        Search for swimmers on SwimRankings using httpx with realistic patterns
         
         Args:
             firstname: Swimmer's first name
@@ -36,32 +38,53 @@ class SwimRankingsScraper:
             'athlete_firstname': firstname,
         }
         
-        # Headers to mimic a real browser
+        # More realistic headers with varied user agents
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+        ]
+        
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
             'Cache-Control': 'max-age=0',
+            'Referer': self.BASE_URL,
         }
         
         try:
+            # Add random delay to appear more human-like (0.5-2 seconds)
+            await asyncio.sleep(random.uniform(0.5, 2.0))
+            
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                logger.info(f"Making request to {search_url} with params: {params}")
+                # First, visit the homepage to get cookies
+                logger.info("Visiting homepage to establish session...")
+                await client.get(self.BASE_URL, headers=headers)
+                
+                # Small delay before search
+                await asyncio.sleep(random.uniform(0.3, 1.0))
+                
+                logger.info(f"Making search request with params: {params}")
                 response = await client.get(search_url, params=params, headers=headers)
                 logger.info(f"Response status: {response.status_code}")
-                logger.info(f"Response URL: {response.url}")
-                logger.info(f"Response encoding: {response.encoding}")
+                
+                if response.status_code == 503:
+                    logger.error("Received 503 - SwimRankings is blocking the request")
+                    return []
                 
                 # Get the decoded text
                 html_text = response.text
                 logger.info(f"Response text length: {len(html_text)} chars")
-                logger.info(f"Response preview: {html_text[:500]}")
                 
                 response.raise_for_status()
                 
