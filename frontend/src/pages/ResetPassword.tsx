@@ -20,7 +20,7 @@ export default function ResetPassword() {
 
   // Check if we have the required token
   useEffect(() => {
-    const accessToken = searchParams.get("access_token");
+    const accessToken = searchParams.get("access_token") || searchParams.get("token");
     const type = searchParams.get("type");
     
     if (!accessToken || type !== "recovery") {
