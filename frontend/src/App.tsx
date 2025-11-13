@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import SquadsPage from "./pages/Squads";
 import AddSquadPage from "./pages/AddSquad";
 import SquadPage from "./pages/Squad";
@@ -27,6 +29,8 @@ export default function App() {
         <Route path="/ai-coach" element={<AICoachPage />} />
       </Route>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
     </Routes>
   );
 }
