@@ -17,7 +17,7 @@ class GenerateWorkoutRequest(BaseModel):
 
 class GenerateWorkoutResponse(BaseModel):
     workout: str
-    examples: list[ExampleWorkout]
+    examples: Optional[list[ExampleWorkout]] = None  # Kept for backwards compatibility but not returned
 
 
 class HealthResponse(BaseModel):

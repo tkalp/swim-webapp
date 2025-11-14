@@ -454,18 +454,9 @@ def generate_workout(
         
         logger.info(f"Workout generated successfully | workout_length={len(workout)}")
         
-        # Step 5: Return response
+        # Step 5: Return response (examples removed from response)
         return {
             "workout": workout,
-            "examples": [
-                {
-                    "id": r["metadata"].get("workout_id", r["id"]),
-                    "title": r["metadata"].get("title", "Unknown"),
-                    "url": r["metadata"].get("workout_url", ""),
-                    "relevance": 1 - r["distance"],
-                }
-                for r in search_results
-            ],
             "athlete_paces": build_athlete_context(best_times) if best_times else None,
         }
     
