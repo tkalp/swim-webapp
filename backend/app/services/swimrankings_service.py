@@ -24,13 +24,20 @@ class SwimRankingsScraper:
         self.proxy_password = os.getenv("OXYLABS_PASSWORD")
         self.proxy_country = os.getenv("OXYLABS_COUNTRY", "US")
         
+        logger.info(f"Proxy config - USE_OXYLABS_PROXY: {self.use_proxy}")
+        logger.info(f"Proxy config - Username present: {bool(self.proxy_username)}")
+        logger.info(f"Proxy config - Password present: {bool(self.proxy_password)}")
+        logger.info(f"Proxy config - Country: {self.proxy_country}")
+        
     def _get_proxy_url(self) -> Optional[str]:
         """Build Oxylabs proxy URL if credentials are configured"""
         if not self.use_proxy or not self.proxy_username or not self.proxy_password:
             return None
             
+        # Oxylabs format: http://user:pass@host:port
         proxy_url = f"http://customer-{self.proxy_username}-cc-{self.proxy_country}:{self.proxy_password}@pr.oxylabs.io:7777"
         logger.info(f"Using Oxylabs proxy with country: {self.proxy_country}")
+        logger.info(f"Proxy URL format: http://customer-{self.proxy_username}-cc-{self.proxy_country}:***@pr.oxylabs.io:7777")
         return proxy_url
     
     async def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
@@ -86,10 +93,11 @@ class SwimRankingsScraper:
             # Configure proxy if enabled
             proxy_url = self._get_proxy_url()
             
+            # httpx automatically handles basic auth from URL (user:pass@host:port)
             async with httpx.AsyncClient(
                 timeout=30.0, 
                 follow_redirects=True,
-                proxy=proxy_url
+                proxy=proxy_url  # None if no proxy, or full URL with embedded credentials
             ) as client:
                 # First, visit the homepage to get cookies
                 logger.info("Visiting homepage to establish session...")
