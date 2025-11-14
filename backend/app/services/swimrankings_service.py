@@ -5,9 +5,10 @@ Result scraping has been moved to the jobs folder (sync_swimrankings.py)
 
 import httpx
 from bs4 import BeautifulSoup
-from typing import List, Dict
+from typing import List, Dict, Optional
 import random
 import asyncio
+import os
 from app.utils import logger, log_error
 
 
@@ -15,6 +16,22 @@ class SwimRankingsScraper:
     """Service for searching SwimRankings.net (result scraping in jobs folder)"""
     
     BASE_URL = "https://www.swimrankings.net"
+    
+    def __init__(self):
+        """Initialize scraper with optional proxy configuration"""
+        self.use_proxy = os.getenv("USE_OXYLABS_PROXY", "false").lower() == "true"
+        self.proxy_username = os.getenv("OXYLABS_USERNAME")
+        self.proxy_password = os.getenv("OXYLABS_PASSWORD")
+        self.proxy_country = os.getenv("OXYLABS_COUNTRY", "US")
+        
+    def _get_proxy_url(self) -> Optional[str]:
+        """Build Oxylabs proxy URL if credentials are configured"""
+        if not self.use_proxy or not self.proxy_username or not self.proxy_password:
+            return None
+            
+        proxy_url = f"http://customer-{self.proxy_username}-cc-{self.proxy_country}:{self.proxy_password}@pr.oxylabs.io:7777"
+        logger.info(f"Using Oxylabs proxy with country: {self.proxy_country}")
+        return proxy_url
     
     async def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
         """
@@ -66,7 +83,14 @@ class SwimRankingsScraper:
             # Add random delay to appear more human-like (0.5-2 seconds)
             await asyncio.sleep(random.uniform(0.5, 2.0))
             
-            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            # Configure proxy if enabled
+            proxy_url = self._get_proxy_url()
+            
+            async with httpx.AsyncClient(
+                timeout=30.0, 
+                follow_redirects=True,
+                proxy=proxy_url
+            ) as client:
                 # First, visit the homepage to get cookies
                 logger.info("Visiting homepage to establish session...")
                 await client.get(self.BASE_URL, headers=headers)
