@@ -77,16 +77,18 @@ class SwimRankingsScraper:
                 logger.info(f"Making search request with params: {params}")
                 response = await client.get(search_url, params=params, headers=headers)
                 logger.info(f"Response status: {response.status_code}")
+                logger.info(f"Response headers: {dict(response.headers)}")
                 
                 if response.status_code == 503:
                     logger.error("Received 503 - SwimRankings is blocking the request")
                     return []
                 
-                # Get the decoded text
-                html_text = response.text
-                logger.info(f"Response text length: {len(html_text)} chars")
-                
                 response.raise_for_status()
+                
+                # httpx automatically decompresses - just use .text
+                html_text = response.text
+                logger.info(f"Decoded text length: {len(html_text)} chars")
+                logger.info(f"First 500 chars: {html_text[:500]}")
                 
                 soup = BeautifulSoup(html_text, 'lxml')
                 results = self._parse_search_results(soup)
