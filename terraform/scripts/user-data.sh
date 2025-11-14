@@ -123,6 +123,32 @@ cat > /etc/logrotate.d/aquilus << 'LOGROTATE'
 }
 LOGROTATE
 
+# Create a marker file to indicate repository is ready for chroma_db transfer
+touch /root/aquilus-webapp/READY_FOR_CHROMADB
+
+echo "=========================================="
+echo "Repository cloned and ready"
+echo "Waiting for chroma_db to be transferred..."
+echo "=========================================="
+
+# Wait for chroma_db to be transferred (marker file will be created by deploy.sh via SSH)
+timeout=600  # 10 minutes max
+elapsed=0
+while [ ! -f /root/aquilus-webapp/CHROMADB_TRANSFERRED ] && [ $elapsed -lt $timeout ]; do
+  sleep 5
+  elapsed=$((elapsed + 5))
+  if [ $((elapsed % 30)) -eq 0 ]; then
+    echo "Still waiting for chroma_db... ($${elapsed}s elapsed)"
+  fi
+done
+
+if [ -f /root/aquilus-webapp/CHROMADB_TRANSFERRED ]; then
+  echo "✓ chroma_db transfer confirmed"
+  rm /root/aquilus-webapp/CHROMADB_TRANSFERRED
+else
+  echo "⚠ Timeout waiting for chroma_db, proceeding anyway..."
+fi
+
 # Run the deployment script to start the application
 /root/aquilus-webapp/deploy.sh
 

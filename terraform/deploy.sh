@@ -2,23 +2,35 @@
 
 terraform apply -auto-approve
 
-echo "Waiting for droplet to initialize..."
-sleep 60
-
-# Get the droplet IP from terraform output
+# Get the droplet IP
 DROPLET_IP=$(terraform output -raw droplet_ip 2>/dev/null)
 
 if [ -n "$DROPLET_IP" ]; then
-  echo ""
-  echo "=========================================="
-  echo "Deployment complete!"
   echo "Droplet IP: $DROPLET_IP"
-  echo "=========================================="
+  echo "Waiting for repository to be ready..."
+  
+  # Wait for the READY_FOR_CHROMADB marker
+  until ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@$DROPLET_IP "test -f /root/aquilus-webapp/READY_FOR_CHROMADB" 2>/dev/null; do
+    echo "Waiting for repository..."
+    sleep 5
+  done
+  
+  echo "✓ Repository ready"
   echo ""
-  echo "Connecting to droplet and tailing cloud-init logs..."
+  
+  # Transfer chroma_db
+  echo "Transferring chroma_db..."
+  scp -o StrictHostKeyChecking=no -r ../backend/chroma_db root@$DROPLET_IP:/root/aquilus-webapp/backend/
+  echo "✓ chroma_db transferred"
+  echo ""
+  
+  # Create marker to signal transfer is complete
+  ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "touch /root/aquilus-webapp/CHROMADB_TRANSFERRED"
+  echo "✓ Signaled transfer complete"
+  echo ""
+  
+  echo "Watching deployment progress..."
   ssh root@$DROPLET_IP "tail -f /var/log/cloud-init-output.log"
 else
-  echo "Could not retrieve droplet IP from terraform output"
+  echo "Could not retrieve droplet IP"
 fi
-
-sleep 20
