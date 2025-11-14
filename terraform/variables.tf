@@ -103,3 +103,29 @@ variable "spaces_region" {
   type        = string
   default     = "sfo3"
 }
+
+variable "use_oxylabs_proxy" {
+  description = "Whether to use Oxylabs residential proxy for SwimRankings scraping"
+  type        = string
+  default     = "false"
+}
+
+variable "oxylabs_username" {
+  description = "Oxylabs proxy username"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "oxylabs_password" {
+  description = "Oxylabs proxy password"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "oxylabs_country" {
+  description = "Oxylabs proxy country code (e.g., US, GB)"
+  type        = string
+  default     = "US"
+}

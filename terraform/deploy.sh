@@ -15,8 +15,8 @@ if [ -n "$DROPLET_IP" ]; then
   echo "Droplet IP: $DROPLET_IP"
   echo "=========================================="
   echo ""
-  echo "Connecting to droplet via SSH..."
-  ssh root@$DROPLET_IP
+  echo "Connecting to droplet and tailing cloud-init logs..."
+  ssh root@$DROPLET_IP "tail -f /var/log/cloud-init-output.log"
 else
   echo "Could not retrieve droplet IP from terraform output"
 fi

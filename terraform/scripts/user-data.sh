@@ -81,19 +81,20 @@ SUPABASE_ANON_KEY=${supabase_anon_key}
 SUPABASE_SERVICE_ROLE_KEY=${supabase_service_role_key}
 SUPABASE_JWT_SECRET=${supabase_jwt_secret}
 
-# Anthropic AI
-ANTHROPIC_API_KEY=${anthropic_api_key}
-
-# ChromaDB
-CHROMA_DB_PATH=/app/chroma_db
 
 # Frontend environment variables
 VITE_SUPABASE_URL=${vite_supabase_url}
 VITE_SUPABASE_ANON_KEY=${vite_supabase_anon_key}
 VITE_API_URL=${vite_api_url}
 
-# API approved domains for CORS
+# Backend environment variables
+ANTHROPIC_API_KEY=${anthropic_api_key}
+CHROMA_DB_PATH=/app/chroma_db
 ALLOWED_ORIGINS=${allowed_origins}
+USE_OXYLABS_PROXY=${use_oxylabs_proxy}
+OXYLABS_USERNAME=${oxylabs_username}
+OXYLABS_PASSWORD=${oxylabs_password}
+OXYLABS_COUNTRY=US
 ENVFILE
 
 # Install Docker Compose v2
@@ -131,33 +132,24 @@ if [ -n "${domain_name}" ]; then
   echo "Setting up SSL certificate for ${domain_name}..."
   echo "=========================================="
   
+  # Get current droplet IP from metadata service
+  DROPLET_IP=$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+  echo "✓ Current droplet IP: $DROPLET_IP"
+  
   # Check if we already have valid certificates
   # Use -e to check if symlink target exists, not just the symlink itself
+  has_valid_cert=false
   if [ -e "/etc/letsencrypt/live/${domain_name}/fullchain.pem" ] && [ -e "/etc/letsencrypt/live/${domain_name}/privkey.pem" ]; then
     echo "✓ Valid SSL certificate files found"
     
     # Verify certificate is not expired and is readable
     if openssl x509 -checkend 604800 -noout -in /etc/letsencrypt/live/${domain_name}/fullchain.pem 2>/dev/null; then
       echo "✓ Certificate is valid for at least 7 more days"
-      echo "✓ Certificate is valid for at least 7 more days"
-      
-      # Enable HTTPS configuration immediately
-      echo "Enabling HTTPS configuration..."
-      export DOMAIN="${domain_name}"
-      envsubst '$${DOMAIN}' < /root/aquilus-webapp/frontend/nginx-https.conf > /tmp/nginx-https.conf
-      docker cp /tmp/nginx-https.conf aquilus-frontend:/etc/nginx/nginx.conf
-      docker exec aquilus-frontend nginx -s reload
-      
-      echo "✓ HTTPS is enabled with existing certificate"
-      exit 0
+      has_valid_cert=true
     else
       echo "⚠ Certificate expires soon, will renew"
     fi
   fi
-  
-  # Get current droplet IP from metadata service
-  DROPLET_IP=$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
-  echo "✓ Current droplet IP: $DROPLET_IP"
   
   # Wait for DNS propagation (20 minutes max)
   echo ""
@@ -191,9 +183,34 @@ if [ -n "${domain_name}" ]; then
     echo "  Current DNS: ${domain_name} -> $resolved_ip"
     echo "  Expected:    ${domain_name} -> $DROPLET_IP"
     echo ""
+    
+    # If we have a valid cert, enable HTTPS anyway
+    if [ "$has_valid_cert" = true ]; then
+      echo "✓ Valid certificate exists, enabling HTTPS..."
+      export DOMAIN="${domain_name}"
+      envsubst '$${DOMAIN}' < /root/aquilus-webapp/frontend/nginx-https.conf > /tmp/nginx-https.conf
+      docker cp /tmp/nginx-https.conf aquilus-frontend:/etc/nginx/nginx.conf
+      docker exec aquilus-frontend nginx -s reload
+      echo "✓ HTTPS is enabled with existing certificate"
+      exit 0
+    fi
+    
     echo "To obtain SSL certificate manually after DNS propagates:"
     echo "  certbot certonly --webroot --webroot-path=/var/www/certbot \\"
     echo "    -d ${domain_name} --agree-tos --email teddy.kalp@cultivatedcode.com --non-interactive"
+    exit 0
+  fi
+  
+  # DNS is ready - if we have valid cert, enable HTTPS immediately
+  if [ "$has_valid_cert" = true ]; then
+    echo ""
+    echo "✓ DNS propagated and valid certificate exists"
+    echo "Enabling HTTPS configuration..."
+    export DOMAIN="${domain_name}"
+    envsubst '$${DOMAIN}' < /root/aquilus-webapp/frontend/nginx-https.conf > /tmp/nginx-https.conf
+    docker cp /tmp/nginx-https.conf aquilus-frontend:/etc/nginx/nginx.conf
+    docker exec aquilus-frontend nginx -s reload
+    echo "✓ HTTPS is enabled with existing certificate"
     exit 0
   fi
   

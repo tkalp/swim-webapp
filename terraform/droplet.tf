@@ -24,12 +24,16 @@ resource "digitalocean_droplet" "aquilus" {
     vite_api_url            = var.vite_api_url
     allowed_origins         = var.allowed_origins
     domain_name             = var.domain_name
-    allowed_origins        = join(",", var.allowed_origins)
+    allowed_origins         = join(",", var.allowed_origins)
     supabase_jwt_secret     = var.supabase_jwt_secret
     spaces_access_key         = var.spaces_access_key
     spaces_secret_key         = var.spaces_secret_key
     spaces_bucket             = var.spaces_bucket
     spaces_region             = var.spaces_region
+    use_oxylabs_proxy         = var.use_oxylabs_proxy
+    oxylabs_username          = var.oxylabs_username
+    oxylabs_password          = var.oxylabs_password
+    oxylabs_country           = var.oxylabs_country
   })
 
   tags = ["aquilus", "production"]

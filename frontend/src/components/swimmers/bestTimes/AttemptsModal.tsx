@@ -9,7 +9,7 @@ import {
 } from "../../../features/swimmers/bestTimesApi";
 import AttemptsStats from "./AttemptsStats";
 import AttemptsChart from "./AttemptsChart";
-import { X, AlertCircle, Activity, Edit2, Calendar, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { X, AlertCircle, Activity, Edit2, Calendar, Clock, ChevronDown } from "lucide-react";
 
 export default function AttemptsModal({
   open,
@@ -35,6 +35,8 @@ export default function AttemptsModal({
     }>
   >([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+
 
   useEffect(() => {
     if (!open) return;
@@ -58,10 +60,32 @@ export default function AttemptsModal({
     };
   }, [open, query]);
 
+  // Get unique years from attempts
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    rows.forEach(row => {
+      if (row.performedOn) {
+        const year = new Date(row.performedOn).getFullYear().toString();
+        years.add(year);
+      }
+    });
+    return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)); // Newest first
+  }, [rows]);
+
+  // Filter rows by selected year
+  const filteredRows = useMemo(() => {
+    if (selectedYear === "all") return rows;
+    return rows.filter(row => {
+      if (!row.performedOn) return false;
+      const year = new Date(row.performedOn).getFullYear().toString();
+      return year === selectedYear;
+    });
+  }, [rows, selectedYear]);
+
   // Chart data - temporal order (as received)
   const data = useMemo(
     () =>
-      rows.map((r, i) => ({
+      filteredRows.map((r, i) => ({
         i: i + 1,
         date: r.performedOn
           ? new Date(r.performedOn).toLocaleDateString([], {
@@ -72,18 +96,18 @@ export default function AttemptsModal({
           : `#${i + 1}`,
         seconds: r.timeSeconds,
       })),
-    [rows]
+    [filteredRows]
   );
 
   // Table data - sorted by performance (fastest first)
   const sortedRows = useMemo(
-    () => [...rows].sort((a, b) => a.timeSeconds - b.timeSeconds),
-    [rows]
+    () => [...filteredRows].sort((a, b) => a.timeSeconds - b.timeSeconds),
+    [filteredRows]
   );
 
-  const first = rows[0]?.timeSeconds;
-  const last = rows[rows.length - 1]?.timeSeconds;
-  const best = rows.reduce(
+  const first = filteredRows[0]?.timeSeconds;
+  const last = filteredRows[filteredRows.length - 1]?.timeSeconds;
+  const best = filteredRows.reduce(
     (m, r) => (r.timeSeconds < m ? r.timeSeconds : m),
     Number.POSITIVE_INFINITY
   );
@@ -92,10 +116,10 @@ export default function AttemptsModal({
 
   // Calculate recent trend (last 3-5 attempts)
   const recentTrend = useMemo(() => {
-    if (rows.length < 2) return null;
+    if (filteredRows.length < 2) return null;
     
-    const recentCount = Math.min(5, rows.length);
-    const recentResults = rows.slice(-recentCount); // Get last 3-5 results
+    const recentCount = Math.min(5, filteredRows.length);
+    const recentResults = filteredRows.slice(-recentCount); // Get last 3-5 results
     
     if (recentResults.length < 2) return null;
     
@@ -117,7 +141,7 @@ export default function AttemptsModal({
       avgChangePerAttempt,
       percentage
     };
-  }, [rows]);
+  }, [filteredRows]);
 
   if (!open) return null;
 
@@ -129,7 +153,7 @@ export default function AttemptsModal({
       onClick={onClose}
     >
       <div
-        className="bg-background-secondary border border-border rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom duration-300"
+        className="bg-background-secondary border border-border rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -143,14 +167,34 @@ export default function AttemptsModal({
               {query.units === "yards" ? "Y" : "M"} {captialize(query.stroke)}{" "}
               {captialize(query.activity)}
             </h2>
-            {query.equipment !== "none" && (
-              <p className="text-text-secondary text-sm">
-                Equipment:{" "}
-                <span className="font-semibold text-primary">
-                  {query.equipment}
-                </span>
-              </p>
-            )}
+            <div className="flex items-center gap-4 flex-wrap">
+              {query.equipment !== "none" && (
+                <p className="text-text-secondary text-sm">
+                  Equipment:{" "}
+                  <span className="font-semibold text-primary">
+                    {query.equipment}
+                  </span>
+                </p>
+              )}
+              {availableYears.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="year-filter" className="text-sm text-text-secondary">
+                    Year:
+                  </label>
+                  <select
+                    id="year-filter"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="px-3 py-1 text-sm bg-background-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 hover:border-primary/50 transition-colors"
+                  >
+                    <option value="all">All Years</option>
+                    {availableYears.map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
@@ -198,26 +242,28 @@ export default function AttemptsModal({
             </div>
           )}
 
-          {!loading && rows.length === 0 && (
+          {!loading && filteredRows.length === 0 && (
             <div className="flex flex-col items-center justify-center min-h-[300px] bg-background-elevated border-2 border-dashed border-border rounded-2xl p-8 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-4">
                 <Activity size={32} />
               </div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">
-                No Attempts Yet
+                {selectedYear === "all" ? "No Attempts Yet" : `No Attempts in ${selectedYear}`}
               </h3>
               <p className="text-text-muted">
-                No attempts have been recorded for this event.
+                {selectedYear === "all" 
+                  ? "No attempts have been recorded for this event."
+                  : "No attempts recorded for this year. Try selecting a different year."}
               </p>
             </div>
           )}
 
-          {!loading && rows.length > 0 && (
+          {!loading && filteredRows.length > 0 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom duration-500 delay-200">
               <AttemptsStats
                 recentTrend={recentTrend}
                 best={best}
-                totalAttempts={rows.length}
+                totalAttempts={filteredRows.length}
                 improvedPct={improvedPct}
               />
 
@@ -230,8 +276,8 @@ export default function AttemptsModal({
                     All Attempts
                   </h3>
                   <p className="text-xs text-text-tertiary mt-1">
-                    {rows.length} {rows.length === 1 ? "attempt" : "attempts"}{" "}
-                    recorded
+                    {filteredRows.length} {filteredRows.length === 1 ? "attempt" : "attempts"}{" "}
+                    {selectedYear === "all" ? "recorded" : `in ${selectedYear}`}
                   </p>
                 </div>
                 
@@ -240,7 +286,6 @@ export default function AttemptsModal({
                   <table className="w-full">
                     <thead className="bg-background-secondary/30 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider w-8"></th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Rank</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Date</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Time</th>
@@ -251,8 +296,8 @@ export default function AttemptsModal({
                     <tbody className="divide-y divide-border">
                       {sortedRows.map((row, index) => {
                         const isBest = row.timeSeconds === best;
-                        const isExpanded = expandedRows.has(row.id);
                         const hasSplits = row.splits && row.splits.length > 0;
+                        const isExpanded = expandedRows.has(row.id);
                         
                         return (
                           <>
@@ -260,30 +305,6 @@ export default function AttemptsModal({
                               key={row.id}
                               className={`hover:bg-background-secondary/50 transition-colors ${isBest ? 'bg-primary/5' : ''}`}
                             >
-                              {/* Expand button */}
-                              <td className="px-2 py-3">
-                                {hasSplits && (
-                                  <button
-                                    onClick={() => {
-                                      const newExpanded = new Set(expandedRows);
-                                      if (isExpanded) {
-                                        newExpanded.delete(row.id);
-                                      } else {
-                                        newExpanded.add(row.id);
-                                      }
-                                      setExpandedRows(newExpanded);
-                                    }}
-                                    className="p-1 hover:bg-background-tertiary rounded transition-colors"
-                                    title={isExpanded ? "Collapse splits" : "Expand splits"}
-                                  >
-                                    {isExpanded ? (
-                                      <ChevronDown size={16} className="text-text-muted" />
-                                    ) : (
-                                      <ChevronRight size={16} className="text-text-muted" />
-                                    )}
-                                  </button>
-                                )}
-                              </td>
 
                               {/* Rank */}
                               <td className="px-4 py-3">
@@ -341,12 +362,27 @@ export default function AttemptsModal({
                                 </div>
                               </td>
 
-                              {/* Splits indicator */}
+                              {/* Splits toggle */}
                               <td className="px-4 py-3">
                                 {hasSplits ? (
-                                  <span className="text-xs text-text-secondary">
-                                    {row.splits.length} {row.splits.length === 1 ? 'split' : 'splits'}
-                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      const newExpanded = new Set(expandedRows);
+                                      if (isExpanded) {
+                                        newExpanded.delete(row.id);
+                                      } else {
+                                        newExpanded.add(row.id);
+                                      }
+                                      setExpandedRows(newExpanded);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-medium transition-all hover:scale-105"
+                                  >
+                                    <span>{row.splits.length}</span>
+                                    <ChevronDown 
+                                      size={14} 
+                                      className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                    />
+                                  </button>
                                 ) : (
                                   <span className="text-xs text-text-tertiary">—</span>
                                 )}
@@ -371,28 +407,26 @@ export default function AttemptsModal({
                             {/* Expanded splits row */}
                             {isExpanded && hasSplits && (
                               <tr key={`${row.id}-splits`} className="bg-background-elevated/30">
-                                <td colSpan={6} className="px-4 py-3">
-                                  <div className="pl-12 pr-4">
-                                    <div className="flex items-center gap-4 flex-wrap">
-                                      {row.splits.map((split, idx) => (
-                                        <div key={split.id} className="flex items-center gap-2">
-                                          <div className="flex items-baseline gap-1.5">
-                                            <span className="text-xs font-medium text-primary">
-                                              {split.split_distance}m
-                                            </span>
-                                            <span className="text-sm font-mono font-semibold text-text-primary">
-                                              {formatTime(intervalToSeconds(split.split_time))}
-                                            </span>
-                                            <span className="text-xs text-text-tertiary">
-                                              ({formatTime(intervalToSeconds(split.cumulative_time))})
-                                            </span>
-                                          </div>
-                                          {idx < row.splits.length - 1 && (
-                                            <span className="text-text-tertiary">•</span>
-                                          )}
+                                <td colSpan={5} className="px-4 py-3">
+                                  <div className="flex items-center gap-2 flex-wrap ml-4">
+                                    {row.splits.map((split, idx) => (
+                                      <div key={split.id} className="inline-flex items-center gap-2">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-background-secondary/60 border border-border/40 rounded-lg">
+                                          <span className="text-xs font-semibold text-primary">
+                                            {split.split_distance}m
+                                          </span>
+                                          <span className="text-xs font-mono font-bold text-text-primary">
+                                            {formatTime(intervalToSeconds(split.split_time))}
+                                          </span>
+                                          <span className="text-[10px] text-text-tertiary font-mono">
+                                            ({formatTime(intervalToSeconds(split.cumulative_time))})
+                                          </span>
                                         </div>
-                                      ))}
-                                    </div>
+                                        {idx < row.splits.length - 1 && (
+                                          <div className="w-2 h-px bg-border"></div>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
                                 </td>
                               </tr>
