@@ -1,5 +1,5 @@
 // components/squad/SquadSidebar.tsx
-import { BarChart3, Trophy, TrendingUp, Users, Calendar, List, CalendarDays } from 'lucide-react';
+import { BarChart3, Trophy, TrendingUp, Users, Calendar, List, CalendarDays, Dumbbell } from 'lucide-react';
 import type { TabKey } from '../../hooks/useSquadData';
 
 interface SquadSidebarProps {
@@ -16,6 +16,7 @@ const SIDEBAR_ITEMS: Array<{
   { key: 'metrics', icon: BarChart3, label: 'Metrics' },
   { key: 'rankings', icon: Trophy, label: 'Rankings' },
   { key: 'performance', icon: TrendingUp, label: 'Performance' },
+  { key: 'workouts', icon: Dumbbell, label: 'Workouts' },
   { key: 'schedule', icon: Calendar, label: 'Schedule' },
   { key: 'sessions', icon: List, label: 'Sessions' },
   { key: 'calendar', icon: CalendarDays, label: 'Calendar' },

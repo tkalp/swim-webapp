@@ -8,6 +8,7 @@ import SessionsList from '../components/squad/SessionsList'
 import CalendarMonth from '../components/squad/CalenderMonth'
 import SquadMetricsTab from '../components/squad/SquadMetrics'
 import SquadRankings from '../components/squad/SquadRankings'
+import SquadWorkouts from '../components/squad/SquadWorkouts'
 import { SquadPerformanceTab } from '../components/squad/performance';
 import { SquadSidebar, SquadMobileNav } from '../components/squad/SquadSidebar'
 import { createSwimmer, updateSwimmer, deleteSwimmer, type CreateSwimmerData, type UpdateSwimmerData } from '../services/swimmerService'
@@ -112,6 +113,7 @@ export default function SquadPage() {
               {tab === 'metrics' && squadId && <SquadMetricsTab squadId={squadId} />}
               {tab === 'rankings' && squadId && <SquadRankings squadId={squadId} />}
               {tab === 'performance' && squadId && <SquadPerformanceTab squadId={squadId} />}
+              {tab === 'workouts' && squadId && <SquadWorkouts squadId={squadId} />}
               {tab === 'swimmers' && squadId && (
                 <SwimmersGrid 
                   swimmers={swimmers} 
