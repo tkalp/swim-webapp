@@ -9,11 +9,12 @@ import SessionsList from '../components/squad/SessionsList'
 import CalendarMonth from '../components/squad/CalenderMonth'
 import SquadMetricsTab from '../components/squad/SquadMetrics'
 import SquadRankings from '../components/squad/SquadRankings'
+import { SquadPerformanceTab } from '../components/squad/performance';
 import { createSwimmer, updateSwimmer, deleteSwimmer, type CreateSwimmerData, type UpdateSwimmerData } from '../services/swimmerService'
 import '@/styles/Squad.css'
 import WeeklyScheduleView from '../components/squad/WeeklyScheduleView'
 
-const TAB_ITEMS = ['metrics', 'rankings', 'swimmers', 'schedule', 'sessions', 'calendar'] as const
+const TAB_ITEMS = ['metrics', 'rankings', 'performance', 'swimmers', 'schedule', 'sessions', 'calendar'] as const
 
 export default function SquadPage() {
   const { squadId } = useParams<{ squadId: string }>()
@@ -114,6 +115,7 @@ export default function SquadPage() {
         <main className="squad-content">
           {tab === 'metrics' && squadId && <SquadMetricsTab squadId={squadId} />}
           {tab === 'rankings' && squadId && <SquadRankings squadId={squadId} />}
+          {tab === 'performance' && squadId && <SquadPerformanceTab squadId={squadId} />}
           {tab === 'swimmers' && squadId && (
             <SwimmersGrid 
               swimmers={swimmers} 
