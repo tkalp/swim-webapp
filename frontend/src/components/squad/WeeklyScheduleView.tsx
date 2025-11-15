@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Calendar, Clock, Plus, Edit, Trash2, MapPin, Users } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import ScheduleFormModal from './ScheduleFormModal'
+import { SquadPageHeader } from './SquadPageHeader'
 
 type TrainingSchedule = {
   id: string
@@ -96,118 +97,110 @@ export default function WeeklyScheduleView({ squadId, schedules, onUpdate }: Wee
   }
 
   return (
-    <div className="bg-background-card border border-border rounded-2xl overflow-hidden">
+    <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Header */}
-      <div className="flex justify-between items-center p-6 bg-background-elevated border-b border-border">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary-dark to-primary flex items-center justify-center text-white">
-            <Calendar size={24} />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold mb-1 bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
-              Weekly Training Schedule
-            </h2>
-            <p className="text-sm text-text-secondary">
-              {schedules.filter(s => s.active).length} active sessions across the week
-            </p>
-          </div>
-        </div>
-        <button 
-          className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-primary-dark to-primary text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 border border-white/10"
-          onClick={() => handleCreateSchedule()}
-        >
-          <Plus size={18} />
-          Add Session
-        </button>
-      </div>
+      <SquadPageHeader
+        title="Weekly Training Schedule"
+        subtitle={`${schedules.filter(s => s.active).length} active sessions scheduled across the week`}
+        actions={
+          <button 
+            className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-primary/30 border border-white/10"
+            onClick={() => handleCreateSchedule()}
+          >
+            <Plus size={18} />
+            Add Session
+          </button>
+        }
+      />
 
       {/* Weekly Grid */}
-      <div className="flex gap-px bg-border min-h-96 overflow-hidden">
-        {DAYS_OF_WEEK.map(day => {
+      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl overflow-hidden">
+        <div className="flex gap-4 min-h-[500px] overflow-x-auto">
+          {DAYS_OF_WEEK.map(day => {
           const daySessions = schedulesByDay[day]
           const hasActiveSessions = daySessions.length > 0
 
           return (
-            <div key={day} className="flex-1 bg-background-primary flex flex-col">
+            <div key={day} className="flex-1 min-w-[200px] bg-background-elevated rounded-xl border border-border/60 flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
               {/* Day Header */}
-              <div className="flex justify-between items-center p-3 bg-background-secondary border-b border-border">
+              <div className="flex justify-between items-center p-4 bg-linear-to-br from-background-secondary to-background-tertiary/50 border-b border-border/60">
                 <div>
-                  <h3 className="font-semibold text-text-primary text-sm">{day}</h3>
-                  <span className="text-xs text-text-secondary">
+                  <h3 className="font-bold text-text-primary text-base mb-0.5">{day}</h3>
+                  <span className="text-xs text-text-secondary font-medium">
                     {daySessions.length} session{daySessions.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <button
-                  className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all duration-200 hover:scale-110"
+                  className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
                   onClick={() => handleCreateSchedule(day)}
                   title={`Add session for ${day}`}
                 >
-                  <Plus size={14} />
+                  <Plus size={16} />
                 </button>
               </div>
 
               {/* Sessions */}
-              <div className="flex-1 p-3 flex flex-col gap-2">
+              <div className="flex-1 p-4 flex flex-col gap-3">
                 {hasActiveSessions ? (
                   daySessions.map(session => (
-                    <div key={session.id} className="bg-background-elevated border border-border rounded-lg p-3 hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 group">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
+                    <div key={session.id} className="bg-linear-to-br from-background-secondary to-background-tertiary/50 border border-border/60 rounded-xl p-4 hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all duration-200 group">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ${
                           session.training_type === 'Swim' 
-                            ? 'bg-accent/20 text-accent border border-accent/30' 
-                            : 'bg-warning/20 text-warning border border-warning/30'
+                            ? 'bg-accent/20 text-accent border border-accent/40' 
+                            : 'bg-warning/20 text-warning border border-warning/40'
                         }`}>
                           {session.training_type === 'Swim' ? (
-                            <MapPin size={12} />
+                            <MapPin size={14} />
                           ) : (
-                            <Users size={12} />
+                            <Users size={14} />
                           )}
                           {session.training_type}
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <button
-                            className="w-6 h-6 rounded-md bg-background-secondary hover:bg-primary/20 text-text-secondary hover:text-primary transition-colors duration-200 flex items-center justify-center"
+                            className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-primary/20 text-text-secondary hover:text-primary transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
                             onClick={() => handleEditSchedule(session)}
                             title="Edit session"
                           >
-                            <Edit size={12} />
+                            <Edit size={14} />
                           </button>
                           <button
-                            className="w-6 h-6 rounded-md bg-background-secondary hover:bg-danger/20 text-text-secondary hover:text-danger transition-colors duration-200 flex items-center justify-center"
+                            className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-danger/20 text-text-secondary hover:text-danger transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
                             onClick={() => handleDeleteSchedule(session.id)}
                             title="Delete session"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 text-text-primary mb-2">
-                        <Clock size={12} />
-                        <span className="text-sm font-medium">
+                        <Clock size={14} className="text-primary" />
+                        <span className="text-sm font-semibold">
                           {formatTime(session.start_time)} - {formatTime(session.end_time)}
                         </span>
-                        <span className="text-xs text-text-secondary">
+                        <span className="text-xs text-text-secondary font-medium">
                           ({getDuration(session.start_time, session.end_time)})
                         </span>
                       </div>
 
                       {session.until && (
-                        <div className="flex items-center gap-2 text-xs text-text-secondary">
-                          <Calendar size={10} />
+                        <div className="flex items-center gap-2 text-xs text-text-secondary mt-2 pt-2 border-t border-border/40">
+                          <Calendar size={12} />
                           <span>Until: {new Date(session.until).toLocaleDateString()}</span>
                         </div>
                       )}
                     </div>
                   ))
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="w-16 h-16 rounded-full bg-background-secondary flex items-center justify-center text-text-muted mb-3">
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="w-16 h-16 rounded-full bg-background-secondary border border-border/60 flex items-center justify-center text-text-muted mb-3 shadow-sm">
                       <Calendar size={24} />
                     </div>
-                    <p className="text-text-secondary text-sm mb-3">No sessions scheduled</p>
+                    <p className="text-text-secondary text-sm mb-3 font-medium">No sessions scheduled</p>
                     <button
-                      className="px-3 py-2 bg-transparent text-primary border border-primary/30 hover:bg-primary/10 rounded-lg transition-colors duration-200 text-sm font-medium"
+                      className="px-4 py-2 bg-transparent text-primary border border-primary/40 hover:bg-primary/10 rounded-lg transition-all duration-200 text-sm font-semibold hover:scale-105"
                       onClick={() => handleCreateSchedule(day)}
                     >
                       Add Session
@@ -218,6 +211,7 @@ export default function WeeklyScheduleView({ squadId, schedules, onUpdate }: Wee
             </div>
           )
         })}
+        </div>
       </div>
 
       {/* Schedule Form Modal */}

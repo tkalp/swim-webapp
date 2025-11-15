@@ -40,14 +40,6 @@ export default function BreakdownChart({
           {subtitle && (
             <p className="text-sm text-text-secondary mb-3">{subtitle}</p>
           )}
-          {hasData && (
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
-                {total.toLocaleString()}m
-              </span>
-              <span className="text-sm text-text-secondary">total</span>
-            </div>
-          )}
         </div>
       </div>
 

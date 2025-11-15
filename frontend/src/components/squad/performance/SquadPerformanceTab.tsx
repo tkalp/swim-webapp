@@ -5,6 +5,7 @@ import {
   SquadPerformanceData,
 } from '../../../features/squads/metricsApi';
 import { SquadSummaryStats } from '../../squad-analytics/SquadSummaryStats';
+import { SquadPageHeader } from '../SquadPageHeader';
 import { PerformanceHeader } from './PerformanceHeader';
 import { PerformanceTable } from './PerformanceTable';
 import { getDefaultDateRange } from './utils';
@@ -72,7 +73,12 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
   if (!data) return null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <SquadPageHeader
+        title="Performance Tracking"
+        subtitle="Track swimmer progress and personal bests across all events"
+      />
+      
       <div className="space-y-6">
         <PerformanceHeader
           startDate={dateRange.start}

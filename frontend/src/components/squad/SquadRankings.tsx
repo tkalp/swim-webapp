@@ -7,6 +7,7 @@ import {
   type ActivityType, 
   type SwimmerRanking 
 } from "../../services/workoutResultService";
+import { SquadPageHeader } from "./SquadPageHeader";
 import { Trophy, Medal, Award, Timer } from "lucide-react";
 
 const STROKES: { value: StrokeType; label: string }[] = [
@@ -118,22 +119,15 @@ export default function SquadRankings({ squadId }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Header */}
-      <div className="flex flex-col gap-2 mb-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Trophy className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-text-primary tracking-tight">Squad Rankings</h2>
-            <p className="text-text-secondary text-xs">Compare swimmer performance by stroke and activity</p>
-          </div>
-        </div>
-      </div>
+      <SquadPageHeader
+        title="Squad Rankings"
+        subtitle="Compare swimmer performance by stroke and activity"
+      />
 
       {/* Filters */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg">
+      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl mb-6">
         <div className="flex flex-col gap-4">
           {/* Stroke Selection */}
           <div>

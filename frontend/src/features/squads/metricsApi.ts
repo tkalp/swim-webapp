@@ -5,6 +5,54 @@ export type WeekDistance = { week: string; meters: number }
 export type StrokeBreakdown = { stroke: string; meters: number; color: string }
 export type ActivityBreakdown = { activity: string; meters: number; color: string }
 
+export async function getSquadSessionCount(
+  squadId: string,
+  range?: { from?: string; to?: string }
+): Promise<number> {
+  let q = supabase
+    .from('training_sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('squad_id', squadId)
+
+  if (range?.from) q = q.gte('start_date', range.from)
+  if (range?.to)   q = q.lte('start_date', range.to)
+
+  const { count, error } = await q
+  if (error) throw error
+  return count ?? 0
+}
+
+export async function getSquadTotalMeters(
+  squadId: string,
+  range?: { from?: string; to?: string }
+): Promise<number> {
+  // 1) Get sessions for squad within range
+  let sQ = supabase
+    .from('training_sessions')
+    .select('id, start_date, workout_id')
+    .eq('squad_id', squadId)
+
+  if (range?.from) sQ = sQ.gte('start_date', range.from)
+  if (range?.to)   sQ = sQ.lte('start_date', range.to)
+
+  const { data: sessions, error: sErr } = await sQ
+  if (sErr) throw sErr
+  if (!sessions?.length) return 0
+
+  // 2) Fetch total_meters for referenced workouts
+  const workoutIds = Array.from(new Set((sessions.map(s => s.workout_id).filter(Boolean) as string[])))
+  if (!workoutIds.length) return 0
+
+  const { data: workouts, error: wErr } = await supabase
+    .from('workout_template')
+    .select('total_meters')
+    .in('id', workoutIds)
+  if (wErr) throw wErr
+
+  // 3) Sum up total_meters
+  return workouts.reduce((sum, w) => sum + (Number(w.total_meters) || 0), 0)
+}
+
 export async function getSquadAttendanceStats(
   squadId: string,
   range?: { from?: string; to?: string }
