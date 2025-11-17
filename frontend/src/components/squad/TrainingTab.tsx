@@ -4,13 +4,13 @@ import WeeklyScheduleView from './WeeklyScheduleView';
 import SessionsList from './SessionsList';
 import CalendarMonth from './CalenderMonth';
 import type { TrainingSubTab } from '../../hooks/useSquadData';
-import type { Schedule, Session, CalendarEvent } from '../../features/squads/detailApi';
+
 
 interface TrainingTabProps {
   squadId: string;
-  schedules: Schedule[];
-  sessions: Session[];
-  events: CalendarEvent[];
+  schedules: any[];
+  sessions: any[];
+  events: any[];
   canManageSessions: boolean;
   canManageSchedules: boolean;
   canManageAttendance: boolean;
