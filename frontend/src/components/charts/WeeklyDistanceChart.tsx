@@ -46,15 +46,9 @@ export default function DistancePerWeekChart({
         {subtitle && (
           <p className="text-sm text-text-secondary mb-1">{subtitle}</p>
         )}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-text-primary">{total.toLocaleString()}</span>
-            <span className="text-sm text-text-secondary">total meters</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-accent">{avgWeeklyDistance.toLocaleString()}</span>
-            <span className="text-sm text-text-secondary">avg/week</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-semibold text-accent">{avgWeeklyDistance.toLocaleString()}</span>
+          <span className="text-sm text-text-secondary">avg/week</span>
         </div>
       </div>
 

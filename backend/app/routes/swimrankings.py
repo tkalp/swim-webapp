@@ -35,16 +35,10 @@ def get_supabase_client() -> Client:
     return create_client(supabase_url, supabase_key)
 
 
-def get_scraper() -> SwimRankingsScraper:
-    """Get SwimRankings scraper instance"""
-    return SwimRankingsScraper()
-
-
 @router.get("/search", response_model=List[SwimRankingsSearchResult])
 async def search_swimmers(
     firstname: str,
-    lastname: str,
-    scraper: SwimRankingsScraper = Depends(get_scraper)
+    lastname: str
 ):
     """
     Search for swimmers on SwimRankings.net
@@ -59,7 +53,8 @@ async def search_swimmers(
     logger.info(f"API search request: {firstname} {lastname}")
     
     try:
-        results = scraper.search_swimmer(firstname, lastname)
+        scraper = SwimRankingsScraper()
+        results = await scraper.search_swimmer(firstname, lastname)
         
         # Convert to Pydantic models
         swimmers = []

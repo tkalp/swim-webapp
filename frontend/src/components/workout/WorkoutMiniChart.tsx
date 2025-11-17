@@ -47,10 +47,12 @@ const ACTIVITY_COLORS: Record<string, string> = {
 
 type WorkoutMiniChartProps = {
   workoutId: string;
+  showLegend?: boolean;
 };
 
 export default function WorkoutMiniChart({ 
-  workoutId
+  workoutId,
+  showLegend = true
 }: WorkoutMiniChartProps) {
   const [workout, setWorkout] = useState<WorkoutData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,7 +118,7 @@ export default function WorkoutMiniChart({
       label: key === 'individualMedley' ? 'IM' : key.charAt(0).toUpperCase() + key.slice(1),
       value,
       color: STROKE_COLORS[key] || '#6B7280',
-      percentage: Math.round((value / workout.json_description.estimate.totalDistance) * 100)
+      percentage: Math.round((value / workout.json_description!.estimate.totalDistance) * 100)
     }));
 
   const activitySegments = Object.entries(activityBreakdown)
@@ -126,7 +128,7 @@ export default function WorkoutMiniChart({
       label: key.charAt(0).toUpperCase() + key.slice(1),
       value,
       color: ACTIVITY_COLORS[key] || '#6B7280',
-      percentage: Math.round((value / workout.json_description.estimate.totalDistance) * 100)
+      percentage: Math.round((value / workout.json_description!.estimate.totalDistance) * 100)
     }));
 
   return (
@@ -162,24 +164,26 @@ export default function WorkoutMiniChart({
             />
             
             {/* Top 3 Stroke Pills */}
-            <div className="flex flex-wrap gap-1.5">
-              {strokeSegments.slice(0, 3).map((segment) => (
-                <div 
-                  key={segment.label}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background-tertiary/50 border border-border"
-                >
+            {showLegend && (
+              <div className="flex flex-wrap gap-1.5">
+                {strokeSegments.slice(0, 3).map((segment) => (
                   <div 
-                    className="w-2 h-2 rounded-full shadow-sm" 
-                    style={{ 
-                      backgroundColor: segment.color,
-                      boxShadow: `0 0 0 2px ${segment.color}20`
-                    }}
-                  />
-                  <span className="text-xs font-medium text-text-primary">{segment.label}</span>
-                  <span className="text-xs font-bold text-text-secondary">{segment.percentage}%</span>
-                </div>
-              ))}
-            </div>
+                    key={segment.label}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background-tertiary/50 border border-border"
+                  >
+                    <div 
+                      className="w-2 h-2 rounded-full shadow-sm" 
+                      style={{ 
+                        backgroundColor: segment.color,
+                        boxShadow: `0 0 0 2px ${segment.color}20`
+                      }}
+                    />
+                    <span className="text-xs font-medium text-text-primary">{segment.label}</span>
+                    <span className="text-xs font-bold text-text-secondary">{segment.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         
@@ -203,24 +207,26 @@ export default function WorkoutMiniChart({
             />
             
             {/* Top 3 Activity Pills */}
-            <div className="flex flex-wrap gap-1.5">
-              {activitySegments.slice(0, 3).map((segment) => (
-                <div 
-                  key={segment.label}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background-tertiary/50 border border-border"
-                >
+            {showLegend && (
+              <div className="flex flex-wrap gap-1.5">
+                {activitySegments.slice(0, 3).map((segment) => (
                   <div 
-                    className="w-2 h-2 rounded-full shadow-sm" 
-                    style={{ 
-                      backgroundColor: segment.color,
-                      boxShadow: `0 0 0 2px ${segment.color}20`
-                    }}
-                  />
-                  <span className="text-xs font-medium text-text-primary">{segment.label}</span>
-                  <span className="text-xs font-bold text-text-secondary">{segment.percentage}%</span>
-                </div>
-              ))}
-            </div>
+                    key={segment.label}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background-tertiary/50 border border-border"
+                  >
+                    <div 
+                      className="w-2 h-2 rounded-full shadow-sm" 
+                      style={{ 
+                        backgroundColor: segment.color,
+                        boxShadow: `0 0 0 2px ${segment.color}20`
+                      }}
+                    />
+                    <span className="text-xs font-medium text-text-primary">{segment.label}</span>
+                    <span className="text-xs font-bold text-text-secondary">{segment.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

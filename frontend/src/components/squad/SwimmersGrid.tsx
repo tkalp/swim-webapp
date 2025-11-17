@@ -80,8 +80,8 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
 
   if (!swimmers.length) {
     return (
-      <>
-        <div className="flex flex-col items-center justify-center py-20 px-4">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col items-center justify-center py-24 px-4">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-6">
             <User size={40} />
           </div>
@@ -106,14 +106,14 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
           onClose={handleCloseModal}
           onSubmit={handleModalSubmit}
         />
-      </>
+      </div>
     )
   }
 
   return (
-    <>
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Toolbar */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-5 mb-6 shadow-lg">
+      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 mb-8 shadow-lg">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search Bar */}
           <div className="flex-1">
@@ -162,7 +162,7 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
       </div>
 
       {/* Swimmers List */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {items.map((s, index) => {
           const initials = getInitials(s.first_name, s.last_name)
           const age = s.date_of_birth ? calcAge(s.date_of_birth) : null
@@ -170,24 +170,24 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
           return (
             <div 
               key={s.id} 
-              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-4 hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-in fade-in slide-in-from-bottom"
+              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-5 sm:p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-in fade-in slide-in-from-bottom"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 {/* Avatar and Info */}
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex items-center gap-5 flex-1 min-w-0">
                   <div className="relative">
-                    <div className="w-14 h-14 bg-gradient-to-br from-primary/30 via-primary/40 to-accent/30 rounded-xl flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/40 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                    <div className="w-16 h-16 bg-linear-to-br from-primary/30 via-primary/40 to-accent/30 rounded-xl flex items-center justify-center text-primary font-bold text-xl border-2 border-primary/40 shadow-lg group-hover:scale-105 transition-transform duration-300">
                       {initials}
                     </div>
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-text-primary text-lg mb-1 truncate">
+                    <h3 className="font-bold text-text-primary text-lg mb-2 truncate">
                       {formatName(s.first_name, s.last_name)}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       {age !== null && (
                         <span className="inline-flex items-center px-2.5 py-1 bg-gradient-to-r from-primary/30 to-accent/30 border border-primary/50 text-primary text-xs font-semibold rounded-lg">
                           Age {age}
@@ -212,10 +212,10 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                   <button
                     onClick={() => navigate(`/swimmers/${s.id}`)}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
                     title="View swimmer details"
                   >
                     Open
@@ -223,17 +223,17 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
                   </button>
                   <button
                     onClick={() => handleOpenEditModal(s)}
-                    className="p-2.5 bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent rounded-lg transition-all duration-200 hover:scale-105"
+                    className="p-3 bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent rounded-lg transition-all duration-200 hover:scale-105"
                     title="Edit swimmer"
                   >
-                    <Edit2 size={16} />
+                    <Edit2 size={18} />
                   </button>
                   <button
                     onClick={() => handleDelete(s)}
-                    className="p-2.5 bg-background-tertiary border border-border/50 hover:border-danger/50 hover:bg-danger/10 text-text-muted hover:text-danger rounded-lg transition-all duration-200 hover:scale-105"
+                    className="p-3 bg-background-tertiary border border-border/50 hover:border-danger/50 hover:bg-danger/10 text-text-muted hover:text-danger rounded-lg transition-all duration-200 hover:scale-105"
                     title="Delete swimmer"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
@@ -263,7 +263,7 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
         onClose={handleCloseModal}
         onSubmit={handleModalSubmit}
       />
-    </>
+    </div>
   )
 }
 

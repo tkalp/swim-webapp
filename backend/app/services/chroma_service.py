@@ -1,8 +1,6 @@
 import os
 import chromadb
 from anthropic import Anthropic
-from openai import OpenAI
-from groq import Groq
 from typing import Optional, Dict
 from datetime import timedelta
 from app.utils import logger, log_error
@@ -402,143 +400,32 @@ IMPORTANT FORMAT REQUIREMENTS:
     return message.content[0].text
 
 
-def generate_with_openai(prompt: str, context: str, api_key: str) -> str:
-    """Generate workout using OpenAI"""
-    client = OpenAI(api_key=api_key)
-    
-    full_prompt = f"""Based on the following request, generate a complete swimming workout.
-
-USER REQUEST:
-{prompt}
-
-EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
-{context}
-
-Generate a workout that:
-1. Matches the user's request and skill level
-2. Follows proper swimming workout nomenclature (e.g., "8 x 50 @ :50 Free")
-3. Is structured with warm-up, main set, cool-down
-4. Includes specific distances, intervals, and effort levels
-5. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
-6. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50 than regular swim paces**
-
-IMPORTANT FORMAT REQUIREMENTS:
-- Be CONCISE - focus on the workout itself, not extensive explanations
-- NO section purposes, no coaching philosophy paragraphs
-- Keep it to: Set name, distances/intervals, and BRIEF drill descriptions when needed
-- **CRITICAL: Put each set on its own line with a blank line between sets**
-- Example good format:
-  WARM-UP (400m)
-  200m Easy choice
-  
-  4 x 50 @ 1:15 (25m Kick, 25m Free)
-  
-  MAIN SET (1200m)
-  8 x 50 @ :50 Breaststroke Pull - Focus on high elbow catch
-  
-  4 x 100 @ 2:30 as: 25 Pull (strong), 25 Easy back, 25 Pull (strong), 25 Easy free
-  
-  COOL-DOWN (200m)
-  200m Easy choice
-  
-- Each set should be on its own line, separated by blank lines for readability
-- Only include drill descriptions if they're essential to the set
-- No "Purpose:" sections, no "Coaching Notes" sections at the end
-- Total distance and brief key focus is fine at the top"""
-    
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": SWIM_COACH_SYSTEM_PROMPT},
-            {"role": "user", "content": full_prompt},
-        ],
-        max_tokens=2000,
-        temperature=0.7,
-    )
-    
-    return response.choices[0].message.content or ""
-
-
-def generate_with_groq(prompt: str, context: str, api_key: str) -> str:
-    """Generate workout using Groq"""
-    client = Groq(api_key=api_key)
-    
-    full_prompt = f"""Based on the following request, generate a complete swimming workout.
-
-USER REQUEST:
-{prompt}
-
-EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
-{context}
-
-Generate a workout that:
-1. Matches the user's request and skill level
-2. Follows proper swimming workout nomenclature (e.g., "8 x 50 @ :50 Free")
-3. Is structured with warm-up, main set, cool-down
-4. Includes specific distances, intervals, and effort levels
-5. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
-6. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50 than regular swim paces**
-
-IMPORTANT FORMAT REQUIREMENTS:
-- Be CONCISE - focus on the workout itself, not extensive explanations
-- NO section purposes, no coaching philosophy paragraphs
-- Keep it to: Set name, distances/intervals, and BRIEF drill descriptions when needed
-- **CRITICAL: Put each set on its own line with a blank line between sets**
-- Example good format:
-  WARM-UP (400m)
-  200m Easy choice
-  
-  4 x 50 @ 1:15 (25m Kick, 25m Free)
-  
-  MAIN SET (1200m)
-  8 x 50 @ :50 Breaststroke Pull - Focus on high elbow catch
-  
-  4 x 100 @ 2:30 as: 25 Pull (strong), 25 Easy back, 25 Pull (strong), 25 Easy free
-  
-  COOL-DOWN (200m)
-  200m Easy choice
-  
-- Each set should be on its own line, separated by blank lines for readability
-- Only include drill descriptions if they're essential to the set
-- No "Purpose:" sections, no "Coaching Notes" sections at the end
-- Total distance and brief key focus is fine at the top"""
-    
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": SWIM_COACH_SYSTEM_PROMPT},
-            {"role": "user", "content": full_prompt},
-        ],
-        max_tokens=2000,
-        temperature=0.7,
-    )
-    
-    return response.choices[0].message.content or ""
 
 
 def generate_workout(
     prompt: str,
-    provider: str,
-    api_key: str,
-    num_examples: int = 3,
     best_times: Optional[Dict[str, str]] = None
 ) -> dict:
     """
-    Main function to generate workout using ChromaDB and athlete performance data
+    Main function to generate workout using ChromaDB and Anthropic Claude
     
     Args:
         prompt: User's workout request
-        provider: AI provider ('claude', 'openai', or 'groq')
-        api_key: API key for the provider
-        num_examples: Number of example workouts to retrieve
         best_times: Optional dict of athlete's best times
                    Example: {"50": "24.5", "100": "52.3", "200": "1:54.2", "500": "5:10.5"}
     
     Returns:
         Dict with workout and examples
     """
+    # Get API key from environment
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+    
+    num_examples = 6  # Fixed number of example workouts
+    
     logger.info(
-        f"Generating workout | provider={provider} | num_examples={num_examples} | "
+        f"Generating workout | num_examples={num_examples} | "
         f"has_best_times={bool(best_times)} | prompt_length={len(prompt)}"
     )
     
@@ -559,310 +446,28 @@ def generate_workout(
             context = athlete_context + "\n\n" + context
             print(f"✓ Added athlete performance data with {len(best_times)} best times")
         
-        # Step 4: Generate workout
-        print(f"Generating workout with {provider}...")
-        logger.info(f"Calling {provider} API to generate workout")
+        # Step 4: Generate workout with Claude
+        print("Generating workout with Claude...")
+        logger.info("Calling Anthropic Claude API to generate workout")
         
-        if provider == "claude":
-            workout = generate_with_claude(prompt, context, api_key)
-        elif provider == "groq":
-            workout = generate_with_groq(prompt, context, api_key)
-        else:
-            workout = generate_with_openai(prompt, context, api_key)
+        workout = generate_with_claude(prompt, context, api_key)
         
-        logger.info(f"Workout generated successfully | provider={provider} | workout_length={len(workout)}")
+        logger.info(f"Workout generated successfully | workout_length={len(workout)}")
         
-        # Step 5: Return response
+        # Step 5: Return response (examples removed from response)
         return {
             "workout": workout,
-            "examples": [
-                {
-                    "id": r["metadata"].get("workout_id", r["id"]),
-                    "title": r["metadata"].get("title", "Unknown"),
-                    "url": r["metadata"].get("workout_url", ""),
-                    "relevance": 1 - r["distance"],
-                }
-                for r in search_results
-            ],
             "athlete_paces": build_athlete_context(best_times) if best_times else None,
         }
     
     except ValueError as e:
         # Client errors (bad input, invalid API key, etc.)
         logger.warning(f"Invalid workout generation request: {str(e)}")
-        log_error(e, context="generate_workout", provider=provider, error_type="validation")
+        log_error(e, context="generate_workout", error_type="validation")
         raise
         
     except Exception as e:
         # Server errors
-        logger.error(f"Failed to generate workout with {provider}")
-        log_error(e, context="generate_workout", provider=provider, num_examples=num_examples)
+        logger.error("Failed to generate workout with Claude")
+        log_error(e, context="generate_workout", num_examples=num_examples)
         raise Exception(f"Failed to generate workout: {str(e)}")
-
-# import os
-# import chromadb
-# from anthropic import Anthropic
-# from openai import OpenAI
-# from groq import Groq
-# from typing import Optional
-
-# COLLECTION_NAME = "swimming_workouts"
-
-# # Initialize ChromaDB client
-# chroma_path = os.getenv("CHROMA_DB_PATH", "./chroma_db")
-# client = chromadb.PersistentClient(path=chroma_path)
-
-# SWIM_COACH_SYSTEM_PROMPT = """You are an expert swimming coach with deep knowledge of workout programming and swimming nomenclature. 
-
-# # SWIMMING WORKOUT NOMENCLATURE GUIDE
-
-# ## Distance Units
-# - Yards (y) or Meters (m): e.g., "100y", "200m"
-# - SCY = Short Course Yards (25y pool)
-# - SCM = Short Course Meters (25m pool)
-# - LCM = Long Course Meters (50m pool)
-
-# ## Workout Format
-# Standard format: [Quantity] x [Distance] @ [Interval] [Stroke/Description]
-
-# Examples:
-# - "8 x 50 @ :50" = 8 repetitions of 50 yards/meters with 50 seconds rest interval
-# - "4 x 100 @ 1:30 Free" = 4 x 100 freestyle leaving every 1:30
-# - "10 x 25 @ :30 Kick" = 10 x 25 kicking with 30 second intervals
-
-# ## Common Abbreviations
-# - Free/Fr = Freestyle
-# - Back/Bk = Backstroke  
-# - Breast/Br = Breaststroke
-# - Fly/Fl = Butterfly
-# - IM = Individual Medley (Fly-Back-Breast-Free)
-# - Kick = Kicking with kickboard
-# - Pull = Pull buoy (legs float, arms only)
-# - Drill = Technique drills
-# - Desc = Descending (get faster each rep)
-# - Build = Gradually increase speed within one rep
-
-# ## Workout Structure
-# 1. **Warm-up** (800-1200): Easy swimming, drills, mix of strokes
-# 2. **Pre-set** (400-800): Moderate intensity, technique focus
-# 3. **Main Set** (1500-3000): Primary training stimulus
-# 4. **Cool-down** (200-400): Easy recovery swimming
-
-# When generating workouts:
-# 1. Always specify distances, intervals, strokes, and effort levels
-# 2. Use proper abbreviations and notation, be sure to define them if needed
-# 3. Structure workouts logically (warm-up → main set → cool-down)
-# 4. Include rest intervals or send-off times
-# 5. Add coaching notes explaining purpose and technique cues
-# 6. Adjust total yardage/meters to athlete's level
-# 7. Be creative but realistic"""
-
-
-# def check_chromadb() -> tuple[bool, Optional[str]]:
-#     """Check if ChromaDB is available and collection exists"""
-#     try:
-#         collections = client.list_collections()
-#         collection_names = [c.name for c in collections]
-        
-#         if COLLECTION_NAME in collection_names:
-#             collection = client.get_collection(name=COLLECTION_NAME)
-#             count = collection.count()
-#             print(f"✓ ChromaDB connected: {count} workouts in collection")
-#             return True, None
-#         else:
-#             msg = f"Collection '{COLLECTION_NAME}' not found"
-#             print(f"⚠ {msg}")
-#             return False, msg
-#     except Exception as e:
-#         print(f"ChromaDB connection error: {str(e)}")
-#         return False, str(e)
-
-
-# def search_similar_workouts(query: str, n_results: int = 5) -> list[dict]:
-#     """Search ChromaDB for similar workouts"""
-#     try:
-#         collection = client.get_collection(name=COLLECTION_NAME)
-        
-#         results = collection.query(
-#             query_texts=[query],
-#             n_results=n_results,
-#         )
-        
-#         workouts = []
-#         if results["ids"] and results["ids"][0]:
-#             for i in range(len(results["ids"][0])):
-#                 workouts.append({
-#                     "id": results["ids"][0][i],
-#                     "document": results["documents"][0][i] if results.get("documents") else "",
-#                     "metadata": results["metadatas"][0][i] if results.get("metadatas") else {},
-#                     "distance": results["distances"][0][i] if results.get("distances") else 1.0,
-#                 })
-        
-#         print(f"✓ Found {len(workouts)} similar workouts")
-#         return workouts
-#     except Exception as e:
-#         print(f"ChromaDB search error: {str(e)}")
-#         raise Exception(f"Failed to search workouts: {str(e)}")
-
-
-# def build_context(search_results: list[dict]) -> str:
-#     """Build context string from search results"""
-#     context_parts = []
-    
-#     for i, result in enumerate(search_results, 1):
-#         context_parts.append(f"EXAMPLE WORKOUT {i}:")
-#         context_parts.append(f"Title: {result['metadata'].get('title', 'Unknown')}")
-        
-#         if result['metadata'].get('coach_notes'):
-#             context_parts.append(f"Coach Notes: {result['metadata']['coach_notes']}")
-        
-#         # Extract workout text from document
-#         doc = result['document']
-#         workout_start = doc.find('Workout:')
-#         if workout_start != -1:
-#             workout_text = doc[workout_start + 8:].strip()
-#             context_parts.append(f"Workout Structure:\n{workout_text}")
-        
-#         context_parts.append('\n' + '=' * 80 + '\n')
-    
-#     return '\n'.join(context_parts)
-
-
-# def generate_with_claude(prompt: str, context: str, api_key: str) -> str:
-#     """Generate workout using Claude"""
-#     client = Anthropic(api_key=api_key)
-    
-#     full_prompt = f"""Based on the following request, generate a complete, detailed swimming workout.
-
-# USER REQUEST:
-# {prompt}
-
-# EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
-# {context}
-
-# Generate a workout that:
-# 1. Matches the user's request and skill level
-# 2. Follows proper swimming workout nomenclature
-# 3. Is structured like the examples (warm-up, pre-set, main set, cool-down)
-# 4. Includes specific distances, intervals, and effort levels
-# 5. Has coaching notes explaining the purpose
-# 6. Is realistic and safe for the intended athlete
-
-# Format the workout clearly with sections and use proper swimming notation."""
-    
-#     message = client.messages.create(
-#         model="claude-sonnet-4-20250514",
-#         max_tokens=4000,
-#         system=SWIM_COACH_SYSTEM_PROMPT,
-#         messages=[{"role": "user", "content": full_prompt}],
-#     )
-    
-#     return message.content[0].text
-
-
-# def generate_with_openai(prompt: str, context: str, api_key: str) -> str:
-#     """Generate workout using OpenAI"""
-#     client = OpenAI(api_key=api_key)
-    
-#     full_prompt = f"""Based on the following request, generate a complete, detailed swimming workout.
-
-# USER REQUEST:
-# {prompt}
-
-# EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
-# {context}
-
-# Generate a workout that:
-# 1. Matches the user's request and skill level
-# 2. Follows proper swimming workout nomenclature
-# 3. Is structured like the examples (warm-up, pre-set, main set, cool-down)
-# 4. Includes specific distances, intervals, and effort levels
-# 5. Has coaching notes explaining the purpose
-# 6. Is realistic and safe for the intended athlete
-
-# Format the workout clearly with sections and use proper swimming notation."""
-    
-#     response = client.chat.completions.create(
-#         model="gpt-4o",
-#         messages=[
-#             {"role": "system", "content": SWIM_COACH_SYSTEM_PROMPT},
-#             {"role": "user", "content": full_prompt},
-#         ],
-#         max_tokens=4000,
-#         temperature=0.7,
-#     )
-    
-#     return response.choices[0].message.content
-
-
-# def generate_with_groq(prompt: str, context: str, api_key: str) -> str:
-#     """Generate workout using Groq"""
-#     client = Groq(api_key=api_key)
-    
-#     full_prompt = f"""Based on the following request, generate a complete, detailed swimming workout.
-
-# USER REQUEST:
-# {prompt}
-
-# EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
-# {context}
-
-# Generate a workout that:
-# 1. Matches the user's request and skill level
-# 2. Follows proper swimming workout nomenclature
-# 3. Is structured like the examples (warm-up, pre-set, main set, cool-down)
-# 4. Includes specific distances, intervals, and effort levels
-# 5. Has coaching notes explaining the purpose
-# 6. Is realistic and safe for the intended athlete
-
-# Format the workout clearly with sections and use proper swimming notation."""
-    
-#     response = client.chat.completions.create(
-#         model="llama-3.3-70b-versatile",
-#         messages=[
-#             {"role": "system", "content": SWIM_COACH_SYSTEM_PROMPT},
-#             {"role": "user", "content": full_prompt},
-#         ],
-#         max_tokens=4000,
-#         temperature=0.7,
-#     )
-    
-#     return response.choices[0].message.content
-
-
-# def generate_workout(
-#     prompt: str,
-#     provider: str,
-#     api_key: str,
-#     num_examples: int = 3
-# ) -> dict:
-#     """Main function to generate workout using ChromaDB"""
-#     # Step 1: Search ChromaDB
-#     print("Searching ChromaDB for similar workouts...")
-#     search_results = search_similar_workouts(prompt, num_examples)
-    
-#     # Step 2: Build context
-#     context = build_context(search_results)
-    
-#     # Step 3: Generate workout
-#     print(f"Generating workout with {provider}...")
-#     if provider == "claude":
-#         workout = generate_with_claude(prompt, context, api_key)
-#     elif provider == "groq":
-#         workout = generate_with_groq(prompt, context, api_key)
-#     else:
-#         workout = generate_with_openai(prompt, context, api_key)
-    
-#     # Step 4: Return response
-#     return {
-#         "workout": workout,
-#         "examples": [
-#             {
-#                 "id": r["metadata"].get("workout_id", r["id"]),
-#                 "title": r["metadata"].get("title", "Unknown"),
-#                 "url": r["metadata"].get("workout_url", ""),
-#                 "relevance": 1 - r["distance"],
-#             }
-#             for r in search_results
-#         ],
-#     }

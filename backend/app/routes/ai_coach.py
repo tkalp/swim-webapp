@@ -13,7 +13,7 @@ from app.services.chroma_service import (
 from app.middleware.auth import get_current_user, get_current_user_id
 from app.utils import logger, log_error
 
-router = APIRouter(prefix="/api/ai-coach", tags=["AI Coach"])
+router = APIRouter(prefix="/ai-coach", tags=["AI Coach"])
 
 
 @router.post("/generate", response_model=GenerateWorkoutResponse)
@@ -22,23 +22,18 @@ async def generate_workout_endpoint(
     user_id: str = Depends(get_current_user_id)
 ):
     """
-    Generate a swimming workout using ChromaDB + LLM
+    Generate a swimming workout using ChromaDB + Anthropic Claude
     
     Requires authentication. User must be logged in.
     """
     logger.info(
         f"Generating workout for user {user_id} | "
-        f"provider={request.provider} | "
-        f"num_examples={request.numExamples} | "
         f"has_best_times={bool(request.bestTimes)}"
     )
     
     try:
         result = generate_workout(
             prompt=request.prompt,
-            provider=request.provider,
-            api_key=request.apiKey,
-            num_examples=request.numExamples,
             best_times=request.bestTimes,
         )
         
@@ -54,7 +49,7 @@ async def generate_workout_endpoint(
     except Exception as e:
         # Server errors
         logger.error(f"Failed to generate workout for user {user_id}")
-        log_error(e, context="generate_workout", user_id=user_id, provider=request.provider)
+        log_error(e, context="generate_workout", user_id=user_id)
         raise HTTPException(status_code=500, detail=f"Failed to generate workout: {str(e)}")
 
 

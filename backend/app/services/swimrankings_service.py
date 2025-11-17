@@ -3,9 +3,12 @@ SwimRankings.net integration service - Search only
 Result scraping has been moved to the jobs folder (sync_swimrankings.py)
 """
 
-import requests
+import httpx
 from bs4 import BeautifulSoup
-from typing import List, Dict
+from typing import List, Dict, Optional
+import random
+import asyncio
+import os
 from app.utils import logger, log_error
 
 
@@ -15,14 +18,31 @@ class SwimRankingsScraper:
     BASE_URL = "https://www.swimrankings.net"
     
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
+        """Initialize scraper with optional proxy configuration"""
+        self.use_proxy = os.getenv("USE_OXYLABS_PROXY", "false").lower() == "true"
+        self.proxy_username = os.getenv("OXYLABS_USERNAME")
+        self.proxy_password = os.getenv("OXYLABS_PASSWORD")
+        self.proxy_country = os.getenv("OXYLABS_COUNTRY", "US")
+        
+        logger.info(f"Proxy config - USE_OXYLABS_PROXY: {self.use_proxy}")
+        logger.info(f"Proxy config - Username present: {bool(self.proxy_username)}")
+        logger.info(f"Proxy config - Password present: {bool(self.proxy_password)}")
+        logger.info(f"Proxy config - Country: {self.proxy_country}")
+        
+    def _get_proxy_url(self) -> Optional[str]:
+        """Build Oxylabs proxy URL if credentials are configured"""
+        if not self.use_proxy or not self.proxy_username or not self.proxy_password:
+            return None
+            
+        # Oxylabs format: http://user:pass@host:port
+        proxy_url = f"http://customer-{self.proxy_username}-cc-{self.proxy_country}:{self.proxy_password}@pr.oxylabs.io:7777"
+        logger.info(f"Using Oxylabs proxy with country: {self.proxy_country}")
+        logger.info(f"Proxy URL format: http://customer-{self.proxy_username}-cc-{self.proxy_country}:***@pr.oxylabs.io:7777")
+        return proxy_url
     
-    def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
+    async def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
         """
-        Search for swimmers on SwimRankings
+        Search for swimmers on SwimRankings using httpx with realistic patterns
         
         Args:
             firstname: Swimmer's first name
@@ -42,17 +62,73 @@ class SwimRankingsScraper:
             'athlete_firstname': firstname,
         }
         
+        # More realistic headers with varied user agents
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+        ]
+        
+        headers = {
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+            'Referer': self.BASE_URL,
+        }
+        
         try:
-            response = self.session.get(search_url, params=params, timeout=10)
-            response.raise_for_status()
+            # Add random delay to appear more human-like (0.5-2 seconds)
+            await asyncio.sleep(random.uniform(0.5, 2.0))
             
-            soup = BeautifulSoup(response.content, 'lxml')
-            results = self._parse_search_results(soup)
+            # Configure proxy if enabled
+            proxy_url = self._get_proxy_url()
             
-            logger.info(f"Found {len(results)} swimmer(s) on SwimRankings")
-            return results
+            # httpx automatically handles basic auth from URL (user:pass@host:port)
+            async with httpx.AsyncClient(
+                timeout=30.0, 
+                follow_redirects=True,
+                proxy=proxy_url  # None if no proxy, or full URL with embedded credentials
+            ) as client:
+                # First, visit the homepage to get cookies
+                logger.info("Visiting homepage to establish session...")
+                await client.get(self.BASE_URL, headers=headers)
+                
+                # Small delay before search
+                await asyncio.sleep(random.uniform(0.3, 1.0))
+                
+                logger.info(f"Making search request with params: {params}")
+                response = await client.get(search_url, params=params, headers=headers)
+                logger.info(f"Response status: {response.status_code}")
+                logger.info(f"Response headers: {dict(response.headers)}")
+                
+                if response.status_code == 503:
+                    logger.error("Received 503 - SwimRankings is blocking the request")
+                    return []
+                
+                response.raise_for_status()
+                
+                # httpx automatically decompresses - just use .text
+                html_text = response.text
+                logger.info(f"Decoded text length: {len(html_text)} chars")
+                logger.info(f"First 500 chars: {html_text[:500]}")
+                
+                soup = BeautifulSoup(html_text, 'lxml')
+                results = self._parse_search_results(soup)
+                
+                logger.info(f"Found {len(results)} swimmer(s) on SwimRankings")
+                return results
             
-        except requests.RequestException as e:
+        except Exception as e:
             log_error(e, context="swimrankings_search", firstname=firstname, lastname=lastname)
             return []
     

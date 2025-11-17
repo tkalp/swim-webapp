@@ -12,15 +12,12 @@ class ExampleWorkout(BaseModel):
 
 class GenerateWorkoutRequest(BaseModel):
     prompt: str
-    provider: Literal["claude", "openai", "groq"] = "claude"
-    apiKey: str
-    numExamples: int = 3
     bestTimes: Optional[dict[str, str]] = None
 
 
 class GenerateWorkoutResponse(BaseModel):
     workout: str
-    examples: list[ExampleWorkout]
+    examples: Optional[list[ExampleWorkout]] = None  # Kept for backwards compatibility but not returned
 
 
 class HealthResponse(BaseModel):

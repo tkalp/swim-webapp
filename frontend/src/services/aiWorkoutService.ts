@@ -113,7 +113,7 @@ export interface SquadWorkoutSuggestions {
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
 export class AIWorkoutService {
-  private static readonly BASE_URL = `${API_BASE_URL}/api/ai-enhancement`;
+  private static readonly BASE_URL = `${API_BASE_URL}/ai-enhancement`;
 
   private static async fetchJSON(url: string, options?: RequestInit) {
     const response = await authenticatedFetch(url, {

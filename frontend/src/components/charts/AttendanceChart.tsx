@@ -18,9 +18,10 @@ type Props = {
   data: Datum[];
   title?: string;
   subtitle?: string;
+  totalSessions?: number;
 };
 
-export default function AttendanceChart({ data, title, subtitle }: Props) {
+export default function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
   const total = useMemo(
     () => data.reduce((s, d) => s + (d.value || 0), 0),
     [data]
@@ -52,14 +53,11 @@ export default function AttendanceChart({ data, title, subtitle }: Props) {
           )}
           {total > 0 && (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={16} className="text-primary" />
-                <span className="text-2xl font-bold bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
-                  {total}
-                </span>
-              </div>
+              <span className="text-lg font-semibold text-text-primary">
+                {total}
+              </span>
               <span className="text-sm text-text-secondary">
-                total sessions
+                attendance records
               </span>
             </div>
           )}

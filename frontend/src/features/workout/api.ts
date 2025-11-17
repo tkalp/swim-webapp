@@ -42,7 +42,8 @@ export async function createWorkoutForSession(
     .single();
   if (error) throw error;
 
-  await addWorkoutToSession(data.id, sessionId);
+  if (sessionId)
+    await addWorkoutToSession(data.id, sessionId);
   return data;
 }
 

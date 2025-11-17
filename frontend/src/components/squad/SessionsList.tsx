@@ -20,6 +20,7 @@ import WorkoutMiniChart from "../workout/WorkoutMiniChart";
 import AddEditSessionModal from "./sessions/AddEditSessionModal";
 import CreateFromScheduleModal from "./sessions/CreateFromScheduleModal";
 import AttendanceModal from "./sessions/AttendanceModal";
+import { SquadPageHeader } from "./SquadPageHeader";
 import { createSession, updateSession, createSessionsFromSchedules, deleteSession, type TrainingSchedule } from "../../services/sessionService";
 import "@/styles/SessionsList.css";
 
@@ -278,21 +279,45 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
 
   return (
     <>
-    <div className="sessions-list-container">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {/* Header */}
+      <SquadPageHeader
+        title="Training Sessions"
+        subtitle={`${stats.total} session${stats.total !== 1 ? 's' : ''} found in the selected period`}
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleAddSession}
+              className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
+            >
+              <Plus size={18} />
+              Add Session
+            </button>
+            <button
+              onClick={handleCreateFromSchedule}
+              className="flex items-center gap-2 px-4 py-2.5 bg-background-elevated border border-primary/30 text-primary rounded-xl font-semibold text-sm hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            >
+              <Calendar size={18} />
+              Create from Schedule
+            </button>
+          </div>
+        }
+      />
+
       {/* Date Range Toolbar - Modern Style */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center shadow-md shadow-accent/25">
-            <CalendarRange className="w-4 h-4 text-white" />
+      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl mb-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 bg-linear-to-br from-accent to-primary rounded-xl flex items-center justify-center shadow-lg shadow-accent/25">
+            <CalendarRange className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-text-primary">Date Range</h3>
-            <p className="text-xs text-text-tertiary">Select a time period</p>
+            <h3 className="text-base font-bold text-text-primary">Date Range</h3>
+            <p className="text-xs text-text-secondary">Filter sessions by period</p>
           </div>
         </div>
 
         {/* Quick Preset Buttons */}
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2.5 mb-5">
           {[
             { key: "week" as const, label: "This Week" },
             { key: "nextweek" as const, label: "Next Week" },
@@ -303,10 +328,10 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
           ].map(({ key, label }) => (
             <button
               key={key}
-              className={`group px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 hover:scale-105 active:scale-95 ${
+              className={`group px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 ${
                 dateRange === key
-                  ? "bg-gradient-to-r from-primary to-accent text-white shadow-md shadow-primary/30 ring-2 ring-primary/50"
-                  : "bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-sm border border-border/30"
+                  ? "bg-linear-to-r from-primary to-accent text-white shadow-lg shadow-primary/40 ring-2 ring-primary/50"
+                  : "bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-md border border-border/40 hover:border-primary/30"
               }`}
               onClick={() => setDateRange(key)}
             >
@@ -316,7 +341,7 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
         </div>
 
         {/* Custom Date Range */}
-        <div className="flex flex-wrap items-end gap-3 p-3 bg-background-tertiary/30 rounded-lg border border-border/30">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4 p-5 bg-background-tertiary/50 rounded-xl border border-border/40">
           <div className="flex-1 min-w-[150px]">
             <DateInput
               label="From Date"
@@ -340,24 +365,6 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
             />
           </div>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <button
-          onClick={handleAddSession}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-lg font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
-        >
-          <Plus size={18} />
-          Add Session
-        </button>
-        <button
-          onClick={handleCreateFromSchedule}
-          className="flex items-center gap-2 px-4 py-2.5 bg-background-elevated border border-primary/30 text-primary rounded-lg font-semibold text-sm hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-        >
-          <Calendar size={18} />
-          Create from Schedule
-        </button>
       </div>
 
       {/* Stats Overview */}
@@ -407,18 +414,18 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
 
       {/* Compact Workout Color Guide */}
       {sortedSessions.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-6 mt-6">
           <button
             onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-            className="flex items-center gap-3 p-2 rounded-lg bg-background-elevated border border-border hover:border-border-light transition-colors duration-200 text-xs"
+            className="flex items-center gap-3 p-3 rounded-lg bg-background-elevated border border-border hover:border-border-light transition-colors duration-200 text-xs"
           >
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 bg-accent rounded-full"></div>
               <div className="w-2 h-2 bg-accent-purple rounded-full"></div>
               <div className="w-2 h-2 bg-success rounded-full"></div>
               <div className="w-2 h-2 bg-warning rounded-full"></div>
               <div className="w-2 h-2 bg-danger rounded-full"></div>
-              <span className="text-text-secondary font-medium">Chart Colors</span>
+              <span className="text-text-secondary font-medium ml-1">Chart Colors</span>
             </div>
             <ChevronDown 
               size={14} 
@@ -429,11 +436,11 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
           </button>
           
           {isLegendExpanded && (
-            <div className="mt-2 p-3 bg-background-elevated border border-border rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="mt-3 p-4 bg-background-elevated border border-border rounded-lg">
+              <div className="grid grid-cols-2 gap-6 text-xs">
                 <div>
-                  <div className="text-text-secondary font-medium mb-2">Strokes</div>
-                  <div className="space-y-1">
+                  <div className="text-text-secondary font-medium mb-3">Strokes</div>
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#22D3EE' }}></div>
                       <span className="text-text-muted">Freestyle</span>
@@ -461,8 +468,8 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
                   </div>
                 </div>
                 <div>
-                  <div className="text-text-secondary font-medium mb-2">Activities</div>
-                  <div className="space-y-1">
+                  <div className="text-text-secondary font-medium mb-3">Activities</div>
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#22D3EE' }}></div>
                       <span className="text-text-muted">Swim</span>

@@ -2,14 +2,10 @@
 
 import type { BestTimes } from "../../types/ai-coach/types"
 import { getAuthHeaders } from "../../lib/apiClient"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../../lib/api';
 
 export interface GenerateWorkoutRequest {
   prompt: string
-  provider: 'claude' | 'openai' | 'groq'
-  apiKey: string
-  numExamples?: number
   bestTimes?: BestTimes
 }
 
@@ -27,21 +23,18 @@ export interface GenerateWorkoutResponse {
 }
 
 /**
- * Generate a swimming workout using AI Coach
+ * Generate a swimming workout using AI Coach (Anthropic Claude)
  */
 export async function generateWorkout(
   request: GenerateWorkoutRequest
 ): Promise<GenerateWorkoutResponse> {
   const headers = await getAuthHeaders()
   
-  const response = await fetch(`${API_BASE_URL}/api/ai-coach/generate`, {
+  const response = await fetch(`${API_BASE_URL}/ai-coach/generate`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
       prompt: request.prompt,
-      provider: request.provider,
-      apiKey: request.apiKey,
-      numExamples: request.numExamples ?? 3,
       bestTimes: request.bestTimes,
     }),
   })
@@ -65,7 +58,7 @@ export async function checkAICoachHealth(): Promise<{
   chromadb?: string
   message?: string
 }> {
-  const response = await fetch(`${API_BASE_URL}/api/ai-coach/health`)
+  const response = await fetch(`${API_BASE_URL}/ai-coach/health`)
   return response.json()
 }
 

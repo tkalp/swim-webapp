@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Sparkles, Settings, ArrowLeft } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useAICoach } from '../hooks/useAICoach'
-import SettingsPanel from '../components/ai-coach/SettingsPanel'
 import TemplateSelector from '../components/ai-coach/TemplateSelector'
 import WorkoutOutput from '../components/ai-coach/WorkoutOutput'
 import PromptTips from '../components/ai-coach/PromptTips'
@@ -11,16 +10,13 @@ import type { BestTimes } from '../types/ai-coach/types'
 
 export default function AICoachPage() {
   const [prompt, setPrompt] = useState('')
-  const [showSettings, setShowSettings] = useState(false)
   const [bestTimes, setBestTimes] = useState<BestTimes>({})
 
   const {
-    settings,
     loading,
     error,
     currentWorkout,
     generate,
-    updateSettings,
     clearError,
   } = useAICoach()
 
@@ -86,27 +82,10 @@ ${currentWorkout.workout}`
                   AI Swim Coach
                 </h1>
               </div>
-              
-              <button
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 hover:border-gray-500 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10"
-                onClick={() => setShowSettings(!showSettings)}
-              >
-                <Settings size={18} className={`transition-transform duration-300 ${showSettings ? 'rotate-90' : ''}`} />
-                <span className="font-medium">Settings</span>
-              </button>
             </div>
           </div>
         </div>
       </header>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="bg-background-secondary border-b border-gray-700 animate-in slide-in-from-top duration-300">
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <SettingsPanel settings={settings} onUpdate={updateSettings} />
-          </div>
-        </div>
-      )}
 
       {/* Error Toast */}
       {error && (

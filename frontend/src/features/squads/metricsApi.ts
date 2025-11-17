@@ -5,6 +5,54 @@ export type WeekDistance = { week: string; meters: number }
 export type StrokeBreakdown = { stroke: string; meters: number; color: string }
 export type ActivityBreakdown = { activity: string; meters: number; color: string }
 
+export async function getSquadSessionCount(
+  squadId: string,
+  range?: { from?: string; to?: string }
+): Promise<number> {
+  let q = supabase
+    .from('training_sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('squad_id', squadId)
+
+  if (range?.from) q = q.gte('start_date', range.from)
+  if (range?.to)   q = q.lte('start_date', range.to)
+
+  const { count, error } = await q
+  if (error) throw error
+  return count ?? 0
+}
+
+export async function getSquadTotalMeters(
+  squadId: string,
+  range?: { from?: string; to?: string }
+): Promise<number> {
+  // 1) Get sessions for squad within range
+  let sQ = supabase
+    .from('training_sessions')
+    .select('id, start_date, workout_id')
+    .eq('squad_id', squadId)
+
+  if (range?.from) sQ = sQ.gte('start_date', range.from)
+  if (range?.to)   sQ = sQ.lte('start_date', range.to)
+
+  const { data: sessions, error: sErr } = await sQ
+  if (sErr) throw sErr
+  if (!sessions?.length) return 0
+
+  // 2) Fetch total_meters for referenced workouts
+  const workoutIds = Array.from(new Set((sessions.map(s => s.workout_id).filter(Boolean) as string[])))
+  if (!workoutIds.length) return 0
+
+  const { data: workouts, error: wErr } = await supabase
+    .from('workout_template')
+    .select('total_meters')
+    .in('id', workoutIds)
+  if (wErr) throw wErr
+
+  // 3) Sum up total_meters
+  return workouts.reduce((sum, w) => sum + (Number(w.total_meters) || 0), 0)
+}
+
 export async function getSquadAttendanceStats(
   squadId: string,
   range?: { from?: string; to?: string }
@@ -235,3 +283,112 @@ export async function getSquadActivityBreakdown(
     .sort((a, b) => b.meters - a.meters)
 }
 
+
+// ============================================
+// SQUAD PERFORMANCE ANALYTICS
+// ============================================
+
+import { getApiUrl } from '../../lib/api';
+
+export interface EventTimeline {
+  date: string;
+  time: number;
+}
+
+export interface EventSummary {
+  event: string;
+  attempts: number;
+  first_time: number;
+  best_time: number;
+  latest_time: number;
+  improvement_pct: number;
+  personal_records: number;
+  activity?: string;
+  stroke?: string;
+  result_units?: string;
+  timeline: EventTimeline[];
+}
+
+export interface SwimmerPerformance {
+  swimmer_id: string;
+  swimmer_name: string;
+  total_workouts: number;
+  events_analyzed: number;
+  personal_records: number;
+  avg_improvement_pct: number;
+  best_improvement_pct: number;
+  events: EventSummary[];
+}
+
+export interface SquadSummary {
+  total_swimmers: number;
+  avg_improvement: number;
+  total_prs: number;
+  most_improved: {
+    swimmer_id: string;
+    swimmer_name: string;
+    improvement_pct: number;
+  } | null;
+}
+
+export interface SquadPerformanceData {
+  squad: {
+    id: string;
+    name: string;
+  };
+  date_range: {
+    start: string;
+    end: string;
+  };
+  swimmers: SwimmerPerformance[];
+  summary: SquadSummary;
+}
+
+export async function getSquadPerformance(
+  squadId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<SquadPerformanceData> {
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+
+  const url = getApiUrl(`squads/${squadId}/performance?${params.toString()}`);
+  
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch squad performance: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export function formatTimeFromSeconds(seconds: number): string {
+  if (seconds >= 60) {
+    const mins = Math.floor(seconds / 60);
+    const secs = (seconds % 60).toFixed(2);
+    return `${mins}:${secs.padStart(5, '0')}`;
+  }
+  return seconds.toFixed(2);
+}
+
+export function parseEventKey(eventKey: string): {
+  distance: string;
+  stroke: string;
+  activity: string;
+  equipment?: string;
+} {
+  // Format: "100Y_freestyle_swim" or "50M_freestyle_swim_fins"
+  const parts = eventKey.split('_');
+  const distance = parts[0];
+  const stroke = parts[1];
+  const activity = parts[2];
+  const equipment = parts[3];
+
+  return { distance, stroke, activity, equipment };
+}

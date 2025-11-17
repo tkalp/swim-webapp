@@ -27,7 +27,7 @@ export default function SwimRankingsLink({
   const [searchLastName, setSearchLastName] = useState(lastName || '');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SwimRankingsSearchResult[]>([]);
-  const [linking, setLinking] = useState(false);
+  const [linkingId, setLinkingId] = useState<string | null>(null);
   const [links, setLinks] = useState<SwimmerExternalLink[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function SwimRankingsLink({
   }
 
   async function handleLink(result: SwimRankingsSearchResult) {
-    setLinking(true);
+    setLinkingId(result.athlete_id);
     setError(null);
 
     try {
@@ -95,7 +95,7 @@ export default function SwimRankingsLink({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to link swimmer');
     } finally {
-      setLinking(false);
+      setLinkingId(null);
     }
   }
 
@@ -264,10 +264,10 @@ export default function SwimRankingsLink({
                     </div>
                     <button
                       onClick={() => handleLink(result)}
-                      disabled={linking}
+                      disabled={linkingId === result.athlete_id}
                       className="px-3 py-1.5 bg-primary hover:bg-primary-dark disabled:bg-primary/50 rounded text-xs font-medium text-white transition-colors whitespace-nowrap"
                     >
-                      {linking ? 'Linking...' : 'Link'}
+                      {linkingId === result.athlete_id ? 'Linking...' : 'Link'}
                     </button>
                   </div>
                 </div>

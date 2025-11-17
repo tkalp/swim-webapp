@@ -133,6 +133,7 @@ export function useWorkoutForm() {
           create_by_coach: user?.id || "",
           json_description: formData.jsonDescription ? JSON.parse(formData.jsonDescription) : null,
         };
+        
 
         await createWorkoutForSession(newWorkout, sessionId || "");
       }

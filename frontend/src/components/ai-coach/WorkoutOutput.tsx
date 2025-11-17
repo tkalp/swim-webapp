@@ -1,7 +1,6 @@
 // components/ai-coach/WorkoutOutput.tsx
-import { Download, Copy, ChevronDown, ExternalLink, Waves } from 'lucide-react'
+import { Download, Copy, Waves } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import { useState } from 'react'
 import type { GeneratedWorkout } from '../../types/ai-coach/types'
 
 interface WorkoutOutputProps {
@@ -12,8 +11,6 @@ interface WorkoutOutputProps {
 }
 
 export default function WorkoutOutput({ workout, loading, onSave, onCopy }: WorkoutOutputProps) {
-  const [showExamples, setShowExamples] = useState(false)
-
   if (loading) {
     return (
       <div className="bg-background-elevated border border-gray-700 rounded-2xl p-8 shadow-xl min-h-[600px] flex flex-col">
@@ -99,53 +96,6 @@ export default function WorkoutOutput({ workout, loading, onSave, onCopy }: Work
           </div>
         </div>
       </div>
-
-      {/* Referenced Workouts */}
-      {workout.examples && workout.examples.length > 0 && (
-        <div className="border-t border-gray-700">
-          <button
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-background-tertiary transition-all duration-300 group"
-            onClick={() => setShowExamples(!showExamples)}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-gray-300 group-hover:text-white">
-                Referenced Workouts ({workout.examples.length})
-              </span>
-              <span className="px-2 py-1 bg-linear-to-r from-primary to-accent text-white text-xs font-medium rounded-full">
-                {workout.examples.length}
-              </span>
-            </div>
-            <ChevronDown 
-              size={16} 
-              className={`text-gray-400 transition-all duration-300 group-hover:text-cyan-400 ${showExamples ? 'rotate-180' : ''}`}
-            />
-          </button>
-          
-          {showExamples && (
-            <div className="px-6 pb-6 space-y-3 animate-in fade-in slide-in-from-top duration-300">
-              {workout.examples.map((example) => (
-                <div key={example.id} className="bg-background-secondary border border-gray-600 rounded-xl p-4 hover:border-gray-500 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-white text-sm">{example.title}</span>
-                    <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-semibold rounded-full">
-                      {(example.relevance * 100).toFixed(0)}% match
-                    </span>
-                  </div>
-                  <a
-                    href={example.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm transition-colors duration-300"
-                  >
-                    <span>View original</span>
-                    <ExternalLink size={14} />
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
