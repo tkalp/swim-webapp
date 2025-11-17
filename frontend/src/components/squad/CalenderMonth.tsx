@@ -9,7 +9,7 @@ type Event = {
   start_date: string
 }
 
-export default function CalendarMonth({ events }: { events: Event[] }) {
+export default function CalendarMonth({ events, canManage = true }: { events: Event[]; canManage?: boolean }) {
   const now = new Date()
   const y = now.getFullYear()
   const m = now.getMonth()

@@ -1,7 +1,8 @@
 // components/ai-coach/WorkoutOutput.tsx
-import { Download, Copy, Waves } from 'lucide-react'
+import { Download, Copy } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import type { GeneratedWorkout } from '../../types/ai-coach/types'
+import logo from '../../assets/logo.png'
 
 interface WorkoutOutputProps {
   workout: GeneratedWorkout | null
@@ -36,7 +37,7 @@ export default function WorkoutOutput({ workout, loading, onSave, onCopy }: Work
       <div className="bg-background-elevated border border-gray-700 rounded-2xl p-8 shadow-xl min-h-[600px] flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
           <div className="w-20 h-20 bg-linear-to-br from-primary to-accent rounded-full flex items-center justify-center opacity-60 shadow-lg">
-            <Waves size={40} strokeWidth={2} className="text-white" />
+            <img src={logo} alt="Aquilus" className="w-12 h-12 object-contain brightness-0 invert" />
           </div>
           <div>
             <h3 className="text-xl font-semibold text-white mb-3">Ready to Generate</h3>

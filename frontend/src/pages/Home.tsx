@@ -1,7 +1,8 @@
 // pages/Home.tsx
 import { useAuth } from "../contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
-import { Sparkles, Users, Wrench, Settings as SettingsIcon, LogOut, Waves, TrendingUp } from "lucide-react"
+import { Sparkles, Users, Wrench, Settings as SettingsIcon, LogOut, TrendingUp } from "lucide-react"
+import logo from "../assets/logo.png"
 
 export default function Home() {
   const { user, signOut } = useAuth()
@@ -52,7 +53,7 @@ export default function Home() {
       <header className="sticky top-0 z-[100] bg-background-elevated/95 backdrop-blur-xl border-b border-border shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Waves size={32} className="text-primary" />
+            <img src={logo} alt="Aquilus" className="w-8 h-8 object-contain" />
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
               aquilus
             </span>

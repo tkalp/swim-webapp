@@ -22,11 +22,13 @@ type StrokeGroup = {
 export default function GroupedBestTimesView({
   bestTimes,
   sortBy,
+  canManageResults = true,
   onCardPress,
   onEditResult,
 }: {
   bestTimes: BestTimeResult[];
   sortBy: "time" | "event" | "date";
+  canManageResults?: boolean;
   onCardPress?: (item: BestTimeResult) => void;
   onEditResult?: (item: BestTimeResult) => void;
 }) {
@@ -57,7 +59,7 @@ export default function GroupedBestTimesView({
       .map((k) => ({ stroke: k, label: STROKE_LABEL[k], items: map.get(k)! }));
   }, [bestTimes, sortBy]);
 
-  return <TableView groups={groups} onCardPress={onCardPress} onEditResult={onEditResult} />;
+  return <TableView groups={groups} canManageResults={canManageResults} onCardPress={onCardPress} onEditResult={onEditResult} />;
 }
 
 function labelActivity(a?: string) {
@@ -76,10 +78,12 @@ function getActivityStyles(activity?: string) {
 
 function TableView({
   groups,
+  canManageResults = true,
   onCardPress,
   onEditResult,
 }: {
   groups: StrokeGroup[];
+  canManageResults?: boolean;
   onCardPress?: (item: BestTimeResult) => void;
   onEditResult?: (item: BestTimeResult) => void;
 }) {
@@ -277,35 +281,37 @@ function TableView({
                       
                       {/* Actions Column */}
                       <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          {scmItem && onEditResult && (
-                            <button
-                              onClick={() => onEditResult(scmItem)}
-                              className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
-                              title="Edit SCM result"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          )}
-                          {lcmItem && onEditResult && (
-                            <button
-                              onClick={() => onEditResult(lcmItem)}
-                              className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
-                              title="Edit LCM result"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          )}
-                          {scyItem && onEditResult && (
-                            <button
-                              onClick={() => onEditResult(scyItem)}
-                              className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
-                              title="Edit SCY result"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          )}
-                        </div>
+                        {canManageResults && (
+                          <div className="flex justify-end gap-1">
+                            {scmItem && onEditResult && (
+                              <button
+                                onClick={() => onEditResult(scmItem)}
+                                className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
+                                title="Edit SCM result"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            )}
+                            {lcmItem && onEditResult && (
+                              <button
+                                onClick={() => onEditResult(lcmItem)}
+                                className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
+                                title="Edit LCM result"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            )}
+                            {scyItem && onEditResult && (
+                              <button
+                                onClick={() => onEditResult(scyItem)}
+                                className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
+                                title="Edit SCY result"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

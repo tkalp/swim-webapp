@@ -55,41 +55,9 @@ ${currentWorkout.workout}`
 
   return (
     <div className="min-h-screen bg-[#191c29] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-background-elevated/95 border-b border-border shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo and Navigation */}
-            <div className="flex items-center gap-3 sm:gap-5">
-              <Link 
-                to="/" 
-                className="flex items-center gap-2 hover:scale-105 transition-all duration-200"
-                title="Home"
-              >
-                <Sparkles size={24} className="text-primary" />
-                <span className="hidden md:inline text-lg font-bold bg-gradient-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
-                  aquilus
-                </span>
-              </Link>
-              
-              <span className="text-border text-xl hidden sm:inline">/</span>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-purple/30 via-accent-purple/40 to-accent/30 border-2 border-accent-purple/40 flex items-center justify-center shadow-lg">
-                  <Sparkles size={20} className="text-accent-purple" />
-                </div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-accent-purple via-accent-purple to-accent bg-clip-text text-transparent drop-shadow-sm">
-                  AI Swim Coach
-                </h1>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Error Toast */}
       {error && (
-        <div className="fixed top-6 right-6 max-w-md bg-[#1e293b] border border-red-500 rounded-xl p-4 shadow-2xl z-50 animate-in slide-in-from-right duration-300">
+        <div className="fixed top-6 right-6 max-w-md bg-background-elevated border border-red-500 rounded-xl p-4 shadow-2xl z-50 animate-in slide-in-from-right duration-300">
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <div className="font-semibold text-red-400 text-sm mb-1">Error</div>
@@ -111,7 +79,7 @@ ${currentWorkout.workout}`
           {/* Left Column - Input */}
           <div className="w-full lg:w-1/2 space-y-6">
             {/* Main Input Card */}
-            <div className="bg-[#1e293b] border border-gray-700 rounded-2xl p-8 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500">
+            <div className="bg-background-elevated border border-gray-700 rounded-2xl p-8 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-3">Describe Your Workout</h2>
                 <p className="text-gray-400 text-base leading-relaxed">

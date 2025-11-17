@@ -145,52 +145,9 @@ export default function SquadsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
-      {/* Header */}
-      <header className="sticky top-0 z-[100] bg-background-elevated/95 backdrop-blur-xl border-b border-border shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo and Navigation */}
-            <div className="flex items-center gap-3 sm:gap-5">
-              <button
-                className="flex items-center gap-2 cursor-pointer transition-all hover:scale-105 bg-transparent border-none p-0"
-                onClick={() => navigate('/')}
-                title="Home"
-              >
-                <Droplets size={24} className="text-primary" />
-                <span className="hidden md:inline text-lg font-bold bg-gradient-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
-                  aquilus
-                </span>
-              </button>
-
-              <span className="text-border text-xl hidden sm:inline">/</span>
-
-              {/* Title */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 via-primary/40 to-accent/30 border-2 border-primary/40 flex items-center justify-center shadow-lg">
-                  <Users size={20} className="text-primary" />
-                </div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent drop-shadow-sm">
-                  My Squads
-                </h1>
-              </div>
-            </div>
-
-            {/* Create Button */}
-            <button
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
-              onClick={handleOpenCreateModal}
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">New Squad</span>
-              <span className="sm:hidden">New</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* Error Toast */}
       {err && (
-        <div className="fixed top-20 right-4 sm:right-6 bg-background-elevated border border-danger rounded-xl p-4 shadow-lg flex items-start gap-3 max-w-[90vw] sm:max-w-md z-[1000] animate-in slide-in-from-right duration-300">
+        <div className="fixed top-20 right-4 sm:right-6 bg-background-elevated border border-danger rounded-xl p-4 shadow-lg flex items-start gap-3 max-w-[90vw] sm:max-w-md z-1000 animate-in slide-in-from-right duration-300">
           <div className="flex-1 min-w-0">
             <strong className="block text-danger text-sm font-semibold mb-1">
               Error
@@ -303,11 +260,11 @@ export default function SquadsPage() {
 
         {/* Squads Grid */}
         {!loading && !empty && (
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <section className="flex flex-wrap gap-5">
             {items.map((squad) => (
               <article
                 key={squad.id}
-                className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-xl hover:border-primary/30 hover:scale-[1.02] relative overflow-hidden group"
+                className="flex-1 min-w-[340px] max-w-[480px] bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-xl hover:border-primary/30 hover:scale-[1.02] relative overflow-hidden group"
               >
                 {/* Badge */}
                 <div className="absolute top-4 right-4 px-3 py-1.5 bg-gradient-to-r from-accent-purple to-accent text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
@@ -316,11 +273,11 @@ export default function SquadsPage() {
 
                 {/* Header */}
                 <div className="flex gap-4 items-start pr-20">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 via-primary/40 to-accent/30 border border-primary/40 flex items-center justify-center shadow-lg shadow-primary/20">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 via-primary/40 to-accent/30 border border-primary/40 flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
                     <Users size={24} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-text-primary mb-1.5 truncate">
+                    <h3 className="text-lg font-bold text-text-primary mb-1.5 wrap-break-word">
                       {squad.name || "Untitled Squad"}
                     </h3>
                     {squad.description && (

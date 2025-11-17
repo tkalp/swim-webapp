@@ -14,7 +14,7 @@ import DistancePerWeekChart from "../charts/WeeklyDistanceChart";
 import BreakdownChart from "../charts/BreakdownChart";
 import DateInput from "../ui/DateInput";
 import { SquadPageHeader } from "./SquadPageHeader";
-import { Waves, Zap, Calendar, TrendingUp, Users, Check } from "lucide-react";
+import { Waves, Zap, Calendar, TrendingUp, Users, Check, Activity } from "lucide-react";
 
 export type RangeKey =
   | "this_week"
@@ -151,7 +151,7 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
   const rangeSubtitle = formatRangeSubtitle(from, to);
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Hero Header Section */}
       <SquadPageHeader
         title="Squad Analytics"
@@ -197,7 +197,7 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
         </div>
         
         {/* Quick Preset Buttons */}
-        <div className="flex flex-wrap gap-2.5 mb-5">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           {[
             { key: "this_week" as const, label: "This Week" },
             { key: "last_week" as const, label: "Last Week" },
@@ -207,43 +207,39 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
           ].map(({ key, label }) => (
             <button
               key={key}
-              className={`group px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 ${
+              className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 ${
                 rangeKey === key
-                  ? "bg-linear-to-r from-primary to-accent text-white shadow-lg shadow-primary/40 ring-2 ring-primary/50"
-                  : "bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-md border border-border/40 hover:border-primary/30"
+                  ? "bg-linear-to-r from-primary to-accent text-white shadow-md"
+                  : "bg-background-tertiary/60 text-text-secondary hover:bg-background-secondary hover:text-text-primary border border-border/40"
               }`}
               onClick={() => onQuick(key)}
             >
               {label}
             </button>
           ))}
-        </div>
-
-        {/* Custom Date Range */}
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4 relative z-50 p-5 bg-background-tertiary/50 rounded-xl border border-border/40">
-          <div className="w-full sm:flex-1 sm:min-w-[150px] relative z-50">
+          
+          {/* Inline Custom Date Range */}
+          <div className="flex items-center gap-2 ml-2">
             <DateInput
-              label="From Date"
+              label=""
               value={from ? from.slice(0, 10) : ""}
               onChange={(value) => setFrom(value ? new Date(value).toISOString() : undefined)}
-              placeholder="Select start date"
+              placeholder="From"
             />
-          </div>
-          <div className="w-full sm:flex-1 sm:min-w-[150px] relative z-50">
+            <span className="text-text-secondary text-xs">to</span>
             <DateInput
-              label="To Date"
+              label=""
               value={to ? to.slice(0, 10) : ""}
               onChange={(value) => setTo(value ? new Date(value + "T23:59:59").toISOString() : undefined)}
-              placeholder="Select end date"
+              placeholder="To"
             />
+            <button
+              className="px-3 py-1.5 bg-accent text-white font-medium text-xs rounded-lg hover:bg-accent/90 transition-all"
+              onClick={onApplyCustom}
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-accent to-accent/90 hover:from-accent/90 hover:to-accent text-white font-bold text-sm rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl shadow-accent/30 flex items-center justify-center gap-2"
-            onClick={onApplyCustom}
-          >
-            <Check className="w-4 h-4" />
-            Apply
-          </button>
         </div>
       </div>
 
@@ -283,41 +279,18 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
 
       {/* Charts Section */}
       {!loading && (
-        <div>
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-text-primary mb-1">Performance Overview</h2>
-            <p className="text-sm text-text-secondary">Key metrics and insights for the selected period</p>
-          </div>
-          
-          <div className="flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap gap-5 sm:gap-6">
-          {/* Attendance Chart */}
-          <div className="flex-1 md:w-[calc(50%-12px)] xl:w-auto group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-7 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300 relative overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+          {/* Weekly Distance Chart */}
+          <div className="w-full group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300 relative overflow-hidden">
             <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-linear-to-br from-success/20 to-success/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Users className="w-5 h-5 text-success" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-linear-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-text-primary truncate">Attendance</h3>
-                  <p className="text-xs text-text-secondary">Session participation</p>
-                </div>
-              </div>
-              <AttendanceChart data={attData} subtitle="" totalSessions={sessionCount} />
-            </div>
-          </div>
-
-          {/* Distance Chart */}
-          <div className="flex-1 md:w-[calc(50%-12px)] xl:w-auto group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-7 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300 relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-linear-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-text-primary truncate">Weekly Distance</h3>
-                  <p className="text-xs text-text-secondary">Training volume trends</p>
+                  <h3 className="text-lg font-bold text-text-primary">Weekly Distance</h3>
+                  <p className="text-sm text-text-secondary">Training volume over time</p>
                 </div>
               </div>
               <DistancePerWeekChart
@@ -328,17 +301,17 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
             </div>
           </div>
 
-          {/* Stroke Breakdown Chart */}
-          <div className="flex-1 md:w-[calc(50%-12px)] xl:w-auto group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-7 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-accent/40 transition-all duration-300 relative overflow-hidden">
+          {/* Stroke Distribution */}
+          <div className="w-full group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-accent/40 transition-all duration-300 relative overflow-hidden">
             <div className="absolute inset-0 bg-linear-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-linear-to-br from-accent/20 to-accent/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Waves size={18} className="text-accent" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-linear-to-br from-accent/20 to-accent/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Waves className="w-6 h-6 text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-text-primary truncate">Stroke Distribution</h3>
-                  <p className="text-xs text-text-secondary">Meters by stroke type</p>
+                  <h3 className="text-lg font-bold text-text-primary">Stroke Distribution</h3>
+                  <p className="text-sm text-text-secondary">By stroke type</p>
                 </div>
               </div>
               <BreakdownChart
@@ -354,17 +327,17 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
             </div>
           </div>
 
-          {/* Activity Breakdown Chart */}
-          <div className="flex-1 md:w-[calc(50%-12px)] xl:w-auto group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-7 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-warning/40 transition-all duration-300 relative overflow-hidden">
+          {/* Activity Mix */}
+          <div className="w-full group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-warning/40 transition-all duration-300 relative overflow-hidden">
             <div className="absolute inset-0 bg-linear-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-linear-to-br from-warning/20 to-warning/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Zap size={18} className="text-warning" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-linear-to-br from-warning/20 to-warning/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="w-6 h-6 text-warning" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-text-primary truncate">Activity Mix</h3>
-                  <p className="text-xs text-text-secondary">Training intensity</p>
+                  <h3 className="text-lg font-bold text-text-primary">Activity Mix</h3>
+                  <p className="text-sm text-text-secondary">Training intensity breakdown</p>
                 </div>
               </div>
               <BreakdownChart
@@ -379,7 +352,6 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
               />
             </div>
           </div>
-        </div>
         </div>
       )}
     </div>

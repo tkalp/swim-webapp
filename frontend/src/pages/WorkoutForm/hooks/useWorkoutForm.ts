@@ -3,15 +3,19 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { createWorkoutForSession, getWorkout, updateWorkout } from "../../../features/workout/api";
 import { useAuth } from "../../../contexts/AuthContext";
+import { getWorkoutTags, setWorkoutTags } from "../../../services/workoutTagService";
+import type { WorkoutTag } from "../../../types/workoutTags";
 
 export type WorkoutFormData = {
   name: string;
+  description: string;
   rawDescription: string;
   totalMeters: number;
   estimatedTimeMinutes: number;
   estimatedCalories: number;
   effortLevel: number;
   jsonDescription: string | null;
+  selectedTags: WorkoutTag[];
 };
 
 export function useWorkoutForm() {
@@ -25,12 +29,14 @@ export function useWorkoutForm() {
 
   const [formData, setFormData] = useState<WorkoutFormData>({
     name: "",
+    description: "",
     rawDescription: "",
     totalMeters: 0,
     estimatedTimeMinutes: 0,
     estimatedCalories: 0,
     effortLevel: 5,
     jsonDescription: null,
+    selectedTags: [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -50,14 +56,24 @@ export function useWorkoutForm() {
         const workout = await getWorkout(workoutId);
         if (!mounted) return;
         
+        // Load tags for this workout
+        let tags: WorkoutTag[] = [];
+        try {
+          tags = await getWorkoutTags(workoutId);
+        } catch (e) {
+          console.error("Failed to load workout tags:", e);
+        }
+        
         setFormData({
           name: workout.name ?? "",
+          description: workout.description ?? "",
           rawDescription: workout.raw_description ?? "",
           totalMeters: workout.total_meters ?? 0,
           estimatedTimeMinutes: workout.estimated_time_minutes ?? 0,
           estimatedCalories: workout.estimated_calories ?? 0,
           effortLevel: workout.effort_level ?? 5,
           jsonDescription: workout.json_description ? JSON.stringify(workout.json_description) : null,
+          selectedTags: tags,
         });
       } catch (err: any) {
         if (mounted) {
@@ -113,6 +129,7 @@ export function useWorkoutForm() {
       if (isEditMode && workoutId) {
         const updatedWorkout = {
           name: formData.name,
+          description: formData.description,
           raw_description: formData.rawDescription,
           total_meters: formData.totalMeters,
           estimated_time_minutes: formData.estimatedTimeMinutes,
@@ -122,10 +139,20 @@ export function useWorkoutForm() {
         };
 
         await updateWorkout(workoutId, updatedWorkout);
+        
+        // Save tags
+        try {
+          const tagIds = formData.selectedTags.map(tag => tag.id);
+          await setWorkoutTags(workoutId, tagIds);
+        } catch (tagError) {
+          console.error("Failed to save tags:", tagError);
+          // Don't fail the whole operation if tags fail
+        }
       } else {
         const newWorkout = {
           name: formData.name,
-          description: formData.rawDescription,
+          description: formData.description || formData.rawDescription.slice(0, 500),
+          raw_description: formData.rawDescription,
           total_meters: formData.totalMeters,
           estimated_time_minutes: formData.estimatedTimeMinutes,
           estimated_calories: formData.estimatedCalories,
@@ -135,7 +162,18 @@ export function useWorkoutForm() {
         };
         
 
-        await createWorkoutForSession(newWorkout, sessionId || "");
+        const result = await createWorkoutForSession(newWorkout, sessionId || "");
+        
+        // Save tags for the newly created workout
+        if (result?.id && formData.selectedTags.length > 0) {
+          try {
+            const tagIds = formData.selectedTags.map(tag => tag.id);
+            await setWorkoutTags(result.id, tagIds);
+          } catch (tagError) {
+            console.error("Failed to save tags:", tagError);
+            // Don't fail the whole operation if tags fail
+          }
+        }
       }
 
       setSuccess(true);

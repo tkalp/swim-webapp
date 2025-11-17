@@ -19,12 +19,13 @@ type TrainingSchedule = {
 type WeeklyScheduleViewProps = {
   squadId: string
   schedules: TrainingSchedule[]
+  canManage: boolean
   onUpdate: () => void
 }
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
-export default function WeeklyScheduleView({ squadId, schedules, onUpdate }: WeeklyScheduleViewProps) {
+export default function WeeklyScheduleView({ squadId, schedules, canManage, onUpdate }: WeeklyScheduleViewProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<TrainingSchedule | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
@@ -103,13 +104,15 @@ export default function WeeklyScheduleView({ squadId, schedules, onUpdate }: Wee
         title="Weekly Training Schedule"
         subtitle={`${schedules.filter(s => s.active).length} active sessions scheduled across the week`}
         actions={
-          <button 
-            className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-primary/30 border border-white/10"
-            onClick={() => handleCreateSchedule()}
-          >
-            <Plus size={18} />
-            Add Session
-          </button>
+          canManage ? (
+            <button 
+              className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-primary/30 border border-white/10"
+              onClick={() => handleCreateSchedule()}
+            >
+              <Plus size={18} />
+              Add Session
+            </button>
+          ) : undefined
         }
       />
 
@@ -130,13 +133,15 @@ export default function WeeklyScheduleView({ squadId, schedules, onUpdate }: Wee
                     {daySessions.length} session{daySessions.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <button
-                  className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
-                  onClick={() => handleCreateSchedule(day)}
-                  title={`Add session for ${day}`}
-                >
-                  <Plus size={16} />
-                </button>
+                {canManage && (
+                  <button
+                    className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
+                    onClick={() => handleCreateSchedule(day)}
+                    title={`Add session for ${day}`}
+                  >
+                    <Plus size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Sessions */}
@@ -157,22 +162,24 @@ export default function WeeklyScheduleView({ squadId, schedules, onUpdate }: Wee
                           )}
                           {session.training_type}
                         </div>
-                        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <button
-                            className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-primary/20 text-text-secondary hover:text-primary transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
-                            onClick={() => handleEditSchedule(session)}
-                            title="Edit session"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-danger/20 text-text-secondary hover:text-danger transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
-                            onClick={() => handleDeleteSchedule(session.id)}
-                            title="Delete session"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        {canManage && (
+                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button
+                              className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-primary/20 text-text-secondary hover:text-primary transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
+                              onClick={() => handleEditSchedule(session)}
+                              title="Edit session"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-danger/20 text-text-secondary hover:text-danger transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
+                              onClick={() => handleDeleteSchedule(session.id)}
+                              title="Delete session"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-text-primary mb-2">

@@ -13,6 +13,8 @@ import {
   Edit2,
   Trash2,
   Users,
+  Sparkles,
+  ClipboardList,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DateInput from "../ui/DateInput";
@@ -20,6 +22,7 @@ import WorkoutMiniChart from "../workout/WorkoutMiniChart";
 import AddEditSessionModal from "./sessions/AddEditSessionModal";
 import CreateFromScheduleModal from "./sessions/CreateFromScheduleModal";
 import AttendanceModal from "./sessions/AttendanceModal";
+import PracticeNotesModal from "./sessions/PracticeNotesModal";
 import { SquadPageHeader } from "./SquadPageHeader";
 import { createSession, updateSession, createSessionsFromSchedules, deleteSession, type TrainingSchedule } from "../../services/sessionService";
 import "@/styles/SessionsList.css";
@@ -38,10 +41,12 @@ type SessionsListProps = {
   sessions: Session[];
   squadId: string;
   schedules: TrainingSchedule[];
+  canManage: boolean;
+  canManageAttendance: boolean;
   onRefresh?: () => void;
 };
 
-export default function SessionsList({ sessions, squadId, schedules, onRefresh }: SessionsListProps) {
+export default function SessionsList({ sessions, squadId, schedules, canManage, canManageAttendance, onRefresh }: SessionsListProps) {
   const navigate = useNavigate();
   
   // Load date range state from localStorage or use default
@@ -81,9 +86,13 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
   const [addEditModalOpen, setAddEditModalOpen] = useState(false);
   const [createFromScheduleModalOpen, setCreateFromScheduleModalOpen] = useState(false);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [practiceNotesModalOpen, setPracticeNotesModalOpen] = useState(false);
+  const [practiceNotesType, setPracticeNotesType] = useState<'pre' | 'post'>('pre');
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [attendanceSessionId, setAttendanceSessionId] = useState<string | null>(null);
   const [attendanceSessionDate, setAttendanceSessionDate] = useState<string | null>(null);
+  const [notesSessionId, setNotesSessionId] = useState<string | null>(null);
+  const [notesSessionDate, setNotesSessionDate] = useState<string | null>(null);
 
   // Filter sessions by date range
   const filteredSessions = useMemo(() => {
@@ -214,6 +223,13 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
     setAttendanceModalOpen(true);
   };
 
+  const handlePracticeNotes = (sessionId: string, sessionDate: string, type: 'pre' | 'post') => {
+    setNotesSessionId(sessionId);
+    setNotesSessionDate(sessionDate);
+    setPracticeNotesType(type);
+    setPracticeNotesModalOpen(true);
+  };
+
   const handleDeleteSession = async (sessionId: string) => {
     if (!confirm('Are you sure you want to delete this training session?')) {
       return;
@@ -285,22 +301,24 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
         title="Training Sessions"
         subtitle={`${stats.total} session${stats.total !== 1 ? 's' : ''} found in the selected period`}
         actions={
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={handleAddSession}
-              className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
-            >
-              <Plus size={18} />
-              Add Session
-            </button>
-            <button
-              onClick={handleCreateFromSchedule}
-              className="flex items-center gap-2 px-4 py-2.5 bg-background-elevated border border-primary/30 text-primary rounded-xl font-semibold text-sm hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-            >
-              <Calendar size={18} />
-              Create from Schedule
-            </button>
-          </div>
+          canManage ? (
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleAddSession}
+                className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
+              >
+                <Plus size={18} />
+                Add Session
+              </button>
+              <button
+                onClick={handleCreateFromSchedule}
+                className="flex items-center gap-2 px-4 py-2.5 bg-background-elevated border border-primary/30 text-primary rounded-xl font-semibold text-sm hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              >
+                <Calendar size={18} />
+                Create from Schedule
+              </button>
+            </div>
+          ) : undefined
         }
       />
 
@@ -517,100 +535,133 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
             );
 
             return (
-              <div key={s.id} className="session-card">
-                <div className="session-header">
-                  <div className="session-type-badge">{s.training_type}</div>
-                  <div className="session-duration">
-                    <Clock size={14} />
-                    <span>{duration} min</span>
-                  </div>
-                </div>
-
-                <div className="session-body">
-                  <div className="session-info-row">
-                    <Activity size={18} className="session-icon" />
-                    <div className="session-info">
-                      <div className="session-date">
+              <div key={s.id} className="group bg-linear-to-br from-background-elevated to-background-secondary/30 border border-border/60 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+                {/* Header with Date & Type */}
+                <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-border/40 px-5 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-text-primary mb-0.5">
                         {startDate.toLocaleDateString(undefined, {
-                          weekday: "short",
-                          month: "short",
+                          weekday: "long",
+                          month: "long",
                           day: "numeric",
-                          year: "numeric",
                         })}
                       </div>
-                      <div className="session-time">
+                      <div className="text-xs text-text-secondary">
                         {startDate.toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                        {" → "}
+                        {" - "}
                         {endDate.toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
                       </div>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-background-elevated/80 border border-border/40 rounded-lg">
+                        <Clock size={14} className="text-accent" />
+                        <span className="text-xs font-semibold text-text-primary">{duration} min</span>
+                      </div>
+                      <div className="px-3 py-1.5 bg-primary/15 border border-primary/30 rounded-lg">
+                        <span className="text-xs font-bold text-primary">{s.training_type}</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  {/* Workout Breakdown Mini Chart */}
+                </div>
+
+                {/* Body - Workout Section */}
+                <div className="p-5">
                   {s.workout_id ? (
-                    <div className="session-workout-breakdown">
-                      <WorkoutMiniChart workoutId={s.workout_id} />
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <FileText size={16} className="text-primary" />
+                          <span className="text-sm font-semibold text-text-primary">Workout Details</span>
+                        </div>
+                        <button
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-primary rounded-lg transition-all duration-200 text-xs font-semibold group/btn"
+                          onClick={() => handleViewWorkout(s.workout_id!)}
+                        >
+                          <span>View Full Workout</span>
+                          <ChevronRight size={14} className="group-hover/btn:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
+                      <div className="bg-background-secondary/40 rounded-xl p-3 border border-border/30 min-h-[280px]">
+                        <WorkoutMiniChart workoutId={s.workout_id} />
+                      </div>
                     </div>
                   ) : (
-                    <div className="mt-3 p-4 bg-background-tertiary/30 border border-dashed border-border/40 rounded-lg text-center">
-                      <FileText size={20} className="inline-block text-text-tertiary mb-1" />
-                      <p className="text-sm text-text-tertiary">No workout assigned yet</p>
-                      <p className="text-xs text-text-tertiary/70 mt-1">Create a workout to add training details</p>
+                    <div className="bg-background-tertiary/30 border border-dashed border-border/40 rounded-xl p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
+                      <FileText size={24} className="inline-block text-text-tertiary/60 mb-2" />
+                      <p className="text-sm font-medium text-text-secondary mb-1">No workout assigned</p>
+                      <p className="text-xs text-text-tertiary mb-3">Create a workout to add training details for this session</p>
+                      {canManage && (
+                        <button
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-primary rounded-lg transition-all duration-200 text-sm font-semibold"
+                          onClick={() => navigate(`/workouts/create?sessionId=${s.id}`)}
+                        >
+                          <Plus size={16} />
+                          <span>Create Workout</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
 
-                <div className="session-footer">
-                  <div className="flex gap-2 w-full">
-                    {s.workout_id ? (
-                      <button
-                        className="session-workout-btn flex-1"
-                        onClick={() => handleViewWorkout(s.workout_id!)}
-                      >
-                        <FileText size={16} />
-                        <span>View Workout</span>
-                        <ChevronRight size={16} />
-                      </button>
-                    ) : (
-                      <button
-                        className="session-create-workout-btn flex-1"
-                        onClick={() =>
-                          navigate(`/workouts/create?sessionId=${s.id}`)
-                        }
-                      >
-                        <Plus size={16} />
-                        <span>Create Workout</span>
-                      </button>
-                    )}
-                    <button
-                      className="px-3 py-2 bg-background-secondary/80 border border-border/30 text-text-secondary hover:text-accent hover:bg-accent/10 hover:border-accent/50 rounded-lg transition-all duration-200"
-                      onClick={() => handleTakeAttendance(s.id, s.start_date)}
-                      title="Take attendance"
-                    >
-                      <Users size={16} />
-                    </button>
-                    <button
-                      className="px-3 py-2 bg-background-secondary/80 border border-border/30 text-text-secondary hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
-                      onClick={() => handleEditSession(s)}
-                      title="Edit session"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      className="px-3 py-2 bg-background-secondary/80 border border-border/30 text-text-secondary hover:text-danger hover:bg-danger/10 hover:border-danger/50 rounded-lg transition-all duration-200"
-                      onClick={() => handleDeleteSession(s.id)}
-                      title="Delete session"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                {/* Footer - Session Actions */}
+                {(canManage || canManageAttendance) && (
+                  <div className="border-t border-border/30 px-5 py-3">
+                    <div className="flex items-center gap-2 justify-end">
+                      {canManage && (
+                        <>
+                          <button
+                            className="p-2 hover:bg-blue-500/10 text-text-secondary hover:text-blue-400 rounded-lg transition-all duration-200"
+                            onClick={() => handlePracticeNotes(s.id, s.start_date, 'pre')}
+                            title="Pre-practice notes"
+                          >
+                            <ClipboardList size={16} />
+                          </button>
+                          <button
+                            className="p-2 hover:bg-purple-500/10 text-text-secondary hover:text-purple-400 rounded-lg transition-all duration-200"
+                            onClick={() => handlePracticeNotes(s.id, s.start_date, 'post')}
+                            title="Post-practice notes"
+                          >
+                            <Sparkles size={16} />
+                          </button>
+                        </>
+                      )}
+                      {canManageAttendance && (
+                        <button
+                          className="p-2 hover:bg-accent/10 text-text-secondary hover:text-accent rounded-lg transition-all duration-200"
+                          onClick={() => handleTakeAttendance(s.id, s.start_date)}
+                          title="Take attendance"
+                        >
+                          <Users size={16} />
+                        </button>
+                      )}
+                      {canManage && (
+                        <>
+                          <button
+                            className="p-2 hover:bg-primary/10 text-text-secondary hover:text-primary rounded-lg transition-all duration-200"
+                            onClick={() => handleEditSession(s)}
+                            title="Edit session"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            className="p-2 hover:bg-danger/10 text-text-secondary hover:text-danger rounded-lg transition-all duration-200"
+                            onClick={() => handleDeleteSession(s.id)}
+                            title="Delete session"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -671,6 +722,19 @@ export default function SessionsList({ sessions, squadId, schedules, onRefresh }
           onRefresh();
         }
       }}
+    />
+
+    {/* Practice Notes Modal */}
+    <PracticeNotesModal
+      open={practiceNotesModalOpen}
+      onClose={() => {
+        setPracticeNotesModalOpen(false);
+        setNotesSessionId(null);
+        setNotesSessionDate(null);
+      }}
+      sessionId={notesSessionId || ''}
+      sessionDate={notesSessionDate || ''}
+      noteType={practiceNotesType}
     />
     </>
   );

@@ -13,19 +13,22 @@ import {
   FileText,
   Calendar,
   TrendingUp,
-  Waves,
   Timer,
   BarChart3,
   Flame,
   CheckCircle,
+  Tag,
 } from "lucide-react";
 import useWorkout from "../hooks/useWorkout";
 import WorkoutBreakdownCharts from "../components/workout/WorkoutBreakdownCharts";
+import { getWorkoutTags } from "../services/workoutTagService";
+import type { WorkoutTag } from "../types/workoutTags";
 
 export default function WorkoutViewPage() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   const [workout, setWorkout] = useState<any | null>(null);
+  const [tags, setTags] = useState<WorkoutTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -35,16 +38,22 @@ export default function WorkoutViewPage() {
     if (!workoutId) return;
     let mounted = true;
     setLoading(true);
-    fetchWorkout(workoutId)
-      .then((data) => {
+    
+    Promise.all([
+      fetchWorkout(workoutId),
+      getWorkoutTags(workoutId)
+    ])
+      .then(([workoutData, tagsData]) => {
         if (mounted) {
-          setWorkout(data);
+          setWorkout(workoutData);
+          setTags(tagsData);
         }
       })
       .catch((e) => {
         if (mounted) setError(e.message ?? "Failed to load workout");
       })
       .finally(() => mounted && setLoading(false));
+    
     return () => {
       mounted = false;
     };
@@ -142,183 +151,201 @@ export default function WorkoutViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background-primary">
-      {/* Header */}
-      <div className="bg-background-elevated border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-6 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
+    <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
+      {/* Modern Header */}
+      <div className="bg-background-elevated/80 backdrop-blur-xl border-b border-border/60 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-start justify-between gap-6">
+            {/* Left: Back button and title section */}
+            <div className="flex-1 min-w-0">
               <button 
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors shrink-0"
+                className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors mb-3 group"
               >
-                <ArrowLeft size={16} />
-                <span className="text-sm">Back</span>
+                <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+                <span className="text-sm font-medium">Back to Workouts</span>
               </button>
               
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-                  <Activity size={18} className="text-primary" />
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center shrink-0">
+                  <Activity size={24} className="text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-lg font-bold text-text-primary truncate">{workout.name}</h1>
-                  <div className="flex items-center gap-3 text-xs text-text-secondary">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar size={11} />
+                  <h1 className="text-2xl font-bold text-text-primary mb-2">{workout.name}</h1>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="flex items-center gap-1.5 text-sm text-text-secondary">
+                      <Calendar size={14} />
                       {new Date(workout.createdAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
+                        month: 'long', 
                         day: 'numeric', 
                         year: 'numeric' 
                       })}
                     </span>
                     {workout.jsonDescription?.estimate?.difficulty && (
-                      <span className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                        <TrendingUp size={11} />
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium">
+                        <TrendingUp size={14} />
                         {workout.jsonDescription.estimate.difficulty}
                       </span>
+                    )}
+                    {tags.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        {tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium"
+                            style={{
+                              backgroundColor: `${tag.color}20`,
+                              color: tag.color,
+                              border: `1px solid ${tag.color}40`
+                            }}
+                          >
+                            <Tag size={12} />
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Right: Action buttons */}
             <div className="flex items-center gap-2 shrink-0">
               <button 
                 onClick={handleEdit}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary transition-colors"
-                title="Edit"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background-tertiary hover:bg-primary/10 border border-border hover:border-primary/30 text-text-secondary hover:text-primary transition-all"
+                title="Edit workout"
               >
                 <Edit size={16} />
+                <span className="text-sm font-medium">Edit</span>
               </button>
               <button 
                 onClick={handleDownload}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary transition-colors"
+                className="p-2 rounded-xl bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary transition-all"
                 title="Download"
               >
-                <Download size={16} />
+                <Download size={18} />
               </button>
               <button 
                 onClick={handleCopy}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                className={`p-2 rounded-xl transition-all ${
                   copied 
                     ? 'bg-success/20 text-success' 
                     : 'bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary'
                 }`}
-                title={copied ? "Copied!" : "Copy"}
+                title={copied ? "Copied!" : "Copy to clipboard"}
               >
-                {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
+                {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
               </button>
               <button 
                 onClick={handleDelete}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 hover:bg-danger/20 text-danger transition-colors"
-                title="Delete"
+                className="p-2 rounded-xl bg-danger/10 hover:bg-danger/20 text-danger transition-all"
+                title="Delete workout"
               >
-                <Trash2 size={16} />
+                <Trash2 size={18} />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Fixed Height Layout */}
-      <div className="h-[calc(100vh-73px)] overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 space-y-4">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-background-card rounded-lg p-3 border border-border hover:shadow-lg hover:shadow-primary/5 transition-all">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                    <Waves size={16} className="text-cyan-400" />
-                  </div>
-                  <span className="text-xs font-medium text-text-secondary">Total Distance</span>
-                </div>
-                <p className="text-xl font-bold text-text-primary">
-                  {workout.totalMeters.toLocaleString()}
-                  <span className="text-xs font-normal text-text-secondary ml-1">m</span>
-                </p>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Activity size={20} className="text-cyan-400" />
               </div>
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Distance</span>
+            </div>
+            <p className="text-3xl font-bold text-text-primary mb-1">
+              {workout.totalMeters.toLocaleString()}
+            </p>
+            <p className="text-xs text-text-secondary">meters</p>
+          </div>
 
-              <div className="bg-background-card rounded-lg p-3 border border-border hover:shadow-lg hover:shadow-green-500/5 transition-all">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                    <Timer size={16} className="text-green-400" />
-                  </div>
-                  <span className="text-xs font-medium text-text-secondary">Est. Duration</span>
-                </div>
-                <p className="text-xl font-bold text-text-primary">
-                  {workout.estimatedTimeMinutes}
-                  <span className="text-xs font-normal text-text-secondary ml-1">min</span>
-                </p>
+          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-green-500/30 hover:shadow-lg hover:shadow-green-500/10 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Timer size={20} className="text-green-400" />
               </div>
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Duration</span>
+            </div>
+            <p className="text-3xl font-bold text-text-primary mb-1">
+              {workout.estimatedTimeMinutes}
+            </p>
+            <p className="text-xs text-text-secondary">minutes</p>
+          </div>
 
-              <div className="bg-background-card rounded-lg p-3 border border-border hover:shadow-lg hover:shadow-orange-500/5 transition-all">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center">
-                    <Flame size={16} className="text-orange-400" />
-                  </div>
-                  <span className="text-xs font-medium text-text-secondary">Est. Calories</span>
-                </div>
-                <p className="text-xl font-bold text-text-primary">
-                  {workout.estimatedCalories.toLocaleString()}
-                  <span className="text-xs font-normal text-text-secondary ml-1">kcal</span>
-                </p>
+          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/10 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Flame size={20} className="text-orange-400" />
               </div>
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Calories</span>
+            </div>
+            <p className="text-3xl font-bold text-text-primary mb-1">
+              {workout.estimatedCalories.toLocaleString()}
+            </p>
+            <p className="text-xs text-text-secondary">kcal</p>
+          </div>
 
-              <div className="bg-background-card rounded-lg p-3 border border-border hover:shadow-lg hover:shadow-purple-500/5 transition-all">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                    <Zap size={16} className="text-purple-400" />
-                  </div>
-                  <span className="text-xs font-medium text-text-secondary">Effort Level</span>
-                </div>
-                <p className="text-xl font-bold text-text-primary">
-                  {workout.effortLevel}
-                  <span className="text-xs font-normal text-text-secondary ml-1">/10</span>
-                </p>
+          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Zap size={20} className="text-purple-400" />
+              </div>
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Effort</span>
+            </div>
+            <p className="text-3xl font-bold text-text-primary mb-1">
+              {workout.effortLevel}/10
+            </p>
+            <p className="text-xs text-text-secondary">intensity</p>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Workout Description */}
+          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-6 border border-border/60 shadow-xl">
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border/40">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+                <FileText size={20} className="text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-text-primary">Workout Plan</h2>
+                <p className="text-xs text-text-secondary">Complete training session details</p>
               </div>
             </div>
-
-            {/* Side by Side Layout */}
-            <div className="flex gap-4 h-[calc(100vh-220px)]">
-              {/* Workout Description - Left Side */}
-              <div className="flex-1 bg-background-card rounded-lg p-4 border border-border flex flex-col overflow-hidden">
-                <div className="flex items-center gap-2 mb-3 shrink-0">
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-                    <FileText size={16} className="text-blue-400" />
-                  </div>
-                  <h2 className="text-sm font-semibold text-text-primary">Workout Plan</h2>
-                </div>
-                <div className="font-mono text-sm space-y-0.5 overflow-y-auto flex-1">
-                  {workout.rawDescription
-                    .split("\n")
-                    .map((line: string, index: number) => (
-                      <p key={index} className={line ? "text-text-primary" : "text-text-tertiary"}>
-                        {line || "\u00A0"}
-                      </p>
-                    ))}
+            <div className="bg-background-tertiary/30 rounded-xl p-5 border border-border/30 max-h-[600px] overflow-y-auto">
+              <div className="prose prose-sm max-w-none">
+                <div className="text-base leading-loose whitespace-pre-wrap text-text-primary">
+                  {workout.rawDescription}
                 </div>
               </div>
-
-              {/* Workout Analysis Charts - Right Side */}
-              {workout.jsonDescription?.estimate && (
-                <div className="flex-1 bg-background-card rounded-lg p-4 border border-border flex flex-col overflow-hidden">
-                  <div className="flex items-center gap-2 mb-3 shrink-0">
-                    <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                      <BarChart3 size={16} className="text-indigo-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-semibold text-text-primary">Workout Analysis</h2>
-                      <p className="text-xs text-text-secondary">Distance breakdown by stroke and activity</p>
-                    </div>
-                  </div>
-                  <div className="overflow-y-auto flex-1">
-                    <WorkoutBreakdownCharts estimate={workout.jsonDescription.estimate} />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Workout Analysis */}
+          {workout.jsonDescription?.estimate && (
+            <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-6 border border-border/60 shadow-xl">
+              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border/40">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                  <BarChart3 size={20} className="text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-text-primary">Workout Analysis</h2>
+                  <p className="text-xs text-text-secondary">Breakdown by stroke and activity</p>
+                </div>
+              </div>
+              <div className="max-h-[600px] overflow-y-auto">
+                <WorkoutBreakdownCharts estimate={workout.jsonDescription.estimate} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import "@/styles/CreateWorkout.css";
 import { RealtimeWorkoutAnalyzer } from "../components/workout";
+import { TagManager } from "../components/workout/TagManager";
+import { useAuth } from "../contexts/AuthContext";
 import { useWorkoutForm } from "./WorkoutForm/hooks/useWorkoutForm";
 import {
   WorkoutFormHeader,
@@ -14,6 +16,7 @@ import {
 } from "./WorkoutForm/components";
 
 export default function WorkoutFormPage() {
+  const { user } = useAuth();
   const {
     formData,
     setFormData,
@@ -87,6 +90,40 @@ export default function WorkoutFormPage() {
               onChange={(value) => setFormData({ ...formData, name: value })}
               autoFocus
             />
+
+            {/* Brief Description */}
+            <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
+              <label className="block text-sm font-semibold text-text-primary mb-2">
+                Brief Description
+                <span className="text-text-muted font-normal ml-2">(Optional, 500 char max)</span>
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 500) {
+                    setFormData({ ...formData, description: value });
+                  }
+                }}
+                placeholder="Add a brief summary of this workout..."
+                className="w-full px-3 py-2 bg-background-tertiary/50 border border-border/40 rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all resize-none"
+                rows={3}
+              />
+              <div className="text-xs text-text-muted mt-1 text-right">
+                {formData.description.length}/500
+              </div>
+            </div>
+
+            {/* Tags */}
+            {user?.id && (
+              <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
+                <TagManager
+                  coachId={user.id}
+                  selectedTags={formData.selectedTags}
+                  onTagsChange={(tags) => setFormData({ ...formData, selectedTags: tags })}
+                />
+              </div>
+            )}
 
             <WorkoutDescriptionTextarea
               value={formData.rawDescription}

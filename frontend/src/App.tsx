@@ -1,6 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
-import Home from "./pages/Home";
+import { GlobalLayout } from "./components/layout/GlobalLayout";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -12,21 +12,25 @@ import SwimmerPage from "./pages/SwimmerPage";
 import AICoachPage from "./pages/AICoachPage";
 import WorkoutViewPage from "./pages/WorkoutView";
 import WorkoutFormPage from "./pages/WorkoutForm";
+import WorkoutsLibraryPage from "./pages/WorkoutsLibrary";
+import CoachNetworkPage from "./pages/CoachNetwork";
 
 export default function App() {
   return (
     <Routes>
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/squads" element={<SquadsPage />} />
-        <Route path="/squads/new" element={<AddSquadPage />} />
-        <Route path="/squads/:squadId/edit" element={<EditSquadPage />} />
-        <Route path="/squads/:squadId" element={<SquadPage />} />
-        <Route path="/swimmers/:swimmerId" element={<SwimmerPage />} />
-        <Route path="/workouts/:workoutId" element={<WorkoutViewPage />} />
-        <Route path="/workouts/:workoutId/edit" element={<WorkoutFormPage />} />
-        <Route path="/workouts/create" element={<WorkoutFormPage />} />
-        <Route path="/ai-coach" element={<AICoachPage />} />
+        <Route path="/" element={<Navigate to="/squads" replace />} />
+        <Route element={<GlobalLayout><SquadsPage /></GlobalLayout>} path="/squads" />
+        <Route element={<GlobalLayout><AddSquadPage /></GlobalLayout>} path="/squads/new" />
+        <Route element={<GlobalLayout><EditSquadPage /></GlobalLayout>} path="/squads/:squadId/edit" />
+        <Route element={<GlobalLayout><SquadPage /></GlobalLayout>} path="/squads/:squadId" />
+        <Route element={<GlobalLayout><SwimmerPage /></GlobalLayout>} path="/swimmers/:swimmerId" />
+        <Route element={<GlobalLayout><WorkoutsLibraryPage /></GlobalLayout>} path="/workouts" />
+        <Route element={<GlobalLayout><WorkoutViewPage /></GlobalLayout>} path="/workouts/:workoutId" />
+        <Route element={<GlobalLayout><WorkoutFormPage /></GlobalLayout>} path="/workouts/:workoutId/edit" />
+        <Route element={<GlobalLayout><WorkoutFormPage /></GlobalLayout>} path="/workouts/create" />
+        <Route element={<GlobalLayout><CoachNetworkPage /></GlobalLayout>} path="/network" />
+        <Route element={<GlobalLayout><AICoachPage /></GlobalLayout>} path="/ai-coach" />
       </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -165,7 +165,7 @@ export default function WorkoutMiniChart({
             
             {/* Top 3 Stroke Pills */}
             {showLegend && (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 min-w-[280px]">
                 {strokeSegments.slice(0, 3).map((segment) => (
                   <div 
                     key={segment.label}
@@ -208,7 +208,7 @@ export default function WorkoutMiniChart({
             
             {/* Top 3 Activity Pills */}
             {showLegend && (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 min-w-[280px]">
                 {activitySegments.slice(0, 3).map((segment) => (
                   <div 
                     key={segment.label}

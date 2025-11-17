@@ -22,7 +22,7 @@ type Swimmer = {
   last_name?: string;
 };
 
-export default function BestTimesTab({ swimmerId, swimmer }: { swimmerId: string; swimmer?: Swimmer }) {
+export default function BestTimesTab({ swimmerId, swimmer, canManageResults = true }: { swimmerId: string; swimmer?: Swimmer; canManageResults?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [allBest, setAllBest] = useState<BestTimeResult[]>([]);
@@ -229,13 +229,15 @@ export default function BestTimesTab({ swimmerId, swimmer }: { swimmerId: string
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setAddEditOpen(true)}
-            className="group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 bg-gradient-to-r from-primary to-accent text-white shadow-md shadow-primary/30 ring-2 ring-primary/50 flex items-center gap-2"
-          >
-            <Plus size={16} />
-            Add Result
-          </button>
+          {canManageResults && (
+            <button
+              onClick={() => setAddEditOpen(true)}
+              className="group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 bg-gradient-to-r from-primary to-accent text-white shadow-md shadow-primary/30 ring-2 ring-primary/50 flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Add Result
+            </button>
+          )}
         </div>
       </div>
 
@@ -418,6 +420,7 @@ export default function BestTimesTab({ swimmerId, swimmer }: { swimmerId: string
           <GroupedBestTimesView
             bestTimes={sorted}
             sortBy={sortBy}
+            canManageResults={canManageResults}
             onCardPress={onCardPress}
             onEditResult={onEditResult}
           />
@@ -434,6 +437,8 @@ export default function BestTimesTab({ swimmerId, swimmer }: { swimmerId: string
         onClose={() => setOpen(false)}
         query={query}
         onEditAttempt={onEditAttempt}
+        canManageResults={canManageResults}
+        onDeleteAttempt={refreshData}
       />
     )}
 

@@ -293,3 +293,166 @@ def _time_to_seconds(time_str: str) -> float:
     except Exception as e:
         logger.warning(f"Failed to parse time string '{time_str}': {e}")
         return 0.0
+
+
+@router.get("/{squad_id}/attendance")
+async def get_squad_attendance(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    authorization: str = Header(None)
+):
+    """
+    Get attendance analytics for all swimmers in a squad over a date range.
+    
+    Returns attendance rates (present, late, absent percentages) for each swimmer
+    and squad-wide statistics.
+    """
+    try:
+        supabase = get_supabase_client()
+        logger.info(f"Fetching squad attendance | squad_id={squad_id} | date_range={start_date} to {end_date}")
+        
+        # Parse and validate dates
+        if not start_date:
+            # Default to 90 days ago
+            start_dt = datetime.now() - timedelta(days=90)
+            start_date = start_dt.strftime("%Y-%m-%d")
+        else:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            
+        if not end_date:
+            end_date = datetime.now().strftime("%Y-%m-%d")
+        else:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        
+        logger.debug(f"Date range parsed | start={start_date} | end={end_date}")
+        
+        # Verify squad exists and get squad info
+        squad_response = supabase.table('squads').select('id, name').eq('id', squad_id).execute()
+        
+        if not squad_response.data:
+            raise HTTPException(status_code=404, detail="Squad not found")
+        
+        squad_info = squad_response.data[0]
+        
+        # Get all sessions in date range for this squad
+        sessions_response = supabase.table('training_sessions')\
+            .select('id, start_date')\
+            .eq('squad_id', squad_id)\
+            .gte('start_date', start_date)\
+            .lte('start_date', end_date)\
+            .execute()
+        
+        if not sessions_response.data:
+            logger.warning(f"No training sessions found for squad {squad_id} in date range")
+            return {
+                "squad": squad_info,
+                "date_range": {"start": start_date, "end": end_date},
+                "swimmers": [],
+                "stats": {
+                    "total_sessions": 0,
+                    "avg_present_percentage": 0,
+                    "avg_late_percentage": 0,
+                    "avg_absent_percentage": 0,
+                    "total_swimmers": 0
+                }
+            }
+        
+        session_ids = [s['id'] for s in sessions_response.data]
+        total_sessions = len(session_ids)
+        logger.debug(f"Found {total_sessions} training sessions in date range")
+        
+        # Get all swimmers in the squad
+        swimmers_response = supabase.table('swimmers')\
+            .select('id, first_name, last_name')\
+            .eq('squad_id', squad_id)\
+            .execute()
+        
+        if not swimmers_response.data:
+            logger.warning(f"No swimmers found in squad {squad_id}")
+            return {
+                "squad": squad_info,
+                "date_range": {"start": start_date, "end": end_date},
+                "swimmers": [],
+                "stats": {
+                    "total_sessions": total_sessions,
+                    "avg_present_percentage": 0,
+                    "avg_late_percentage": 0,
+                    "avg_absent_percentage": 0,
+                    "total_swimmers": 0
+                }
+            }
+        
+        # Get all attendance records for these sessions
+        attendance_response = supabase.table('training_attendance')\
+            .select('swimmer_id, training_session_id, status')\
+            .in_('training_session_id', session_ids)\
+            .execute()
+        
+        logger.debug(f"Found {len(attendance_response.data)} attendance records")
+        
+        # Build swimmer attendance data
+        swimmer_attendance = {}
+        for swimmer in swimmers_response.data:
+            swimmer_id = swimmer['id']
+            swimmer_name = f"{swimmer['first_name']} {swimmer['last_name']}"
+            
+            # Filter attendance for this swimmer
+            swimmer_records = [r for r in attendance_response.data if r['swimmer_id'] == swimmer_id]
+            
+            # Count by status
+            present = sum(1 for r in swimmer_records if r['status'] and r['status'].lower() == 'present')
+            late = sum(1 for r in swimmer_records if r['status'] and r['status'].lower() == 'late')
+            absent = sum(1 for r in swimmer_records if r['status'] and r['status'].lower() == 'absent')
+            
+            total_recorded = present + late + absent
+            
+            # Only include swimmers with at least one attendance record
+            if total_recorded > 0:
+                swimmer_attendance[swimmer_id] = {
+                    'swimmer_id': swimmer_id,
+                    'swimmer_name': swimmer_name,
+                    'total_sessions': total_recorded,
+                    'present': present,
+                    'late': late,
+                    'absent': absent,
+                    'present_percentage': (present / total_recorded * 100) if total_recorded > 0 else 0,
+                    'late_percentage': (late / total_recorded * 100) if total_recorded > 0 else 0,
+                    'absent_percentage': (absent / total_recorded * 100) if total_recorded > 0 else 0
+                }
+        
+        swimmers_list = list(swimmer_attendance.values())
+        
+        # Calculate squad-wide statistics
+        if swimmers_list:
+            avg_present = sum(s['present_percentage'] for s in swimmers_list) / len(swimmers_list)
+            avg_late = sum(s['late_percentage'] for s in swimmers_list) / len(swimmers_list)
+            avg_absent = sum(s['absent_percentage'] for s in swimmers_list) / len(swimmers_list)
+        else:
+            avg_present = avg_late = avg_absent = 0
+        
+        logger.info(f"Squad attendance calculated | swimmers={len(swimmers_list)} | avg_present={avg_present:.1f}%")
+        
+        return {
+            "squad": squad_info,
+            "date_range": {
+                "start": start_date,
+                "end": end_date
+            },
+            "swimmers": swimmers_list,
+            "stats": {
+                "total_sessions": total_sessions,
+                "avg_present_percentage": avg_present,
+                "avg_late_percentage": avg_late,
+                "avg_absent_percentage": avg_absent,
+                "total_swimmers": len(swimmers_list)
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching squad attendance: {str(e)}")
+        log_error(e, context="get_squad_attendance", squad_id=squad_id)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch squad attendance: {str(e)}")
+

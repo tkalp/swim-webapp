@@ -26,9 +26,10 @@ import {
 
 type Props = {
   squadId: string;
+  canManage: boolean;
 };
 
-export default function SquadWorkouts({ squadId }: Props) {
+export default function SquadWorkouts({ squadId, canManage }: Props) {
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<WorkoutTemplate[]>([]);
   const [filteredWorkouts, setFilteredWorkouts] = useState<WorkoutTemplate[]>([]);
@@ -214,13 +215,15 @@ export default function SquadWorkouts({ squadId }: Props) {
         title="Workout Library"
         subtitle={`${totalCount} workout${totalCount !== 1 ? 's' : ''} in your library`}
         actions={
-          <button
-            onClick={handleCreateWorkout}
-            className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
-          >
-            <Plus size={18} />
-            Create Workout
-          </button>
+          canManage ? (
+            <button
+              onClick={handleCreateWorkout}
+              className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+            >
+              <Plus size={18} />
+              Create Workout
+            </button>
+          ) : undefined
         }
       />
 
@@ -376,27 +379,31 @@ export default function SquadWorkouts({ squadId }: Props) {
                   <Eye size={14} />
                   View
                 </button>
-                <button
-                  onClick={() => handleEditWorkout(workout.id)}
-                  className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
-                  title="Edit workout"
-                >
-                  <Edit size={14} />
-                </button>
-                <button
-                  onClick={() => handleDuplicateWorkout(workout.id)}
-                  className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-accent hover:bg-accent/10 hover:border-accent/50 rounded-lg transition-all duration-200"
-                  title="Duplicate workout"
-                >
-                  <Copy size={14} />
-                </button>
-                <button
-                  onClick={() => handleDeleteWorkout(workout.id, workout.name)}
-                  className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-danger hover:bg-danger/10 hover:border-danger/50 rounded-lg transition-all duration-200"
-                  title="Delete workout"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {canManage && (
+                  <>
+                    <button
+                      onClick={() => handleEditWorkout(workout.id)}
+                      className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
+                      title="Edit workout"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDuplicateWorkout(workout.id)}
+                      className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-accent hover:bg-accent/10 hover:border-accent/50 rounded-lg transition-all duration-200"
+                      title="Duplicate workout"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteWorkout(workout.id, workout.name)}
+                      className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-danger hover:bg-danger/10 hover:border-danger/50 rounded-lg transition-all duration-200"
+                      title="Delete workout"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

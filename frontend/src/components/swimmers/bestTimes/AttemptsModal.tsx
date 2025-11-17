@@ -9,18 +9,23 @@ import {
 } from "../../../features/swimmers/bestTimesApi";
 import AttemptsStats from "./AttemptsStats";
 import AttemptsChart from "./AttemptsChart";
-import { X, AlertCircle, Activity, Edit2, Calendar, Clock, ChevronDown } from "lucide-react";
+import { X, AlertCircle, Activity, Edit2, Trash2, Calendar, Clock, ChevronDown } from "lucide-react";
+import { supabase } from "../../../lib/supabase";
 
 export default function AttemptsModal({
   open,
   onClose,
   query,
+  canManageResults = true,
   onEditAttempt,
+  onDeleteAttempt,
 }: {
   open: boolean;
   onClose: () => void;
   query: EventQuery;
+  canManageResults?: boolean;
   onEditAttempt?: (attemptId: string) => void;
+  onDeleteAttempt?: () => void;
 }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -36,6 +41,31 @@ export default function AttemptsModal({
   >([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedYear, setSelectedYear] = useState<string>("all");
+
+  const handleDeleteAttempt = async (attemptId: string) => {
+    if (!confirm('Are you sure you want to delete this attempt? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('workout_result')
+        .delete()
+        .eq('id', attemptId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setRows(prev => prev.filter(r => r.id !== attemptId));
+      
+      // Notify parent to refresh data
+      if (onDeleteAttempt) {
+        onDeleteAttempt();
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to delete attempt');
+    }
+  };
 
 
   useEffect(() => {
@@ -290,7 +320,9 @@ export default function AttemptsModal({
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Date</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Time</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Splits</th>
-                        <th className="text-right px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Actions</th>
+                        {canManageResults && (
+                          <th className="text-right px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Actions</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -388,26 +420,35 @@ export default function AttemptsModal({
                                 )}
                               </td>
 
-                              {/* Edit button */}
-                              <td className="px-4 py-3">
-                                <div className="flex justify-end">
-                                  {onEditAttempt && (
+                              {/* Actions */}
+                              {canManageResults && (
+                                <td className="px-4 py-3">
+                                  <div className="flex justify-end gap-2">
+                                    {onEditAttempt && (
+                                      <button
+                                        onClick={() => onEditAttempt(row.id)}
+                                        className="p-2 rounded-lg bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105"
+                                        title="Edit attempt"
+                                      >
+                                        <Edit2 size={16} />
+                                      </button>
+                                    )}
                                     <button
-                                      onClick={() => onEditAttempt(row.id)}
-                                      className="p-2 rounded-lg bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105"
-                                      title="Edit attempt"
+                                      onClick={() => handleDeleteAttempt(row.id)}
+                                      className="p-2 rounded-lg bg-background-tertiary border border-border/50 hover:border-danger/50 hover:bg-danger/10 text-text-muted hover:text-danger transition-all duration-200 hover:scale-105"
+                                      title="Delete attempt"
                                     >
-                                      <Edit2 size={16} />
+                                      <Trash2 size={16} />
                                     </button>
-                                  )}
-                                </div>
-                              </td>
+                                  </div>
+                                </td>
+                              )}
                             </tr>
                             
                             {/* Expanded splits row */}
                             {isExpanded && hasSplits && (
                               <tr key={`${row.id}-splits`} className="bg-background-elevated/30">
-                                <td colSpan={5} className="px-4 py-3">
+                                <td colSpan={canManageResults ? 5 : 4} className="px-4 py-3">
                                   <div className="flex items-center gap-2 flex-wrap ml-4">
                                     {row.splits.map((split, idx) => (
                                       <div key={split.id} className="inline-flex items-center gap-2">

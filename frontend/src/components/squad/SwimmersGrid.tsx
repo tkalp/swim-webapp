@@ -8,12 +8,13 @@ import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '../../servic
 type Props = {
   swimmers: Swimmer[]
   squadId: string
+  canManage: boolean
   onAddSwimmer: (swimmer: CreateSwimmerData) => Promise<Swimmer>
   onEditSwimmer: (id: string, swimmer: UpdateSwimmerData) => Promise<void>
   onDeleteSwimmer: (id: string) => Promise<void>
 }
 
-export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSwimmer, onDeleteSwimmer }: Props) {
+export default function SwimmersGrid({ swimmers, squadId, canManage, onAddSwimmer, onEditSwimmer, onDeleteSwimmer }: Props) {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [sortBy, setSortBy] = useState<'last' | 'first' | 'dob'>('last')
@@ -89,13 +90,15 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
           <p className="text-text-secondary mb-8 max-w-md text-center">
             Get started by adding your first swimmer to this squad.
           </p>
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
-          >
-            <Plus size={18} />
-            Add First Swimmer
-          </button>
+          {canManage && (
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
+            >
+              <Plus size={18} />
+              Add First Swimmer
+            </button>
+          )}
         </div>
 
         <SwimmerModal
@@ -141,13 +144,15 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
               <option value="dob">Sort by Age</option>
             </select>
             
-            <button
-              onClick={handleOpenAddModal}
-              className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 whitespace-nowrap"
-            >
-              <Plus size={18} />
-              Add Swimmer
-            </button>
+            {canManage && (
+              <button
+                onClick={handleOpenAddModal}
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 whitespace-nowrap"
+              >
+                <Plus size={18} />
+                Add Swimmer
+              </button>
+            )}
           </div>
         </div>
         
@@ -221,20 +226,24 @@ export default function SwimmersGrid({ swimmers, squadId, onAddSwimmer, onEditSw
                     Open
                     <ChevronRight size={16} />
                   </button>
-                  <button
-                    onClick={() => handleOpenEditModal(s)}
-                    className="p-3 bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent rounded-lg transition-all duration-200 hover:scale-105"
-                    title="Edit swimmer"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(s)}
-                    className="p-3 bg-background-tertiary border border-border/50 hover:border-danger/50 hover:bg-danger/10 text-text-muted hover:text-danger rounded-lg transition-all duration-200 hover:scale-105"
-                    title="Delete swimmer"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {canManage && (
+                    <>
+                      <button
+                        onClick={() => handleOpenEditModal(s)}
+                        className="p-3 bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent rounded-lg transition-all duration-200 hover:scale-105"
+                        title="Edit swimmer"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s)}
+                        className="p-3 bg-background-tertiary border border-border/50 hover:border-danger/50 hover:bg-danger/10 text-text-muted hover:text-danger rounded-lg transition-all duration-200 hover:scale-105"
+                        title="Delete swimmer"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,6 +1,7 @@
 // components/squad/SquadSidebar.tsx
-import { BarChart3, Trophy, TrendingUp, Users, Calendar, List, CalendarDays, Dumbbell } from 'lucide-react';
-import type { TabKey } from '../../hooks/useSquadData';
+import { LayoutDashboard, Users, Calendar, Dumbbell, UserCog, MoreHorizontal } from 'lucide-react';
+import { useState } from 'react';
+import type { TabKey, TrainingSubTab } from '../../hooks/useSquadData';
 
 interface SquadSidebarProps {
   activeTab: TabKey;
@@ -11,28 +12,26 @@ const SIDEBAR_ITEMS: Array<{
   key: TabKey;
   icon: React.ElementType;
   label: string;
+  description?: string;
 }> = [
-  { key: 'swimmers', icon: Users, label: 'Swimmers' },
-  { key: 'metrics', icon: BarChart3, label: 'Metrics' },
-  { key: 'rankings', icon: Trophy, label: 'Rankings' },
-  { key: 'performance', icon: TrendingUp, label: 'Performance' },
-  { key: 'workouts', icon: Dumbbell, label: 'Workouts' },
-  { key: 'schedule', icon: Calendar, label: 'Schedule' },
-  { key: 'sessions', icon: List, label: 'Sessions' },
-  { key: 'calendar', icon: CalendarDays, label: 'Calendar' },
+  { key: 'overview', icon: LayoutDashboard, label: 'Overview', description: 'Metrics, rankings & performance' },
+  { key: 'team', icon: Users, label: 'Team', description: 'Swimmers & roster' },
+  { key: 'training', icon: Calendar, label: 'Training', description: 'Schedule, sessions & calendar' },
+  { key: 'workouts', icon: Dumbbell, label: 'Workouts', description: 'Workout library' },
+  { key: 'coaches', icon: UserCog, label: 'Coaches', description: 'Manage squad access' },
 ];
 
 export function SquadSidebar({ activeTab, onTabChange }: SquadSidebarProps) {
   return (
     <aside className="w-64 bg-linear-to-b from-background-elevated to-background-secondary/30 border-r border-border/60 shrink-0 hidden lg:block backdrop-blur-sm">
-      <nav className="sticky top-[73px] p-6 space-y-1.5">
+      <nav className="sticky top-0 p-6 space-y-1.5">
         <div className="mb-6 pb-4 border-b border-border/40">
           <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider px-3">
             Squad Menu
           </h3>
         </div>
         
-        {SIDEBAR_ITEMS.map(({ key, icon: Icon, label }) => {
+        {SIDEBAR_ITEMS.map(({ key, icon: Icon, label, description }) => {
           const isActive = activeTab === key;
           
           return (
@@ -72,7 +71,14 @@ export function SquadSidebar({ activeTab, onTabChange }: SquadSidebarProps) {
                 />
               </div>
               
-              <span className="flex-1 text-left relative z-10">{label}</span>
+              <div className="flex-1 text-left relative z-10">
+                <div className="font-semibold">{label}</div>
+                {description && (
+                  <div className={`text-[10px] mt-0.5 ${isActive ? 'text-white/80' : 'text-text-muted'}`}>
+                    {description}
+                  </div>
+                )}
+              </div>
               
               {/* Active indicator dot */}
               {isActive && (
@@ -88,48 +94,41 @@ export function SquadSidebar({ activeTab, onTabChange }: SquadSidebarProps) {
 
 // Mobile bottom navigation
 export function SquadMobileNav({ activeTab, onTabChange }: SquadSidebarProps) {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background-elevated/95 backdrop-blur-xl border-t border-border shadow-2xl">
-      <nav className="flex items-center justify-around px-2 py-2 max-w-7xl mx-auto">
-        {SIDEBAR_ITEMS.slice(0, 5).map(({ key, icon: Icon, label }) => {
-          const isActive = activeTab === key;
-          
-          return (
-            <button
-              key={key}
-              onClick={() => onTabChange(key)}
-              className={`
-                flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 min-w-0 flex-1
-                ${isActive 
-                  ? 'text-primary' 
-                  : 'text-text-secondary'
-                }
-              `}
-            >
-              <Icon 
-                size={20} 
-                className={`shrink-0 ${isActive ? 'drop-shadow-[0_0_8px_rgba(49,151,167,0.6)]' : ''}`}
-              />
-              <span className={`text-[10px] font-medium truncate w-full text-center ${
-                isActive ? 'text-primary' : 'text-text-muted'
-              }`}>
-                {label}
-              </span>
-            </button>
-          );
-        })}
-        
-        {/* More menu for remaining items */}
-        <button
-          onClick={() => {
-            // Could open a modal or dropdown with remaining items
-          }}
-          className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 min-w-0 flex-1 text-text-secondary"
-        >
-          <List size={20} />
-          <span className="text-[10px] font-medium text-text-muted">More</span>
-        </button>
-      </nav>
-    </div>
+    <>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background-elevated/95 backdrop-blur-xl border-t border-border shadow-2xl">
+        <nav className="flex items-center justify-around px-2 py-2 max-w-7xl mx-auto">
+          {SIDEBAR_ITEMS.map(({ key, icon: Icon, label }) => {
+            const isActive = activeTab === key;
+            
+            return (
+              <button
+                key={key}
+                onClick={() => onTabChange(key)}
+                className={`
+                  flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 min-w-0 flex-1
+                  ${isActive 
+                    ? 'text-primary' 
+                    : 'text-text-secondary'
+                  }
+                `}
+              >
+                <Icon 
+                  size={20} 
+                  className={`shrink-0 ${isActive ? 'drop-shadow-[0_0_8px_rgba(49,151,167,0.6)]' : ''}`}
+                />
+                <span className={`text-[10px] font-medium truncate w-full text-center ${
+                  isActive ? 'text-primary' : 'text-text-muted'
+                }`}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </>
   );
 }

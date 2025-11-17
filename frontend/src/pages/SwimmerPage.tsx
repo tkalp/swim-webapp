@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useSquadPermissions } from "../hooks/useSquadPermissions";
 
 import AttendanceChart from "../components/charts/AttendanceChart";
 import SessionsPerWeekChart from "../components/charts/SessionsPerWeekChart";
@@ -41,6 +43,16 @@ export default function SwimmerPage() {
     bestWeek,
     swimmer,
   } = useSwimmerStats(swimmerId, { from, to });
+
+  // Fetch squad_id from swimmer to check permissions
+  const [squadId, setSquadId] = useState<string | null>(null);
+  const { hasPermission } = useSquadPermissions(squadId || '');
+
+  useEffect(() => {
+    if (swimmer?.squad_id) {
+      setSquadId(swimmer.squad_id);
+    }
+  }, [swimmer]);
 
   // UI state
   const [tab, setTab] = useState("overview");
@@ -152,7 +164,11 @@ export default function SwimmerPage() {
 
         {!loading && tab === "bestTimes" && swimmerId && (
           <div className="animate-in fade-in slide-in-from-bottom duration-500">
-            <BestTimesTab swimmerId={swimmerId} swimmer={swimmer} />
+            <BestTimesTab 
+              swimmerId={swimmerId} 
+              swimmer={swimmer}
+              canManageResults={hasPermission('can_manage_results')}
+            />
           </div>
         )}
       </main>

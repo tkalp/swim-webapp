@@ -4,7 +4,7 @@ export async function getWorkout(workoutId: string) {
   const { data, error } = await supabase
     .from("workout_template")
     .select(
-      "id, name, total_meters, estimated_time_minutes, estimated_calories, effort_level, raw_description, json_description, created_at, create_by_coach"
+      "id, name, description, total_meters, estimated_time_minutes, estimated_calories, effort_level, raw_description, json_description, created_at, create_by_coach"
     )
     .eq("id", workoutId)
     .single();
@@ -16,6 +16,7 @@ export async function createWorkoutForSession(
   workout: {
     name: string;
     description: string;
+    raw_description?: string;
     total_meters: number;
     estimated_time_minutes: number;
     estimated_calories: number;
@@ -30,7 +31,8 @@ export async function createWorkoutForSession(
     .from("workout_template")
     .insert({
       name: workout.name,
-      raw_description: workout.description,
+      description: workout.description,
+      raw_description: workout.raw_description || workout.description,
       total_meters: workout.total_meters,
       estimated_time_minutes: workout.estimated_time_minutes,
       estimated_calories: workout.estimated_calories,
@@ -64,6 +66,7 @@ export async function updateWorkout(
   workoutId: string,
   patch: Partial<{
     name: string;
+    description: string;
     raw_description: string;
     total_meters: number;
     estimated_time_minutes: number;
