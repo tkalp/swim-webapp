@@ -129,3 +129,9 @@ variable "oxylabs_country" {
   type        = string
   default     = "US"
 }
+
+variable "mixpanel_token" {
+  description = "Mixpanel project token"
+  type        = string
+  sensitive   = true
+}

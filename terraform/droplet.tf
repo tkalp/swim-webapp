@@ -34,6 +34,7 @@ resource "digitalocean_droplet" "aquilus" {
     oxylabs_username          = var.oxylabs_username
     oxylabs_password          = var.oxylabs_password
     oxylabs_country           = var.oxylabs_country
+    mixpanel_token            = var.mixpanel_token
   })
 
   tags = ["aquilus", "production"]

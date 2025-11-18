@@ -86,6 +86,7 @@ SUPABASE_JWT_SECRET=${supabase_jwt_secret}
 VITE_SUPABASE_URL=${vite_supabase_url}
 VITE_SUPABASE_ANON_KEY=${vite_supabase_anon_key}
 VITE_API_URL=${vite_api_url}
+VITE_MIXPANEL_TOKEN=${mixpanel_token}
 
 # Backend environment variables
 ANTHROPIC_API_KEY=${anthropic_api_key}

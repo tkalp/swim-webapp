@@ -16,7 +16,7 @@ export default function AttemptsModal({
   open,
   onClose,
   query,
-  canManageResults = true,
+  canManageResults,
   onEditAttempt,
   onDeleteAttempt,
 }: {

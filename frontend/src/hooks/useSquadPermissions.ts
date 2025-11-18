@@ -1,10 +1,11 @@
 // hooks/useSquadPermissions.ts
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
+import { set } from "date-fns";
 
 export interface SquadPermissions {
-  role: 'owner' | 'admin' | 'member';
+  role: "owner" | "admin" | "member";
   can_manage_swimmers: boolean;
   can_manage_workouts: boolean;
   can_manage_results: boolean;
@@ -22,7 +23,7 @@ export interface CoachSquadMembership {
   id: string;
   coach_id: string;
   squad_id: string;
-  role: 'owner' | 'admin' | 'member';
+  role: "owner" | "admin" | "member";
   created_at: string;
   created_by: string | null;
   updated_at: string | null;
@@ -35,7 +36,10 @@ export interface CoachSquadMembership {
   };
 }
 
-const DEFAULT_PERMISSIONS: Record<'owner' | 'admin' | 'member', Partial<SquadPermissions>> = {
+const DEFAULT_PERMISSIONS: Record<
+  "owner" | "admin" | "member",
+  Partial<SquadPermissions>
+> = {
   owner: {
     can_manage_swimmers: true,
     can_manage_workouts: true,
@@ -93,13 +97,16 @@ export function useSquadPermissions(squadId: string | undefined) {
     loadPermissions();
   }, [squadId, user?.id]);
 
-  const hasPermission = (permission: keyof Omit<SquadPermissions, 'role'>): boolean => {
+  const hasPermission = (
+    permission: keyof Omit<SquadPermissions, "role">
+  ): boolean => {
     if (!permissions) return false;
     return permissions[permission] === true;
   };
 
-  const isOwner = permissions?.role === 'owner';
-  const isAdmin = permissions?.role === 'admin' || permissions?.role === 'owner';
+  const isOwner = permissions?.role === "owner";
+  const isAdmin =
+    permissions?.role === "admin" || permissions?.role === "owner";
 
   const loadPermissions = async () => {
     if (!squadId || !user?.id) return;
@@ -107,15 +114,28 @@ export function useSquadPermissions(squadId: string | undefined) {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('coach_squads')
-        .select('*')
-        .eq('squad_id', squadId)
-        .eq('coach_id', user.id)
+        .from("coach_squads")
+        .select("*")
+        .eq("squad_id", squadId)
+        .eq("coach_id", user.id)
         .single();
 
       if (error) throw error;
 
       if (data) {
+        // Owner and admin roles get default permissions
+        if (data.role === "owner" || data.role === "admin") {
+          console.log("Setting default perms for role: " + data.role);
+          const defaultPerms =
+            DEFAULT_PERMISSIONS[data.role as "owner" | "admin"];
+          setPermissions({
+            role: data.role,
+            ...defaultPerms,
+          } as SquadPermissions);
+          return;
+        }
+
+        // Member role uses database permissions
         setPermissions({
           role: data.role,
           can_manage_swimmers: data.can_manage_swimmers,
@@ -150,26 +170,28 @@ export function useSquadPermissions(squadId: string | undefined) {
   };
 }
 
-export async function getSquadCoaches(squadId: string): Promise<CoachSquadMembership[]> {
+export async function getSquadCoaches(
+  squadId: string
+): Promise<CoachSquadMembership[]> {
   const { data: memberships, error } = await supabase
-    .from('coach_squads')
-    .select('*')
-    .eq('squad_id', squadId)
-    .order('created_at', { ascending: true });
+    .from("coach_squads")
+    .select("*")
+    .eq("squad_id", squadId)
+    .order("created_at", { ascending: true });
 
   if (error) throw error;
   if (!memberships || memberships.length === 0) return [];
 
   // Fetch coach names from coaches table
-  const coachIds = memberships.map(m => m.coach_id);
+  const coachIds = memberships.map((m) => m.coach_id);
   const { data: coaches } = await supabase
-    .from('coach')
-    .select('id, first_name, last_name')
-    .in('id', coachIds);
+    .from("coach")
+    .select("id, first_name, last_name")
+    .in("id", coachIds);
 
-  const coachMap = new Map(coaches?.map(c => [c.id, c]) || []);
+  const coachMap = new Map(coaches?.map((c) => [c.id, c]) || []);
 
-  return memberships.map(item => ({
+  return memberships.map((item) => ({
     id: item.id,
     coach_id: item.coach_id,
     squad_id: item.squad_id,
@@ -202,22 +224,24 @@ export async function updateCoachPermissions(
   updatedBy: string
 ): Promise<void> {
   const { error } = await supabase
-    .from('coach_squads')
+    .from("coach_squads")
     .update({
       ...permissions,
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     })
-    .eq('id', membershipId);
+    .eq("id", membershipId);
 
   if (error) throw error;
 }
 
-export async function removeCoachFromSquad(membershipId: string): Promise<void> {
+export async function removeCoachFromSquad(
+  membershipId: string
+): Promise<void> {
   const { error } = await supabase
-    .from('coach_squads')
+    .from("coach_squads")
     .delete()
-    .eq('id', membershipId);
+    .eq("id", membershipId);
 
   if (error) throw error;
 }
@@ -226,19 +250,17 @@ export async function inviteCoachToSquad(
   squadId: string,
   inviterId: string,
   invitedEmail: string,
-  role: 'owner' | 'admin' | 'member' = 'member',
+  role: "owner" | "admin" | "member" = "member",
   message?: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from('squad_invitations')
-    .insert({
-      squad_id: squadId,
-      inviter_id: inviterId,
-      invited_email: invitedEmail,
-      role,
-      message,
-      status: 'pending',
-    });
+  const { error } = await supabase.from("squad_invitations").insert({
+    squad_id: squadId,
+    inviter_id: inviterId,
+    invited_email: invitedEmail,
+    role,
+    message,
+    status: "pending",
+  });
 
   if (error) throw error;
 }

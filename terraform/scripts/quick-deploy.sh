@@ -18,7 +18,9 @@ echo "📦 Navigating to app directory..."
 cd /root/aquilus-webapp
 
 echo "🔄 Pulling latest changes from git..."
-git pull origin feature/deploying-to-digital-ocean
+git fetch origin
+git checkout feature/improving-layout
+git pull origin feature/improving-layout
 
 echo "🛑 Stopping containers..."
 docker-compose down

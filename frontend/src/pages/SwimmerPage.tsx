@@ -53,7 +53,6 @@ export default function SwimmerPage() {
       setSquadId(swimmer.squad_id);
     }
   }, [swimmer]);
-
   // UI state
   const [tab, setTab] = useState("overview");
 

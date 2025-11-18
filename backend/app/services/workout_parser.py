@@ -694,6 +694,13 @@ class WorkoutParser:
                     if re.match(r'^\d+\s*(?:x|rounds?)\s*(?:of\s*)?$', next_line_stripped, re.IGNORECASE):
                         break
                     
+                    # Stop if we hit a non-indented rest period (e.g., "2:00 Rest")
+                    if (next_line_stripped and 
+                        not next_line.startswith(' ') and 
+                        not next_line.startswith('\t') and
+                        re.match(r'^\d+:\d+\s+rest\b', next_line_stripped, re.IGNORECASE)):
+                        break
+                    
                     # Stop if we hit a line that looks like a new section
                     # (no indentation and contains swimming content, not just descriptive text)
                     if (next_line_stripped and 

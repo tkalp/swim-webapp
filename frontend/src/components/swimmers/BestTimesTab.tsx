@@ -22,7 +22,7 @@ type Swimmer = {
   last_name?: string;
 };
 
-export default function BestTimesTab({ swimmerId, swimmer, canManageResults = true }: { swimmerId: string; swimmer?: Swimmer; canManageResults?: boolean }) {
+export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: { swimmerId: string; swimmer?: Swimmer; canManageResults?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [allBest, setAllBest] = useState<BestTimeResult[]>([]);

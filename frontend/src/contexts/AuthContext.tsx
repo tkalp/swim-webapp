@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { analytics } from '../lib/mixpanel'
 
 type AuthContextValue = {
   session: Session | null
@@ -31,6 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // subscribe to changes
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s ?? null)
+      
+      // Track user authentication with Mixpanel
+      if (s?.user) {
+        console.log("User Email: " + s?.user.email)
+        analytics.identify(s.user.id)
+        analytics.setUser({
+          email: s.user.email,
+          created_at: s.user.created_at,
+        })
+      } else {
+        analytics.reset()
+      }
     })
 
     return () => {
@@ -45,9 +58,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     async signIn(email, password) {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (!error) {
+        analytics.track('User Signed In', { method: 'email' })
+      }
       return error ? { error } : {}
     },
     async signOut() {
+      analytics.track('User Signed Out')
+      analytics.reset()
       await supabase.auth.signOut()
     },
     async sendPasswordResetEmail(email) {
