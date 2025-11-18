@@ -71,7 +71,7 @@ cd /root
 git clone git@github.com:lablytics/aquilus-webapp.git
 
 cd aquilus-webapp
-git checkout feature/deploying-to-digital-ocean
+git checkout feature/improving-layout
 
 # Create .env file with secrets from Terraform
 cat > /root/aquilus-webapp/.env << 'ENVFILE'
