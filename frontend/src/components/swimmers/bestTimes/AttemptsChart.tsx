@@ -66,6 +66,7 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
               axisLine={{ stroke: "#374151" }}
               tickLine={{ stroke: "#374151" }}
               tickFormatter={(value) => formatTime(value)}
+              reversed={true}
             />
             <Tooltip
               contentStyle={{ 
