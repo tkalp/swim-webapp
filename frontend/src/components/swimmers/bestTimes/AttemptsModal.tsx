@@ -2,15 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   getEventAttempts,
+  getBestSplits,
   type EventQuery,
   formatTime,
   intervalToSeconds,
   type RaceSplit,
+  type BestSplitsResponse,
 } from "../../../features/swimmers/bestTimesApi";
 import AttemptsStats from "./AttemptsStats";
 import AttemptsChart from "./AttemptsChart";
-import { X, AlertCircle, Activity, Edit2, Trash2, Calendar, Clock, ChevronDown } from "lucide-react";
+import RaceComparisonModal from "./RaceComparisonModal";
+import { X, AlertCircle, Activity, Edit2, Trash2, Calendar, Clock, ChevronDown, TrendingUp, TrendingDown, GitCompare } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
+import { useAnalytics } from "../../../hooks/useAnalytics";
 
 export default function AttemptsModal({
   open,
@@ -41,6 +45,12 @@ export default function AttemptsModal({
   >([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [bestSplits, setBestSplits] = useState<BestSplitsResponse | null>(null);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [selectedRaces, setSelectedRaces] = useState<Set<string>>(new Set());
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
+  
+  const { track } = useAnalytics();
 
   const handleDeleteAttempt = async (attemptId: string) => {
     if (!confirm('Are you sure you want to delete this attempt? This action cannot be undone.')) {
@@ -74,10 +84,13 @@ export default function AttemptsModal({
     setLoading(true);
     (async () => {
       try {
-        const r = await getEventAttempts(query);
+        const [attemptsData, splitsData] = await Promise.all([
+          getEventAttempts(query),
+          getBestSplits(query)
+        ]);
         if (!mounted) return;
-        // Store unsorted for chart (temporal order)
-        setRows(r);
+        setRows(attemptsData);
+        setBestSplits(splitsData);
         setErr("");
       } catch (e: any) {
         setErr(e.message ?? "Failed to load attempts");
@@ -177,6 +190,50 @@ export default function AttemptsModal({
 
   const captialize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+  // Helper to get delta from best split
+  const getSplitDelta = (split: RaceSplit): { delta: number; isBest: boolean } | null => {
+    if (!bestSplits) return null;
+    
+    const bestSplit = bestSplits.best_splits.find(
+      bs => bs.split_distance === split.split_distance
+    );
+    
+    if (!bestSplit) return null;
+    
+    const currentSeconds = intervalToSeconds(split.cumulative_time);
+    const delta = currentSeconds - bestSplit.best_seconds;
+    const isBest = Math.abs(delta) < 0.01; // Within 0.01s = best
+    
+    return { delta, isBest };
+  };
+
+  // Memoized toggle function to avoid recreating on each render
+  const toggleRowExpansion = useMemo(() => (rowId: string, numSplits: number) => {
+    setExpandedRows(prev => {
+      const newExpanded = new Set(prev);
+      const isCurrentlyExpanded = prev.has(rowId);
+      
+      if (isCurrentlyExpanded) {
+        newExpanded.delete(rowId);
+      } else {
+        newExpanded.add(rowId);
+        // Track when user views split analysis (async, non-blocking)
+        if (bestSplits && bestSplits.best_splits.length > 0) {
+          setTimeout(() => {
+            track('Best Splits Analyzed', {
+              event_type: `${query.distance}m ${query.stroke}`,
+              swimmer_id: query.swimmerId,
+              num_splits: numSplits,
+              result_units: query.resultUnits
+            });
+          }, 0);
+        }
+      }
+      
+      return newExpanded;
+    });
+  }, [bestSplits, query, track]);
+
   const modalContent = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
@@ -222,6 +279,51 @@ export default function AttemptsModal({
                       <option key={year} value={year}>{year}</option>
                     ))}
                   </select>
+                </div>
+              )}
+              {/* Compare Races Button */}
+              {filteredRows.length >= 2 && (
+                <div className="flex items-center gap-2">
+                  {!comparisonMode ? (
+                    <button
+                      onClick={() => setComparisonMode(true)}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-primary rounded-lg transition-all hover:scale-105"
+                    >
+                      <GitCompare size={16} />
+                      Compare Races
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          if (selectedRaces.size >= 2 && selectedRaces.size <= 4) {
+                            // Track race comparison event
+                            track('Race Comparison Viewed', {
+                              event_type: `${query.distance}m ${query.stroke}`,
+                              num_races_compared: selectedRaces.size,
+                              swimmer_id: query.swimmerId,
+                              result_units: query.resultUnits
+                            });
+                            setShowComparisonModal(true);
+                          }
+                        }}
+                        disabled={selectedRaces.size < 2}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-success/10 hover:bg-success/20 border border-success/30 hover:border-success/50 text-success rounded-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <GitCompare size={16} />
+                        Compare ({selectedRaces.size})
+                      </button>
+                      <button
+                        onClick={() => {
+                          setComparisonMode(false);
+                          setSelectedRaces(new Set());
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium text-text-muted hover:text-danger transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -316,11 +418,14 @@ export default function AttemptsModal({
                   <table className="w-full">
                     <thead className="bg-background-secondary/30 border-b border-border">
                       <tr>
+                        {comparisonMode && (
+                          <th className="w-12 px-4 py-2"></th>
+                        )}
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Rank</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Date</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Time</th>
                         <th className="text-left px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Splits</th>
-                        {canManageResults && (
+                        {canManageResults && !comparisonMode && (
                           <th className="text-right px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Actions</th>
                         )}
                       </tr>
@@ -330,13 +435,36 @@ export default function AttemptsModal({
                         const isBest = row.timeSeconds === best;
                         const hasSplits = row.splits && row.splits.length > 0;
                         const isExpanded = expandedRows.has(row.id);
+                        const isSelected = selectedRaces.has(row.id);
                         
                         return (
                           <>
                             <tr
                               key={row.id}
-                              className={`hover:bg-background-secondary/50 transition-colors ${isBest ? 'bg-primary/5' : ''}`}
+                              className={`hover:bg-background-secondary/50 transition-colors ${isBest ? 'bg-primary/5' : ''} ${isSelected ? 'bg-accent/10' : ''}`}
                             >
+                              {/* Checkbox for comparison */}
+                              {comparisonMode && (
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      const newSelection = new Set(selectedRaces);
+                                      if (e.target.checked) {
+                                        if (newSelection.size < 4) {
+                                          newSelection.add(row.id);
+                                        }
+                                      } else {
+                                        newSelection.delete(row.id);
+                                      }
+                                      setSelectedRaces(newSelection);
+                                    }}
+                                    disabled={!isSelected && selectedRaces.size >= 4}
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 disabled:opacity-50 cursor-pointer"
+                                  />
+                                </td>
+                              )}
 
                               {/* Rank */}
                               <td className="px-4 py-3">
@@ -398,15 +526,7 @@ export default function AttemptsModal({
                               <td className="px-4 py-3">
                                 {hasSplits ? (
                                   <button
-                                    onClick={() => {
-                                      const newExpanded = new Set(expandedRows);
-                                      if (isExpanded) {
-                                        newExpanded.delete(row.id);
-                                      } else {
-                                        newExpanded.add(row.id);
-                                      }
-                                      setExpandedRows(newExpanded);
-                                    }}
+                                    onClick={() => toggleRowExpansion(row.id, row.splits.length)}
                                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-medium transition-all hover:scale-105"
                                   >
                                     <span>{row.splits.length}</span>
@@ -421,7 +541,7 @@ export default function AttemptsModal({
                               </td>
 
                               {/* Actions */}
-                              {canManageResults && (
+                              {canManageResults && !comparisonMode && (
                                 <td className="px-4 py-3">
                                   <div className="flex justify-end gap-2">
                                     {onEditAttempt && (
@@ -449,25 +569,57 @@ export default function AttemptsModal({
                             {isExpanded && hasSplits && (
                               <tr key={`${row.id}-splits`} className="bg-background-elevated/30">
                                 <td colSpan={canManageResults ? 5 : 4} className="px-4 py-3">
-                                  <div className="flex items-center gap-2 flex-wrap ml-4">
-                                    {row.splits.map((split, idx) => (
-                                      <div key={split.id} className="inline-flex items-center gap-2">
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-background-secondary/60 border border-border/40 rounded-lg">
-                                          <span className="text-xs font-semibold text-primary">
-                                            {split.split_distance}m
-                                          </span>
-                                          <span className="text-xs font-mono font-bold text-text-primary">
-                                            {formatTime(intervalToSeconds(split.split_time))}
-                                          </span>
-                                          <span className="text-[10px] text-text-tertiary font-mono">
-                                            ({formatTime(intervalToSeconds(split.cumulative_time))})
-                                          </span>
-                                        </div>
-                                        {idx < row.splits.length - 1 && (
-                                          <div className="w-2 h-px bg-border"></div>
-                                        )}
-                                      </div>
-                                    ))}
+                                  <div className="space-y-3 ml-4">
+                                    {/* Split times */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      {row.splits.map((split, idx) => {
+                                        const deltaInfo = getSplitDelta(split);
+                                        
+                                        return (
+                                          <div key={split.id} className="inline-flex items-center gap-2">
+                                            <div className={`inline-flex flex-col gap-0.5 px-2.5 py-1.5 rounded-lg border ${
+                                              deltaInfo?.isBest 
+                                                ? 'bg-primary/10 border-primary/40' 
+                                                : 'bg-background-secondary/60 border-border/40'
+                                            }`}>
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="text-xs font-semibold text-primary">
+                                                  {split.split_distance}m
+                                                </span>
+                                                <span className="text-xs font-mono font-bold text-text-primary">
+                                                  {formatTime(intervalToSeconds(split.split_time))}
+                                                </span>
+                                                <span className="text-[10px] text-text-tertiary font-mono">
+                                                  ({formatTime(intervalToSeconds(split.cumulative_time))})
+                                                </span>
+                                              </div>
+                                              {deltaInfo && !deltaInfo.isBest && (
+                                                <div className={`flex items-center gap-1 text-[10px] font-mono ${
+                                                  deltaInfo.delta < 0 ? 'text-success' : 'text-danger'
+                                                }`}>
+                                                  {deltaInfo.delta < 0 ? (
+                                                    <TrendingDown size={10} />
+                                                  ) : (
+                                                    <TrendingUp size={10} />
+                                                  )}
+                                                  <span>
+                                                    {deltaInfo.delta > 0 ? '+' : ''}{deltaInfo.delta.toFixed(2)}s
+                                                  </span>
+                                                </div>
+                                              )}
+                                              {deltaInfo?.isBest && (
+                                                <div className="text-[10px] font-semibold text-primary">
+                                                  BEST
+                                                </div>
+                                              )}
+                                            </div>
+                                            {idx < row.splits.length - 1 && (
+                                              <div className="w-2 h-px bg-border"></div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
                                 </td>
                               </tr>
@@ -486,5 +638,23 @@ export default function AttemptsModal({
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return createPortal(
+    <>
+      {modalContent}
+      {/* Race Comparison Modal */}
+      {showComparisonModal && (
+        <RaceComparisonModal
+          open={showComparisonModal}
+          onClose={() => {
+            setShowComparisonModal(false);
+            setComparisonMode(false);
+            setSelectedRaces(new Set());
+          }}
+          races={rows.filter(r => selectedRaces.has(r.id))}
+          eventName={`${query.distance}${query.units === "yards" ? "Y" : "M"} ${captialize(query.stroke)} ${captialize(query.activity)}`}
+        />
+      )}
+    </>,
+    document.body
+  );
 }

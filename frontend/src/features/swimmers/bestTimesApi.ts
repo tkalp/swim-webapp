@@ -228,3 +228,42 @@ export function formatTime(seconds: number): string {
   if (h > 0) return `${String(h)}:${String(m).padStart(2,'0')}:${ss}`
   return `${String(m)}:${ss}`
 }
+
+// New API for best splits
+export type BestSplit = {
+  split_distance: number
+  best_cumulative_time: string
+  best_seconds: number
+  from_attempt_id: string
+  from_attempt_date: string | null
+}
+
+export type BestSplitsResponse = {
+  distance: number
+  stroke: string
+  activity: string
+  equipment: string
+  result_units: string
+  best_splits: BestSplit[]
+  total_attempts_analyzed: number
+}
+
+export async function getBestSplits(query: EventQuery): Promise<BestSplitsResponse> {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const url = new URL(
+    `/api/swimmers/${query.swimmerId}/best-splits/${query.distance}/${query.stroke}`,
+    apiUrl
+  )
+  
+  url.searchParams.set('activity', query.activity)
+  url.searchParams.set('equipment', query.equipment)
+  url.searchParams.set('result_units', query.resultUnits)
+  
+  const response = await fetch(url.toString())
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch best splits: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
