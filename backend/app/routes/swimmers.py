@@ -6,7 +6,7 @@ from app.utils import logger
 from app.utils.fina_calculator import calculate_fina_points, get_supported_events
 import os
 
-router = APIRouter(prefix="/api/swimmers", tags=["swimmers"])
+router = APIRouter(prefix="/swimmers", tags=["swimmers"])
 
 
 def get_supabase_client() -> Client:
