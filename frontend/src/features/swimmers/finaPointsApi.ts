@@ -1,5 +1,5 @@
 // features/swimmers/finaPointsApi.ts
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { getApiUrl } from '../../lib/api';
 
 export interface FinaPointsByStroke {
   best_fina_points: number;
@@ -65,7 +65,7 @@ export async function getSwimmerFinaPoints(
   });
 
   const response = await fetch(
-    `${API_BASE_URL}/api/swimmers/${swimmerId}/fina-points?${params.toString()}`
+    getApiUrl(`swimmers/${swimmerId}/fina-points?${params.toString()}`)
   );
 
   if (!response.ok) {
@@ -91,7 +91,7 @@ export async function getSupportedFinaEvents(
   course: "LCM" | "SCM" = "LCM"
 ): Promise<SupportedEventsResponse> {
   const response = await fetch(
-    `${API_BASE_URL}/api/swimmers/fina/supported-events?course=${course}`
+    getApiUrl(`swimmers/fina/supported-events?course=${course}`)
   );
 
   if (!response.ok) {
