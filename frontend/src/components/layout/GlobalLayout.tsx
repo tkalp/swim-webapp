@@ -35,7 +35,7 @@ export function GlobalLayout({ children }: GlobalLayoutProps) {
       </main>
       <CommandPalette 
         isOpen={isCommandPaletteOpen} 
-        onClose={() => setIsCommandPaletteOpen(false)} 
+        onClose={() => setIsCommandPaletteOpen(false)}
       />
     </div>
   );

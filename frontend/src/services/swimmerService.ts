@@ -92,6 +92,50 @@ export async function updateSwimmer(id: string, updates: UpdateSwimmerData): Pro
 }
 
 /**
+ * Create a swimmer with an external link (e.g., SwimRankings)
+ */
+export async function createSwimmerWithExternalLink(
+  swimmerData: CreateSwimmerData,
+  externalLink: {
+    platform: string
+    external_id: string
+    external_url?: string
+    external_name?: string
+    birth_year?: number
+    nation_code?: string
+    club_name?: string
+    gender?: 'M' | 'F'
+  }
+): Promise<Swimmer> {
+  // First create the swimmer
+  const swimmer = await createSwimmer(swimmerData)
+
+  // Then create the external link
+  const { error: linkError } = await supabase
+    .from('swimmer_external_links')
+    .insert([{
+      swimmer_id: swimmer.id,
+      platform: externalLink.platform,
+      external_id: externalLink.external_id,
+      external_url: externalLink.external_url,
+      external_name: externalLink.external_name,
+      birth_year: externalLink.birth_year,
+      nation_code: externalLink.nation_code,
+      club_name: externalLink.club_name,
+      gender: externalLink.gender,
+      verified: true,
+      auto_import_enabled: true
+    }])
+
+  if (linkError) {
+    console.error('Error creating external link:', linkError)
+    // Don't throw - swimmer was created successfully
+  }
+
+  return swimmer
+}
+
+/**
  * Delete a swimmer
  */
 export async function deleteSwimmer(id: string): Promise<void> {

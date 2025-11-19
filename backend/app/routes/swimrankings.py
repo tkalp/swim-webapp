@@ -16,6 +16,7 @@ from app.models.swimrankings import (
 from app.services.swimrankings_service import SwimRankingsScraper
 from app.middleware.auth import get_current_user_id
 from app.utils import logger, log_error
+from app.utils.fina_calculator import calculate_fina_points, time_string_to_seconds
 
 
 router = APIRouter(prefix="/swimrankings", tags=["swimrankings"])
@@ -298,3 +299,121 @@ async def delete_link(
     except Exception as e:
         log_error(e, context="delete_link", link_id=link_id)
         raise HTTPException(status_code=500, detail="Failed to delete link")
+
+
+@router.get("/athlete/{athlete_id}/fina-points")
+async def get_athlete_fina_points(
+    athlete_id: str,
+    gender: str,
+    course: str = "LCM"
+):
+    """
+    Get FINA points for an external athlete from SwimRankings
+    
+    Args:
+        athlete_id: SwimRankings athlete ID
+        gender: Athlete gender (M or F)
+        course: Course type (LCM or SCM)
+    
+    Returns:
+        Best times with FINA points grouped by stroke
+    """
+    logger.info(f"Getting FINA points for athlete {athlete_id} ({gender}, {course})")
+    
+    # Validate inputs
+    if gender.upper() not in ['M', 'F', 'MALE', 'FEMALE']:
+        raise HTTPException(status_code=400, detail="Gender must be M/F or Male/Female")
+    
+    if course.upper() not in ['LCM', 'SCM']:
+        raise HTTPException(status_code=400, detail="Course must be LCM or SCM")
+    
+    # Normalize gender
+    gender_normalized = 'male' if gender.upper() in ['M', 'MALE'] else 'female'
+    course_normalized = course.upper()
+    
+    try:
+        scraper = SwimRankingsScraper()
+        best_times = await scraper.get_athlete_best_times(athlete_id)
+        
+        if not best_times:
+            logger.warning(f"No best times found for athlete {athlete_id}")
+            return {
+                "athlete_id": athlete_id,
+                "gender": gender_normalized,
+                "course": course_normalized,
+                "by_stroke": {},
+                "all_results": []
+            }
+        
+        # Filter by course and exclude relay lap times
+        filtered_times = [
+            t for t in best_times 
+            if t['course'] == course_normalized and not t.get('is_relay_lap', False)
+        ]
+        
+        if not filtered_times:
+            logger.info(f"No times found for {course_normalized} course")
+            return {
+                "athlete_id": athlete_id,
+                "gender": gender_normalized,
+                "course": course_normalized,
+                "by_stroke": {},
+                "all_results": []
+            }
+        
+        # Calculate FINA points for each time
+        results_with_fina = []
+        for time_data in filtered_times:
+            try:
+                # Convert time to seconds
+                time_seconds = time_string_to_seconds(time_data['time'])
+                
+                # Calculate FINA points
+                fina_points = calculate_fina_points(
+                    distance=time_data['distance'],
+                    stroke=time_data['stroke'],
+                    time_seconds=time_seconds,
+                    gender=gender_normalized,
+                    course=course_normalized
+                )
+                
+                if fina_points is not None:
+                    result = {
+                        **time_data,
+                        'time_seconds': time_seconds,
+                        'fina_points': round(fina_points)
+                    }
+                    results_with_fina.append(result)
+                    
+            except Exception as e:
+                logger.warning(f"Error calculating FINA points for {time_data}: {e}")
+                continue
+        
+        # Group by stroke
+        by_stroke = {}
+        for result in results_with_fina:
+            stroke = result['stroke']
+            if stroke not in by_stroke:
+                by_stroke[stroke] = []
+            by_stroke[stroke].append(result)
+        
+        # Sort each stroke by FINA points (descending)
+        for stroke in by_stroke:
+            by_stroke[stroke] = sorted(by_stroke[stroke], key=lambda x: x['fina_points'], reverse=True)
+        
+        # Sort all results by FINA points
+        all_sorted = sorted(results_with_fina, key=lambda x: x['fina_points'], reverse=True)
+        
+        logger.info(f"Calculated FINA points for {len(results_with_fina)} times")
+        
+        return {
+            "athlete_id": athlete_id,
+            "gender": gender_normalized,
+            "course": course_normalized,
+            "by_stroke": by_stroke,
+            "all_results": all_sorted
+        }
+        
+    except Exception as e:
+        log_error(e, context="get_athlete_fina_points", athlete_id=athlete_id)
+        raise HTTPException(status_code=500, detail="Failed to get athlete FINA points")

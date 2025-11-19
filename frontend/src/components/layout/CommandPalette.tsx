@@ -20,7 +20,7 @@ interface Command {
   description?: string;
   icon: React.ElementType;
   action: () => void;
-  category: 'navigation' | 'create' | 'recent';
+  category: 'navigation' | 'create' | 'recent' | 'search';
   keywords?: string[];
 }
 
@@ -185,12 +185,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-200 animate-in fade-in duration-200"
         onClick={onClose}
       />
 
       {/* Command Palette */}
-      <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 w-full max-w-2xl z-[201] px-4 animate-in fade-in slide-in-from-top-4 duration-200">
+      <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 w-full max-w-2xl z-201 px-4 animate-in fade-in slide-in-from-top-4 duration-200">
         <div className="bg-background-elevated border border-border/60 rounded-2xl shadow-2xl overflow-hidden">
           {/* Search Input */}
           <div className="flex items-center gap-3 px-4 py-4 border-b border-border/40">

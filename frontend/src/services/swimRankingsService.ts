@@ -116,6 +116,28 @@ export interface ImportEventAttemptsResponse {
   results: EventResult[];
 }
 
+export interface ExternalSwimmerBestTime {
+  distance: number;
+  stroke: string;
+  time: string;
+  time_formatted: string;
+  time_seconds: number;
+  course: string;
+  date: string;
+  city: string;
+  meet_name: string;
+  swimrankings_points?: string;
+  fina_points: number;
+}
+
+export interface ExternalSwimmerFinaPoints {
+  athlete_id: string;
+  gender: string;
+  course: string;
+  by_stroke: Record<string, ExternalSwimmerBestTime[]>;
+  all_results: ExternalSwimmerBestTime[];
+}
+
 async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) {
@@ -248,6 +270,28 @@ export async function importEventAttempts(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to import event attempts');
+  }
+
+  return response.json();
+}
+
+export async function getExternalSwimmerFinaPoints(
+  athleteId: string,
+  gender: string,
+  course: string = 'LCM'
+): Promise<ExternalSwimmerFinaPoints> {
+  // No auth required - this is public SwimRankings data
+  const params = new URLSearchParams({
+    gender,
+    course,
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/swimrankings/athlete/${athleteId}/fina-points?${params}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to get external swimmer FINA points');
   }
 
   return response.json();

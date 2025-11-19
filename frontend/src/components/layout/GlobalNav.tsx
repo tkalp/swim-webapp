@@ -4,6 +4,7 @@ import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Networ
 import { useAuth } from "../../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { NotificationBell } from "./NotificationBell";
+import { SwimmerSearchBar } from "../swimmers/SwimmerSearchBar";
 import logo from "../../assets/logo.png";
 
 interface NavLinkProps {
@@ -204,17 +205,8 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            {/* Command Palette Button */}
-            {onCommandPaletteOpen && (
-              <button
-                onClick={onCommandPaletteOpen}
-                className="hidden md:flex items-center gap-2 px-3 py-2 bg-background-secondary/60 border border-border/40 rounded-lg text-text-secondary hover:text-text-primary hover:border-primary/30 transition-all duration-200"
-                title="Search commands (Cmd+K)"
-              >
-                <Search size={16} />
-                <span className="text-xs text-text-muted">Cmd+K</span>
-              </button>
-            )}
+            {/* Swimmer Search */}
+            <SwimmerSearchBar />
             <NotificationBell />
             <QuickCreateMenu />
             <ProfileMenu />

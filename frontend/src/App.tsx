@@ -10,6 +10,7 @@ import AddSquadPage from "./pages/AddSquad";
 import SquadPage from "./pages/Squad";
 import EditSquadPage from "./pages/EditSquad";
 import SwimmerPage from "./pages/SwimmerPage";
+import ExternalSwimmerPage from "./pages/ExternalSwimmerPage";
 import AICoachPage from "./pages/AICoachPage";
 import WorkoutViewPage from "./pages/WorkoutView";
 import WorkoutFormPage from "./pages/WorkoutForm";
@@ -68,6 +69,14 @@ export default function App() {
             </GlobalLayout>
           }
           path="/swimmers/:swimmerId"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <ExternalSwimmerPage />
+            </GlobalLayout>
+          }
+          path="/swimmer/:slug"
         />
         <Route
           element={

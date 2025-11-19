@@ -166,6 +166,43 @@ FINA_BASE_TIMES_SCM_2025 = {
 }
 
 
+def time_string_to_seconds(time_str: str) -> float:
+    """
+    Convert time string to seconds
+    
+    Formats supported:
+    - "1:23.45" (minutes:seconds.hundredths)
+    - "23.45" (seconds.hundredths)
+    - "1:23.45M" (with trailing letter that will be stripped)
+    
+    Args:
+        time_str: Time string to convert
+    
+    Returns:
+        Time in seconds as float
+    
+    Raises:
+        ValueError: If time string format is invalid
+    """
+    import re
+    
+    # Strip any trailing letters (M, L, S, etc.)
+    time_str = re.sub(r'[A-Za-z]+$', '', time_str.strip())
+    
+    parts = time_str.split(':')
+    
+    if len(parts) == 1:
+        # Format: "23.45" (seconds only)
+        return float(parts[0])
+    elif len(parts) == 2:
+        # Format: "1:23.45" (minutes:seconds)
+        minutes = int(parts[0])
+        seconds = float(parts[1])
+        return minutes * 60 + seconds
+    else:
+        raise ValueError(f"Invalid time format: {time_str}")
+
+
 def normalize_stroke_name(stroke: str) -> str:
     """
     Normalize stroke name to match base times dictionary keys

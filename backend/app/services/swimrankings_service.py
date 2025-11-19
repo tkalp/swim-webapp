@@ -211,3 +211,152 @@ class SwimRankingsScraper:
                 continue
         
         return swimmers
+    
+    async def get_athlete_best_times(self, athlete_id: str) -> List[Dict]:
+        """
+        Fetch athlete's best times from SwimRankings profile page
+        
+        Args:
+            athlete_id: SwimRankings athlete ID
+            
+        Returns:
+            List of best times with stroke, distance, time, meet info
+        """
+        logger.info(f"Fetching best times for athlete {athlete_id}")
+        
+        profile_url = f"{self.BASE_URL}/index.php?page=athleteDetail&athleteId={athlete_id}"
+        
+        # Realistic headers
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        ]
+        
+        headers = {
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Referer': self.BASE_URL,
+        }
+        
+        try:
+            # Add delay to be respectful
+            await asyncio.sleep(random.uniform(0.5, 2.0))
+            
+            proxy_url = self._get_proxy_url()
+            
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                follow_redirects=True,
+                proxy=proxy_url
+            ) as client:
+                response = await client.get(profile_url, headers=headers)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.text, 'lxml')
+                results = self._parse_athlete_best_times(soup)
+                
+                logger.info(f"Found {len(results)} best times for athlete {athlete_id}")
+                return results
+                
+        except Exception as e:
+            log_error(e, context="get_athlete_best_times", athlete_id=athlete_id)
+            return []
+    
+    def _parse_athlete_best_times(self, soup: BeautifulSoup) -> List[Dict]:
+        """Parse best times from athlete profile page"""
+        results = []
+        
+        # SwimRankings shows personal bests in table with class 'athleteBest'
+        # Table structure: Event | Course | Time | Pts. | Date | City (Nation) | Meet
+        best_table = soup.find('table', class_='athleteBest')
+        
+        if not best_table:
+            logger.warning("No athleteBest table found on page")
+            return results
+        
+        rows = best_table.find_all('tr')
+        
+        for row in rows[1:]:  # Skip header row
+            cells = row.find_all('td')
+            
+            if len(cells) < 7:
+                continue
+            
+            try:
+                # Extract data from each column
+                event_text = cells[0].get_text(strip=True)
+                course_text = cells[1].get_text(strip=True)
+                time_text = cells[2].get_text(strip=True)
+                points_text = cells[3].get_text(strip=True)
+                date_text = cells[4].get_text(strip=True)
+                city_text = cells[5].get_text(strip=True)
+                meet_text = cells[6].get_text(strip=True)
+                
+                # Check if this is a relay lap time (e.g., "100m Freestyle Lap 1")
+                is_relay_lap = 'lap' in event_text.lower()
+                
+                # Parse event (e.g., "100m Freestyle")
+                distance, stroke = self._parse_event(event_text)
+                
+                if distance and stroke and time_text:
+                    # Determine course from course column (50m = LCM, 25m = SCM)
+                    course = 'LCM' if '50m' in course_text else 'SCM'
+                    
+                    result = {
+                        'distance': distance,
+                        'stroke': stroke,
+                        'time': time_text,
+                        'time_formatted': time_text,
+                        'course': course,
+                        'date': date_text.replace('\xa0', ' '),
+                        'city': city_text.replace('\xa0', ' '),
+                        'meet_name': meet_text,
+                        'swimrankings_points': points_text if points_text.isdigit() else None,
+                        'is_relay_lap': is_relay_lap
+                    }
+                    results.append(result)
+                    
+            except Exception as e:
+                logger.warning(f"Error parsing best time row: {e}")
+                continue
+        
+        return results
+    
+    def _parse_event(self, event_text: str) -> tuple:
+        """
+        Parse event text like "100m Freestyle" into distance and stroke
+        
+        Returns:
+            Tuple of (distance, stroke) or (None, None) if can't parse
+        """
+        distance = None
+        stroke = None
+        
+        # Remove 'm' from distance if present
+        event_text = event_text.replace('m', ' ')
+        parts = event_text.split()
+        
+        # Find distance (first number)
+        for part in parts:
+            if part.isdigit():
+                distance = int(part)
+                break
+        
+        # Find stroke
+        event_lower = event_text.lower()
+        if 'freestyle' in event_lower or 'free' in event_lower:
+            stroke = 'Freestyle'
+        elif 'backstroke' in event_lower or 'back' in event_lower:
+            stroke = 'Backstroke'
+        elif 'breaststroke' in event_lower or 'breast' in event_lower:
+            stroke = 'Breaststroke'
+        elif 'butterfly' in event_lower or 'fly' in event_lower:
+            stroke = 'Butterfly'
+        elif 'medley' in event_lower or 'im' in event_lower:
+            stroke = 'Individual Medley'
+        
+        return distance, stroke
