@@ -19,7 +19,7 @@ import PageHeader from "../components/ui/PageHeader";
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
-  { key: 'bestTimes', label: 'Records' },
+  { key: 'bestTimes', label: 'Best Times' },
   { key: 'finaPoints', label: 'FINA Points' },
 ];
 
