@@ -8,7 +8,8 @@ import SessionsPerWeekChart from "../components/charts/SessionsPerWeekChart";
 import SwimmerOverviewStats from "../components/stats/SwimmerOverviewStats";
 import RangeToolbar from "../components/range/RangeToolbar";
 import BestTimesTab from "../components/swimmers/BestTimesTab";
-import SwimmerProfileCard from "../components/swimmers/SwimmerProfileCard";
+import FinaPointsTab from "../components/swimmers/FinaPointsTab";
+import SwimRankingsLink from "../components/swimmers/SwimRankingsLink";
 
 import type { RangeKey } from "../types/stats";
 import { useSwimmerStats } from "../hooks/useSwimmerStats";
@@ -19,6 +20,7 @@ import PageHeader from "../components/ui/PageHeader";
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'bestTimes', label: 'Records' },
+  { key: 'finaPoints', label: 'FINA Points' },
 ];
 
 export default function SwimmerPage() {
@@ -70,14 +72,71 @@ export default function SwimmerPage() {
   };
   const onApplyCustom = () => setRangeKey("custom");
 
+  // Show loading screen until swimmer data is loaded
+  if (loading || !swimmer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full animate-pulse">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-text-primary">Loading Swimmer Data</h2>
+            <p className="text-sm text-text-secondary">Please wait...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
       <PageHeader
-        title={swimmer ? `${swimmer.first_name} ${swimmer.last_name}` : "Swimmer Stats"}
+        title={
+          swimmer ? (
+            <div className="flex flex-col gap-2">
+              <span>{swimmer.first_name} {swimmer.last_name}</span>
+              <div className="flex items-center gap-2">
+                {swimmer.date_of_birth && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 rounded-md border border-primary/20">
+                    <span className="text-xs font-medium text-primary">
+                      {(() => {
+                        const today = new Date();
+                        const birthDate = new Date(swimmer.date_of_birth);
+                        let age = today.getFullYear() - birthDate.getFullYear();
+                        const monthDiff = today.getMonth() - birthDate.getMonth();
+                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                          age--;
+                        }
+                        return age;
+                      })()} years
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-accent/10 rounded-md border border-accent/20">
+                  <span className="text-xs font-medium text-accent">
+                    {swimmer.sex === "Female" ? "Female" : "Male"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            "Swimmer Stats"
+          )
+        }
         backLabel="Swimmers"
         tabs={TABS}
         activeTab={tab}
         onTabChange={setTab}
+        rightContent={
+          swimmer && (
+            <SwimRankingsLink
+              swimmerId={swimmerId!}
+              firstName={swimmer.first_name}
+              lastName={swimmer.last_name}
+            />
+          )
+        }
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
@@ -93,8 +152,6 @@ export default function SwimmerPage() {
             </div>
           </div>
         )}
-
-        {swimmer && <SwimmerProfileCard swimmer={swimmer} />}
 
         {tab === "overview" && (
           <div className="space-y-3">
@@ -167,6 +224,15 @@ export default function SwimmerPage() {
               swimmerId={swimmerId} 
               swimmer={swimmer}
               canManageResults={hasPermission('can_manage_results')}
+            />
+          </div>
+        )}
+
+        {!loading && tab === "finaPoints" && swimmerId && (
+          <div className="animate-in fade-in slide-in-from-bottom duration-500">
+            <FinaPointsTab 
+              swimmerId={swimmerId} 
+              swimmer={swimmer}
             />
           </div>
         )}

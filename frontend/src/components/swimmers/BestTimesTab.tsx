@@ -8,7 +8,6 @@ import {
 import GroupedBestTimesView from "./bestTimes/GroupedBestTimesView";
 import AttemptsModal from "./bestTimes/AttemptsModal";
 import AddEditWorkoutResultModal from "./bestTimes/AddEditWorkoutResultModal";
-import SwimRankingsLink from "./SwimRankingsLink";
 import type { Option } from "../ui/CustomSelect";
 import CustomSelect from "../ui/CustomSelect";
 import { supabase } from "../../lib/supabase";
@@ -205,15 +204,6 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
   return (
     <>
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom duration-500">
-      {/* External Tracking Integration */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg">
-        <SwimRankingsLink
-          swimmerId={swimmerId}
-          firstName={swimmer?.first_name}
-          lastName={swimmer?.last_name}
-        />
-      </div>
-
       {/* Header with Stats */}
       <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-6 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
         <div className="flex items-start justify-between gap-4">

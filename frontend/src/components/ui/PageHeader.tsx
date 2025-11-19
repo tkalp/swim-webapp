@@ -9,12 +9,13 @@ type Tab = {
 };
 
 type PageHeaderProps = {
-  title: string;
+  title: string | React.ReactNode;
   backLabel?: string;
   tabs?: Tab[];
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   className?: string;
+  rightContent?: React.ReactNode;
 };
 
 export default function PageHeader({
@@ -24,6 +25,7 @@ export default function PageHeader({
   activeTab,
   onTabChange,
   className = '',
+  rightContent,
 }: PageHeaderProps) {
   const navigate = useNavigate();
 
@@ -43,6 +45,14 @@ export default function PageHeader({
           <h1 className="text-3xl font-bold text-text-primary">
             {title}
           </h1>
+          {rightContent && (
+            <>
+              <div className="h-6 w-px bg-border/40 ml-auto"></div>
+              <div className="flex items-center gap-3">
+                {rightContent}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Tabs */}

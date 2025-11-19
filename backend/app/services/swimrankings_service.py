@@ -4,6 +4,7 @@ Result scraping has been moved to the jobs folder (sync_swimrankings.py)
 """
 
 import httpx
+import brotli
 from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 import random
@@ -117,8 +118,20 @@ class SwimRankingsScraper:
                 
                 response.raise_for_status()
                 
-                # httpx automatically decompresses - just use .text
+                # Manually handle brotli decompression if needed
                 html_text = response.text
+                if response.headers.get('content-encoding') == 'br' and len(html_text) < 1000:
+                    # Response might not be properly decompressed
+                    try:
+                        logger.info("Attempting manual brotli decompression...")
+                        decompressed = brotli.decompress(response.content)
+                        html_text = decompressed.decode('utf-8')
+                        logger.info(f"Successfully decompressed brotli content")
+                    except Exception as decomp_err:
+                        logger.error(f"Brotli decompression failed: {decomp_err}")
+                        # Fall back to original text
+                        pass
+                
                 logger.info(f"Decoded text length: {len(html_text)} chars")
                 logger.info(f"First 500 chars: {html_text[:500]}")
                 

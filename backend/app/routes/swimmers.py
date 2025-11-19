@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, Dict, Any, List
 from supabase import create_client, Client
 from app.utils import logger
+from app.utils.fina_calculator import calculate_fina_points, get_supported_events
 import os
 
 router = APIRouter(prefix="/api/swimmers", tags=["swimmers"])
@@ -159,3 +160,172 @@ def _interval_to_seconds(interval_str: str) -> float:
             return float(interval_str)
     except (ValueError, IndexError):
         return float('inf')
+
+
+@router.get("/{swimmer_id}/fina-points")
+async def get_swimmer_fina_points(
+    swimmer_id: str,
+    gender: str = Query(..., description="Swimmer gender (male/female)"),
+    course: str = Query(default="LCM", description="Course type (LCM or SCM)"),
+    activity: str = Query(default="swim", description="Activity type filter"),
+    equipment: str = Query(default="none", description="Equipment filter")
+) -> Dict[str, Any]:
+    """
+    Calculate FINA points for all of a swimmer's results
+    
+    Returns:
+    - Overall best and average FINA points
+    - Best FINA points by stroke
+    - Best results with FINA points for each event
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        # Fetch all results for the swimmer, filtered by course (result_units)
+        response = supabase.table("workout_result").select(
+            "id, distance, stroke, time_result, performed_on, activity, equipment, result_units"
+        ).eq("swimmer_id", swimmer_id).eq("activity", activity).eq("equipment", equipment).eq("result_units", course).execute()
+        
+        if not response.data:
+            return {
+                "swimmer_id": swimmer_id,
+                "gender": gender,
+                "course": course,
+                "overall_best_fina_points": 0,
+                "overall_average_fina_points": 0,
+                "total_results": 0,
+                "by_stroke": {},
+                "results_with_points": []
+            }
+        
+        results = response.data
+        
+        # Calculate FINA points for each result
+        results_with_points = []
+        all_fina_points = []
+        
+        for result in results:
+            # Convert time to seconds
+            time_seconds = _interval_to_seconds(result["time_result"])
+            
+            # Use the result's own result_units (SCM/LCM/SCY) for accurate FINA calculation
+            result_course = result.get("result_units", course)
+            
+            # Calculate FINA points using the result's actual course
+            fina_points = calculate_fina_points(
+                time_seconds=time_seconds,
+                stroke=result["stroke"],
+                distance=result["distance"],
+                gender=gender,
+                course=result_course
+            )
+            
+            if fina_points is not None:
+                result_with_points = {
+                    "id": result["id"],
+                    "distance": result["distance"],
+                    "stroke": result["stroke"],
+                    "time_result": result["time_result"],
+                    "time_seconds": time_seconds,
+                    "performed_on": result["performed_on"],
+                    "fina_points": fina_points,
+                    "result_units": result["result_units"]
+                }
+                results_with_points.append(result_with_points)
+                all_fina_points.append(fina_points)
+        
+        if not results_with_points:
+            return {
+                "swimmer_id": swimmer_id,
+                "gender": gender,
+                "course": course,
+                "overall_best_fina_points": 0,
+                "overall_average_fina_points": 0,
+                "total_results": 0,
+                "by_stroke": {},
+                "results_with_points": []
+            }
+        
+        # Group by stroke and calculate summaries
+        by_stroke = {}
+        strokes = set(r["stroke"] for r in results_with_points)
+        
+        for stroke in strokes:
+            stroke_results = [r for r in results_with_points if r["stroke"] == stroke]
+            stroke_points = [r["fina_points"] for r in stroke_results]
+            
+            # Find best result for each distance
+            best_by_distance = {}
+            distances = set(r["distance"] for r in stroke_results)
+            
+            for distance in distances:
+                distance_results = [r for r in stroke_results if r["distance"] == distance]
+                best_result = max(distance_results, key=lambda x: x["fina_points"])
+                best_by_distance[str(distance)] = {
+                    "id": best_result["id"],
+                    "distance": best_result["distance"],
+                    "time_result": best_result["time_result"],
+                    "time_seconds": best_result["time_seconds"],
+                    "fina_points": best_result["fina_points"],
+                    "performed_on": best_result["performed_on"]
+                }
+            
+            by_stroke[stroke] = {
+                "best_fina_points": max(stroke_points),
+                "average_fina_points": round(sum(stroke_points) / len(stroke_points)),
+                "total_results": len(stroke_results),
+                "best_by_distance": best_by_distance
+            }
+        
+        # Calculate overall statistics
+        overall_best = max(all_fina_points)
+        overall_average = round(sum(all_fina_points) / len(all_fina_points))
+        
+        # Find the overall best result (event with highest FINA points)
+        overall_best_result = max(results_with_points, key=lambda x: x["fina_points"])
+        
+        return {
+            "swimmer_id": swimmer_id,
+            "gender": gender,
+            "course": course,
+            "overall_best_fina_points": overall_best,
+            "overall_best_result": {
+                "id": overall_best_result["id"],
+                "stroke": overall_best_result["stroke"],
+                "distance": overall_best_result["distance"],
+                "time_result": overall_best_result["time_result"],
+                "time_seconds": overall_best_result["time_seconds"],
+                "fina_points": overall_best_result["fina_points"],
+                "performed_on": overall_best_result["performed_on"]
+            },
+            "overall_average_fina_points": overall_average,
+            "total_results": len(results_with_points),
+            "by_stroke": by_stroke,
+            "results_with_points": sorted(results_with_points, key=lambda x: x["fina_points"], reverse=True)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating FINA points for swimmer {swimmer_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/fina/supported-events")
+async def get_fina_supported_events(
+    course: str = Query(default="LCM", description="Course type (LCM or SCM)")
+) -> Dict[str, Any]:
+    """
+    Get list of all events supported for FINA point calculation
+    
+    Returns:
+    - Supported events by gender and stroke
+    """
+    try:
+        events = get_supported_events(course)
+        return {
+            "course": course,
+            "events": events
+        }
+    except Exception as e:
+        logger.error(f"Error fetching supported FINA events: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
