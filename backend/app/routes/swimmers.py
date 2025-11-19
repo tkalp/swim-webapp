@@ -1,9 +1,12 @@
 # backend/app/routes/swimmers.py
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends
 from typing import Optional, Dict, Any, List
 from supabase import create_client, Client
-from app.utils import logger
+from pydantic import BaseModel
+from datetime import datetime
+from app.utils import logger, log_error
 from app.utils.fina_calculator import calculate_fina_points, get_supported_events
+from app.middleware.auth import get_current_user_id
 import os
 
 router = APIRouter(prefix="/swimmers", tags=["swimmers"])
@@ -328,4 +331,333 @@ async def get_fina_supported_events(
     except Exception as e:
         logger.error(f"Error fetching supported FINA events: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Pydantic models for new endpoint
+class SwimmerData(BaseModel):
+    first_name: str
+    last_name: str
+    sex: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    squad_id: str
+
+
+class ExternalLinkData(BaseModel):
+    platform: str
+    external_id: str
+    external_url: Optional[str] = None
+    external_name: Optional[str] = None
+    birth_year: Optional[int] = None
+    nation_code: Optional[str] = None
+    club_name: Optional[str] = None
+    gender: Optional[str] = None
+
+
+class CreateSwimmerWithLinkRequest(BaseModel):
+    swimmer: SwimmerData
+    external_link: ExternalLinkData
+    auto_sync: bool = True  # Whether to immediately start background sync
+
+
+class CreateSwimmerWithLinkResponse(BaseModel):
+    swimmer_id: str
+    external_link_id: str
+    sync_started: bool
+    message: str
+
+
+@router.post("/with-external-link", response_model=CreateSwimmerWithLinkResponse)
+async def create_swimmer_with_external_link(
+    request: CreateSwimmerWithLinkRequest,
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Create a swimmer with an external platform link and optionally start background data sync
+    
+    This endpoint:
+    1. Creates a new swimmer in the database
+    2. Links them to an external platform (e.g., SwimRankings)
+    3. Optionally triggers a background job to import their historical results
+    
+    Args:
+        request: Swimmer data and external link information
+        background_tasks: FastAPI background tasks
+        user_id: Authenticated user ID
+    
+    Returns:
+        Created swimmer and link IDs, sync status
+    """
+    logger.info(f"Creating swimmer with external link: {request.swimmer.first_name} {request.swimmer.last_name}")
+    
+    try:
+        supabase = get_supabase_client()
+        
+        # Verify user has permission to add swimmers to this squad
+        squad_id = request.swimmer.squad_id
+        coach_check = supabase.table('coach_squads').select('id, can_manage_swimmers').eq(
+            'squad_id', squad_id
+        ).eq('coach_id', user_id).execute()
+        
+        if not coach_check.data:
+            raise HTTPException(status_code=403, detail="Not authorized to add swimmers to this squad")
+        
+        # Create the swimmer
+        swimmer_data = {
+            'first_name': request.swimmer.first_name,
+            'last_name': request.swimmer.last_name,
+            'sex': request.swimmer.sex,
+            'date_of_birth': request.swimmer.date_of_birth,
+            'squad_id': request.swimmer.squad_id
+        }
+        
+        swimmer_result = supabase.table('swimmers').insert(swimmer_data).execute()
+        
+        if not swimmer_result.data:
+            raise HTTPException(status_code=500, detail="Failed to create swimmer")
+        
+        swimmer = swimmer_result.data[0]
+        swimmer_id = swimmer['id']
+        
+        logger.info(f"Created swimmer {swimmer_id}")
+        
+        # Create the external link
+        link_data = {
+            'swimmer_id': swimmer_id,
+            'platform': request.external_link.platform,
+            'external_id': request.external_link.external_id,
+            'external_url': request.external_link.external_url,
+            'external_name': request.external_link.external_name,
+            'birth_year': request.external_link.birth_year,
+            'nation_code': request.external_link.nation_code,
+            'club_name': request.external_link.club_name,
+            'gender': request.external_link.gender,
+            'verified': True,
+            'auto_import_enabled': True,
+            'sync_status': 'pending',
+            'created_by': user_id
+        }
+        
+        link_result = supabase.table('swimmer_external_links').insert(link_data).execute()
+        
+        if not link_result.data:
+            raise HTTPException(status_code=500, detail="Failed to create external link")
+        
+        link = link_result.data[0]
+        external_link_id = link['id']
+        
+        logger.info(f"Created external link {external_link_id}")
+        
+        # Start background sync if requested
+        sync_started = False
+        if request.auto_sync and request.external_link.platform == 'swimrankings':
+            try:
+                from app.tasks.swimrankings_sync import start_swimmer_sync
+                
+                background_tasks.add_task(
+                    start_swimmer_sync,
+                    swimmer_id=swimmer_id,
+                    external_link_id=external_link_id,
+                    external_id=request.external_link.external_id,
+                    limit_events=10  # Initially sync top 10 events, full sync happens in daily job
+                )
+                
+                sync_started = True
+                logger.info(f"Started background sync for swimmer {swimmer_id}")
+                
+            except Exception as e:
+                logger.error(f"Failed to start background sync: {e}")
+                log_error(e, context="start_background_sync", swimmer_id=swimmer_id)
+                # Don't fail the request if background sync fails to start
+        
+        return CreateSwimmerWithLinkResponse(
+            swimmer_id=swimmer_id,
+            external_link_id=external_link_id,
+            sync_started=sync_started,
+            message=f"Swimmer created successfully{' and data import started' if sync_started else ''}"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(e, context="create_swimmer_with_external_link")
+        raise HTTPException(status_code=500, detail="Failed to create swimmer with external link")
+
+
+@router.post("/{swimmer_id}/sync-external-data")
+async def trigger_swimmer_sync(
+    swimmer_id: str,
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Manually trigger a sync of external platform data for a swimmer
+    
+    This endpoint allows coaches to manually re-sync a swimmer's data
+    from their linked external platform (e.g., SwimRankings)
+    
+    Args:
+        swimmer_id: Swimmer ID
+        background_tasks: FastAPI background tasks
+        user_id: Authenticated user ID
+    
+    Returns:
+        Sync status message
+    """
+    logger.info(f"Manual sync triggered for swimmer {swimmer_id}")
+    
+    try:
+        supabase = get_supabase_client()
+        
+        # Verify swimmer exists and get squad_id
+        swimmer_check = supabase.table('swimmers').select('id, squad_id').eq('id', swimmer_id).execute()
+        
+        if not swimmer_check.data:
+            raise HTTPException(status_code=404, detail="Swimmer not found")
+        
+        swimmer = swimmer_check.data[0]
+        squad_id = swimmer.get('squad_id')
+        
+        if not squad_id:
+            raise HTTPException(status_code=400, detail="Swimmer must belong to a squad")
+        
+        # Verify user has permission
+        coach_check = supabase.table('coach_squads').select('id').eq(
+            'squad_id', squad_id
+        ).eq('coach_id', user_id).execute()
+        
+        if not coach_check.data:
+            raise HTTPException(status_code=403, detail="Not authorized to manage this swimmer")
+        
+        # Get SwimRankings link
+        link_result = supabase.table('swimmer_external_links').select('*').eq(
+            'swimmer_id', swimmer_id
+        ).eq('platform', 'swimrankings').execute()
+        
+        if not link_result.data:
+            raise HTTPException(status_code=404, detail="No SwimRankings link found for this swimmer")
+        
+        link = link_result.data[0]
+        
+        # Check if already syncing
+        if link.get('sync_status') == 'in_progress':
+            return {
+                "success": False,
+                "message": "Sync already in progress for this swimmer",
+                "external_link_id": link['id']
+            }
+        
+        # Update status to pending before starting sync
+        supabase.table('swimmer_external_links').update({
+            'sync_status': 'pending',
+            'last_sync_started_at': datetime.utcnow().isoformat()
+        }).eq('id', link['id']).execute()
+        
+        # Start background sync
+        try:
+            from app.tasks.swimrankings_sync import start_swimmer_sync
+            
+            background_tasks.add_task(
+                start_swimmer_sync,
+                swimmer_id=swimmer_id,
+                external_link_id=link['id'],
+                external_id=link['external_id'],
+                limit_events=None  # Full sync
+            )
+            
+            logger.info(f"Started manual sync for swimmer {swimmer_id}")
+            
+            return {
+                "success": True,
+                "message": "Sync started successfully",
+                "external_link_id": link['id']
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to start manual sync: {e}")
+            log_error(e, context="trigger_manual_sync", swimmer_id=swimmer_id)
+            raise HTTPException(status_code=500, detail="Failed to start sync")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(e, context="trigger_swimmer_sync", swimmer_id=swimmer_id)
+        raise HTTPException(status_code=500, detail="Failed to trigger sync")
+
+
+@router.post("/{swimmer_id}/cancel-sync")
+async def cancel_swimmer_sync(
+    swimmer_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Cancel an in-progress sync for a swimmer
+    
+    Args:
+        swimmer_id: Swimmer ID
+        user_id: Authenticated user ID
+    
+    Returns:
+        Cancellation status
+    """
+    logger.info(f"Sync cancellation requested for swimmer {swimmer_id}")
+    
+    try:
+        supabase = get_supabase_client()
+        
+        # Verify swimmer exists and get squad_id
+        swimmer_check = supabase.table('swimmers').select('id, squad_id').eq('id', swimmer_id).execute()
+        
+        if not swimmer_check.data:
+            raise HTTPException(status_code=404, detail="Swimmer not found")
+        
+        swimmer = swimmer_check.data[0]
+        squad_id = swimmer.get('squad_id')
+        
+        if not squad_id:
+            raise HTTPException(status_code=400, detail="Swimmer must belong to a squad")
+        
+        # Verify user has permission
+        coach_check = supabase.table('coach_squads').select('id').eq(
+            'squad_id', squad_id
+        ).eq('coach_id', user_id).execute()
+        
+        if not coach_check.data:
+            raise HTTPException(status_code=403, detail="Not authorized to manage this swimmer")
+        
+        # Get SwimRankings link
+        link_result = supabase.table('swimmer_external_links').select('*').eq(
+            'swimmer_id', swimmer_id
+        ).eq('platform', 'swimrankings').execute()
+        
+        if not link_result.data:
+            raise HTTPException(status_code=404, detail="No SwimRankings link found for this swimmer")
+        
+        link = link_result.data[0]
+        
+        # Check if sync is actually in progress
+        if link.get('sync_status') not in ['in_progress', 'pending']:
+            return {
+                "success": False,
+                "message": f"No active sync to cancel (status: {link.get('sync_status')})"
+            }
+        
+        # Mark as cancelled - the sync task will pick this up
+        supabase.table('swimmer_external_links').update({
+            'sync_status': 'cancelled',
+            'sync_error': 'Cancelled by user'
+        }).eq('id', link['id']).execute()
+        
+        logger.info(f"Marked sync as cancelled for swimmer {swimmer_id}")
+        
+        return {
+            "success": True,
+            "message": "Sync cancellation requested"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(e, context="cancel_swimmer_sync", swimmer_id=swimmer_id)
+        raise HTTPException(status_code=500, detail="Failed to cancel sync")
 

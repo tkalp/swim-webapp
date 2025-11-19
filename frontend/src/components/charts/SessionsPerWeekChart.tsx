@@ -2,9 +2,10 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, LabelList
 } from 'recharts';
+import { memo } from 'react';
 import { Calendar, Trophy, TrendingUp } from 'lucide-react';
 
-export default function SessionsPerWeekChart({
+function SessionsPerWeekChart({
   data, bestWeek,
 }: {
   data: { week: string; sessions: number }[];
@@ -131,3 +132,5 @@ export default function SessionsPerWeekChart({
     </div>
   );
 }
+
+export default memo(SessionsPerWeekChart);

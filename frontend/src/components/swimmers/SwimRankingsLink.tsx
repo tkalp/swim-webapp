@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link2, Trash2, Search, CheckCircle, X } from 'lucide-react';
+import { Link2, Trash2, Search, CheckCircle, X, RefreshCw } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import {
   searchSwimRankings,
@@ -9,17 +9,22 @@ import {
   type SwimRankingsSearchResult,
   type SwimmerExternalLink,
 } from '../../services/swimRankingsService';
+import { triggerSwimmerSync } from '../../services/swimmerService';
 
 interface SwimRankingsLinkProps {
   swimmerId: string;
   firstName?: string;
   lastName?: string;
+  onSyncTrigger?: () => void;
+  syncStatus?: 'idle' | 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 }
 
 export default function SwimRankingsLink({
   swimmerId,
   firstName,
   lastName,
+  onSyncTrigger,
+  syncStatus,
 }: SwimRankingsLinkProps) {
   const { showToast } = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -31,6 +36,7 @@ export default function SwimRankingsLink({
   const [links, setLinks] = useState<SwimmerExternalLink[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const loadLinks = useCallback(async () => {
     try {
@@ -113,6 +119,28 @@ export default function SwimRankingsLink({
     }
   }
 
+  async function handleSync() {
+    try {
+      setSyncing(true);
+      const result = await triggerSwimmerSync(swimmerId);
+      if (result.success) {
+        showToast('Data sync started', 'success');
+        // Trigger callback to update parent component's sync status
+        if (onSyncTrigger) {
+          onSyncTrigger();
+        }
+      } else {
+        showToast(result.message, 'error');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start sync';
+      showToast(message, 'error');
+      setError(message);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const hasSwimRankingsLink = links.some(link => link.platform === 'swimrankings');
 
   return (
@@ -150,11 +178,20 @@ export default function SwimRankingsLink({
                   </span>
                 </div>
               </div>
-              <div className="relative flex items-center gap-1">
+              <div className="relative flex items-center ml-2 gap-1">
+                <button
+                  onClick={handleSync}
+                  disabled={syncing || syncStatus === 'pending' || syncStatus === 'in_progress'}
+                  className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={syncStatus === 'pending' || syncStatus === 'in_progress' ? "Disabled During Sync" : "Sync Data"}
+                >
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                </button>
                 <button
                   onClick={() => handleDelete(link.id)}
-                  className="p-2 text-text-secondary hover:text-danger hover:bg-danger/10 rounded-lg transition-all duration-200"
-                  title="Remove link"
+                  disabled={syncStatus === 'pending' || syncStatus === 'in_progress'}
+                  className="p-2 text-text-secondary hover:text-danger hover:bg-danger/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={syncStatus === 'pending' || syncStatus === 'in_progress' ? "Disabled During Sync" : "Remove link"}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

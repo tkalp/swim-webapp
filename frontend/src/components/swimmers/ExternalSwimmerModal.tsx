@@ -262,7 +262,7 @@ export function ExternalSwimmerModal({ isOpen, onClose }: ExternalSwimmerModalPr
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:text-blue-700"
                       >
-                        View on SwimRankings →
+                        View Profile →
                       </a>
                     </div>
                   </div>

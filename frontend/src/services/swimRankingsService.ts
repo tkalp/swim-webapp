@@ -167,7 +167,7 @@ export async function searchSwimRankings(
   );
 
   if (!response.ok) {
-    throw new Error('Failed to search SwimRankings');
+    throw new Error('Failed to search swimmers');
   }
 
   return response.json();

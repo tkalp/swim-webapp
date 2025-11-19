@@ -9,7 +9,7 @@ import {
   LabelList,
   Cell,
 } from "recharts";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { BarChart3, TrendingUp } from "lucide-react";
 
 type Datum = { label: string; value: number; color: string };
@@ -21,7 +21,7 @@ type Props = {
   totalSessions?: number;
 };
 
-export default function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
+function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
   const total = useMemo(
     () => data.reduce((s, d) => s + (d.value || 0), 0),
     [data]
@@ -171,3 +171,5 @@ export default function AttendanceChart({ data, title, subtitle, totalSessions }
     </div>
   );
 }
+
+export default memo(AttendanceChart);

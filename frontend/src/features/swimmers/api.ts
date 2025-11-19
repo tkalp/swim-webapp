@@ -3,7 +3,23 @@ import { supabase } from "../../lib/supabase";
 export async function getSwimmerBasicInfo(swimmerId: string) {
   const { data, error } = await supabase
     .from('swimmers')
-    .select('id, first_name, last_name, date_of_birth, sex, squad_id')
+    .select(`
+      id, 
+      first_name, 
+      last_name, 
+      date_of_birth, 
+      sex, 
+      squad_id,
+      external_links:swimmer_external_links(
+        id,
+        platform,
+        sync_status,
+        results_count,
+        sync_error,
+        last_sync_started_at,
+        last_sync_completed_at
+      )
+    `)
     .eq('id', swimmerId)
     .single();
   if (error) throw error;

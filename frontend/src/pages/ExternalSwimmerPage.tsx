@@ -17,7 +17,11 @@ import {
   type ExternalSwimmerFinaPoints,
   type ExternalSwimmerBestTime,
 } from '../services/swimRankingsService';
-import { createSwimmerWithExternalLink } from '../services/swimmerService';
+import { 
+  createSwimmerWithExternalLink, 
+  getSwimmerSyncStatus,
+  type SwimmerSyncStatus 
+} from '../services/swimmerService';
 import AddToSquadModal from '../components/swimmers/AddToSquadModal';
 
 export default function ExternalSwimmerPage() {
@@ -32,6 +36,8 @@ export default function ExternalSwimmerPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddToSquad, setShowAddToSquad] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SwimmerSyncStatus | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (!swimmer || !athleteId) {
@@ -78,7 +84,7 @@ export default function ExternalSwimmerPage() {
     const lastName = nameParts.pop() || '';
     const firstName = nameParts.join(' ');
 
-    await createSwimmerWithExternalLink(
+    const result = await createSwimmerWithExternalLink(
       {
         first_name: firstName,
         last_name: lastName,
@@ -97,6 +103,30 @@ export default function ExternalSwimmerPage() {
         gender: swimmer.gender?.toUpperCase() === 'FEMALE' || swimmer.gender?.toUpperCase() === 'F' ? 'F' : 'M',
       }
     );
+
+    // Start tracking sync status if sync was started
+    if (result.sync_started) {
+      setIsSyncing(true);
+      pollSyncStatus(result.external_link_id);
+    }
+  };
+
+  // Poll for sync status updates
+  const pollSyncStatus = async (externalLinkId: string) => {
+    try {
+      const status = await getSwimmerSyncStatus(externalLinkId);
+      setSyncStatus(status);
+
+      // Continue polling if still in progress
+      if (status.sync_status === 'in_progress' || status.sync_status === 'pending') {
+        setTimeout(() => pollSyncStatus(externalLinkId), 2000); // Poll every 2 seconds
+      } else {
+        setIsSyncing(false);
+      }
+    } catch (err) {
+      console.error('Error polling sync status:', err);
+      setIsSyncing(false);
+    }
   };
 
   // Get top performances - unique events only (best time per event)
@@ -183,6 +213,57 @@ export default function ExternalSwimmerPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Sync Status Banner */}
+        {syncStatus && (
+          <div className={`mb-6 p-4 rounded-xl border ${
+            syncStatus.sync_status === 'completed' 
+              ? 'bg-green-500/10 border-green-500/30 text-green-400'
+              : syncStatus.sync_status === 'failed'
+              ? 'bg-red-500/10 border-red-500/30 text-red-400'
+              : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+          }`}>
+            <div className="flex items-center gap-3">
+              {syncStatus.sync_status === 'pending' || syncStatus.sync_status === 'in_progress' ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold">
+                      {syncStatus.sync_status === 'pending' ? 'Preparing to import data...' : 'Importing swimmer data...'}
+                    </p>
+                    {syncStatus.sync_progress !== undefined && syncStatus.sync_total !== undefined && syncStatus.sync_total > 0 && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span>{syncStatus.sync_progress} / {syncStatus.sync_total} events processed</span>
+                          <span>{Math.round((syncStatus.sync_progress / syncStatus.sync_total) * 100)}%</span>
+                        </div>
+                        <div className="w-full bg-blue-500/20 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-blue-500 h-full transition-all duration-300 ease-out"
+                            style={{ width: `${(syncStatus.sync_progress / syncStatus.sync_total) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : syncStatus.sync_status === 'completed' ? (
+                <>
+                  <TrendingUp className="w-5 h-5" />
+                  <p className="font-semibold">Data import completed!</p>
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-5 h-5" />
+                  <p className="font-semibold">Data import failed</p>
+                  {syncStatus.sync_error && (
+                    <p className="text-sm opacity-80 ml-2">{syncStatus.sync_error}</p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Course Selector */}
         <div className="inline-flex gap-1 p-1 bg-background-elevated rounded-xl border border-border/60 mb-8 shadow-md">
