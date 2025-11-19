@@ -93,9 +93,12 @@ export default function AttemptsModal({
         setBestSplits(splitsData);
         setErr("");
       } catch (e: any) {
+        if (!mounted) return;
         setErr(e.message ?? "Failed to load attempts");
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -185,8 +188,6 @@ export default function AttemptsModal({
       percentage
     };
   }, [filteredRows]);
-
-  if (!open) return null;
 
   const captialize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -637,6 +638,8 @@ export default function AttemptsModal({
       </div>
     </div>
   );
+
+  if (!open) return null;
 
   return createPortal(
     <>

@@ -1,4 +1,5 @@
 import { supabase } from "../../lib/supabase"
+import { getApiUrl } from "../../lib/api"
 
 export type ResultRow = {
   id: string
@@ -249,17 +250,12 @@ export type BestSplitsResponse = {
 }
 
 export async function getBestSplits(query: EventQuery): Promise<BestSplitsResponse> {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  const url = new URL(
-    `/api/swimmers/${query.swimmerId}/best-splits/${query.distance}/${query.stroke}`,
-    apiUrl
+  const url = getApiUrl(
+    `swimmers/${query.swimmerId}/best-splits/${query.distance}/${query.stroke}?` +
+    `activity=${query.activity}&equipment=${query.equipment}&result_units=${query.resultUnits}`
   )
   
-  url.searchParams.set('activity', query.activity)
-  url.searchParams.set('equipment', query.equipment)
-  url.searchParams.set('result_units', query.resultUnits)
-  
-  const response = await fetch(url.toString())
+  const response = await fetch(url)
   
   if (!response.ok) {
     throw new Error(`Failed to fetch best splits: ${response.statusText}`)

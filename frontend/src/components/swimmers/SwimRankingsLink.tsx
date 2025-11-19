@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link2, Trash2, Search, CheckCircle, X } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import {
@@ -32,11 +32,7 @@ export default function SwimRankingsLink({
   const [loadingLinks, setLoadingLinks] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadLinks();
-  }, [swimmerId]);
-
-  async function loadLinks() {
+  const loadLinks = useCallback(async () => {
     try {
       setLoadingLinks(true);
       const data = await getSwimmerLinks(swimmerId);
@@ -46,7 +42,11 @@ export default function SwimRankingsLink({
     } finally {
       setLoadingLinks(false);
     }
-  }
+  }, [swimmerId]);
+
+  useEffect(() => {
+    loadLinks();
+  }, [loadLinks]);
 
   async function handleSearch() {
     if (!searchFirstName.trim() || !searchLastName.trim()) {
@@ -87,7 +87,7 @@ export default function SwimRankingsLink({
         gender: result.gender || undefined,
         verified: true,
       });
-
+      
       showToast('Successfully linked swimmer for tracking!', 'success');
       setShowModal(false);
       setSearchResults([]);
