@@ -30,6 +30,27 @@ class WorkerConfig:
     # SwimRankings configuration
     SWIMRANKINGS_BASE_URL: str = 'https://www.swimrankings.net'
     
+    # Proxy configuration
+    USE_OXYLABS_PROXY: bool = os.getenv('USE_OXYLABS_PROXY', 'false').lower() == 'true'
+    OXYLABS_USERNAME: str = os.getenv('OXYLABS_USERNAME', '')
+    OXYLABS_PASSWORD: str = os.getenv('OXYLABS_PASSWORD', '')
+    OXYLABS_COUNTRY: str = os.getenv('OXYLABS_COUNTRY', 'us')
+    
+    @classmethod
+    def get_proxy_config(cls) -> dict:
+        """Get proxy configuration for Playwright"""
+        if not cls.USE_OXYLABS_PROXY or not cls.OXYLABS_USERNAME or not cls.OXYLABS_PASSWORD:
+            return {}
+        
+        # Oxylabs residential proxy endpoint
+        proxy_url = f"http://{cls.OXYLABS_USERNAME}:{cls.OXYLABS_PASSWORD}@pr.oxylabs.io:7777"
+        
+        return {
+            'server': proxy_url,
+            'username': cls.OXYLABS_USERNAME,
+            'password': cls.OXYLABS_PASSWORD
+        }
+    
     @classmethod
     def validate(cls) -> None:
         """Validate required configuration"""

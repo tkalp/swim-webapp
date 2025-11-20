@@ -101,7 +101,19 @@ class BaseScraper(ABC):
         try:
             logger.debug(f"Launching Playwright browser for: {url}")
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                # Get proxy configuration
+                proxy_config = WorkerConfig.get_proxy_config()
+                
+                if proxy_config:
+                    logger.info(f"Using Oxylabs proxy for request")
+                    browser = p.chromium.launch(
+                        headless=True,
+                        proxy=proxy_config
+                    )
+                else:
+                    logger.debug("No proxy configured, using direct connection")
+                    browser = p.chromium.launch(headless=True)
+                
                 context = browser.new_context(
                     viewport={'width': 1920, 'height': 1080},
                     user_agent=self.get_random_user_agent()
