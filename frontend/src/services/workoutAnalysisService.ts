@@ -1,6 +1,6 @@
 // services/workoutAnalysisService.ts
-import { authenticatedFetch } from '../lib/apiClient'
-import { API_BASE_URL } from '../lib/api';
+import { authenticatedFetch } from '@/lib/apiClient'
+import { API_BASE_URL } from '@/lib/api';
 
 export interface WorkoutAnalysis {
   workout_id: string;

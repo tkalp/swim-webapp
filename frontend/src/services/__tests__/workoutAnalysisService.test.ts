@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { analyzeWorkout, getQuickWorkoutStats } from '../workoutAnalysisService'
-import { authenticatedFetch } from '../../lib/apiClient'
+import { authenticatedFetch } from '@/lib/apiClient'
 
 vi.mock('../../lib/apiClient', () => ({
   authenticatedFetch: vi.fn()

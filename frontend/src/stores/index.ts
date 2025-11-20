@@ -1,8 +1,8 @@
 // Re-export all stores for easy importing
-export { useAuthStore } from './authStore'
-export { useSwimmerStore } from './swimmerStore'
-export { useSquadStore } from './squadStore'
-export { useUIStore } from './uiStore'
+export { useAuthStore } from '@/stores/authStore'
+export { useSwimmerStore } from '@/stores/swimmerStore'
+export { useSquadStore } from '@/stores/squadStore'
+export { useUIStore } from '@/stores/uiStore'
 
 // Re-export types
-export type { Squad, SquadCard, SquadDetails } from './squadStore'
+export type { Squad, SquadCard, SquadDetails } from '@/stores/squadStore'

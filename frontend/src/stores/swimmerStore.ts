@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { Swimmer } from '../services/swimmerService'
+import type { Swimmer } from '@/services/swimmerService'
 
 interface SwimmerState {
   // State

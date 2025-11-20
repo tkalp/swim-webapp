@@ -1,4 +1,4 @@
 // components/squad/index.ts
-export { ManageCoaches } from './ManageCoaches';
-export { CoachConnections } from './CoachConnections';
-export { SquadCoachesTab } from './SquadCoachesTab';
+export { ManageCoaches } from '@/components/squad/ManageCoaches';
+export { CoachConnections } from '@/components/squad/CoachConnections';
+export { SquadCoachesTab } from '@/components/squad/SquadCoachesTab';

@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import logo from "../assets/logo.png";
+import { useAuth } from '@/contexts/AuthContext';
+import logo from '@/assets/logo.png';
 
 export default function ResetPassword() {
   const { updatePassword } = useAuth();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle, Clock, XCircle, Calendar } from 'lucide-react';
-import { AttendanceStats as AttendanceStatsType } from '../../../services/attendanceService';
+import { AttendanceStats as AttendanceStatsType } from '@/services/attendanceService';
 
 interface AttendanceStatsProps {
   stats: AttendanceStatsType;

@@ -7,8 +7,8 @@ import {
   removeConnection as removeConnectionService,
   addCoachToSquad as addCoachToSquadService,
   type CoachConnectionsResult,
-} from '../../services/coachService';
-import { useUIStore } from '../../stores/uiStore';
+} from '@/services/coachService';
+import { useUIStore } from '@/stores/uiStore';
 
 /**
  * Coach API hooks with automatic error handling and user feedback

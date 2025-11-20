@@ -1,8 +1,8 @@
 // hooks/usePermissions.ts
 import { useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { usePermissionStore } from '../stores/permissionStore'
-import type { SquadPermissions } from '../services/permissionService'
+import { useAuth } from '@/contexts/AuthContext'
+import { usePermissionStore } from '@/stores/permissionStore'
+import type { SquadPermissions } from '@/services/permissionService'
 
 /**
  * Hook to manage squad permissions for the current user

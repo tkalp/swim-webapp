@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   searchSwimRankings,
   type SwimRankingsSearchResult,
-} from '../../services/swimRankingsService';
+} from '@/services/swimRankingsService';
 
 export function SwimmerSearchBar() {
   const [isOpen, setIsOpen] = useState(false);

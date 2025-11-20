@@ -4,7 +4,7 @@ import { devtools } from 'zustand/middleware'
 import { 
   getCoachPermissions, 
   type SquadPermissions 
-} from '../services/permissionService'
+} from '@/services/permissionService'
 
 interface PermissionState {
   // State - Map of squadId -> permissions

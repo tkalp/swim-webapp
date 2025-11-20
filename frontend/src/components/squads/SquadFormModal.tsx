@@ -1,7 +1,7 @@
 // components/squads/SquadFormModal.tsx
 import { useState } from 'react'
-import Modal from '../ui/Modal'
-import type { CreateSquadData } from '../../services/squadService'
+import Modal from '@/components/ui/Modal'
+import type { CreateSquadData } from '@/services/squadService'
 
 type SquadFormData = {
   name: string

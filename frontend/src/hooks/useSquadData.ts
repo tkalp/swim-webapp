@@ -5,10 +5,10 @@ import {
   getSquadSchedules, 
   getSquadSessions, 
   getSquadCalendarEvents 
-} from '../services/squadService'
-import { useSquadDetails, useSwimmersBySquad, useSquadSchedules, useSquadSessions, useSquadEvents } from './useStores'
-import { useSquadStore } from '../stores/squadStore'
-import { useSwimmerStore } from '../stores/swimmerStore'
+} from '@/services/squadService'
+import { useSquadDetails, useSwimmersBySquad, useSquadSchedules, useSquadSessions, useSquadEvents } from '@/hooks/useStores'
+import { useSquadStore } from '@/stores/squadStore'
+import { useSwimmerStore } from '@/stores/swimmerStore'
 
 export type TabKey = 'overview' | 'team' | 'training' | 'workouts' | 'coaches'
 export type TrainingSubTab = 'schedule' | 'sessions' | 'calendar'

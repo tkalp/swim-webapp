@@ -7,7 +7,7 @@ import {
   inviteCoachToSquad,
   DEFAULT_PERMISSIONS,
 } from '../permissionService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {

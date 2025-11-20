@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import logo from "../assets/logo.png";
+import { useAuth } from '@/contexts/AuthContext';
+import logo from '@/assets/logo.png';
 
 export default function ForgotPassword() {
   const { sendPasswordResetEmail } = useAuth();

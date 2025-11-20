@@ -1,5 +1,5 @@
-import { getApiUrl } from '../lib/api'
-import { authenticatedFetch } from '../lib/apiClient'
+import { getApiUrl } from '@/lib/api'
+import { authenticatedFetch } from '@/lib/apiClient'
 
 // ============================================
 // TYPES

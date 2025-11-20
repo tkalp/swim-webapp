@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Clock, Calendar, MapPin, Users } from 'lucide-react'
-import { useScheduleApi } from '../../hooks/api'
+import { useScheduleApi } from '@/hooks/api'
 
 type TrainingSchedule = {
   id: string

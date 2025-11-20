@@ -8,10 +8,10 @@ import {
   type UpdateSessionData,
   type TrainingSession,
   type TrainingSchedule
-} from '../../services/sessionService'
-import { getSquadSessions } from '../../services/squadService'
-import { useSquadStore } from '../../stores/squadStore'
-import { useUIStore } from '../../stores/uiStore'
+} from '@/services/sessionService'
+import { getSquadSessions } from '@/services/squadService'
+import { useSquadStore } from '@/stores/squadStore'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Session API hooks with automatic store synchronization

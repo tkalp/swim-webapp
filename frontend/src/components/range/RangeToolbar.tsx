@@ -1,6 +1,6 @@
 import { Calendar, Filter, Check } from 'lucide-react';
-import DateInput from '../ui/DateInput';
-import type { RangeKey } from '../../types/stats';
+import DateInput from '@/components/ui/DateInput';
+import type { RangeKey } from '@/types/stats';
 
 type Props = {
   rangeKey: RangeKey;

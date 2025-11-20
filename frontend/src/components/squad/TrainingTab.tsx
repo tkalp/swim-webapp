@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Calendar, List, CalendarDays } from 'lucide-react';
-import WeeklyScheduleView from './WeeklyScheduleView';
-import SessionsList from './SessionsList';
-import CalendarMonth from './CalenderMonth';
-import type { TrainingSubTab } from '../../hooks/useSquadData';
+import WeeklyScheduleView from '@/components/squad/WeeklyScheduleView';
+import SessionsList from '@/components/squad/SessionsList';
+import CalendarMonth from '@/components/squad/CalenderMonth';
+import type { TrainingSubTab } from '@/hooks/useSquadData';
 
 
 interface TrainingTabProps {

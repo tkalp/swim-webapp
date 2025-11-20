@@ -1,1 +1,1 @@
-export { default } from './SquadAttendanceTab';
+export { default } from '@/components/squad/attendance/SquadAttendanceTab';

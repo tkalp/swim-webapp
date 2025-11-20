@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
-import { useAICoach } from '../hooks/useAICoach'
-import TemplateSelector from '../components/ai-coach/TemplateSelector'
-import WorkoutOutput from '../components/ai-coach/WorkoutOutput'
-import PromptTips from '../components/ai-coach/PromptTips'
-import BestTimesInput from '../components/ai-coach/BestTimesInput'
-import type { BestTimes } from '../types/ai-coach/types'
+import { useAICoach } from '@/hooks/useAICoach'
+import TemplateSelector from '@/components/ai-coach/TemplateSelector'
+import WorkoutOutput from '@/components/ai-coach/WorkoutOutput'
+import PromptTips from '@/components/ai-coach/PromptTips'
+import BestTimesInput from '@/components/ai-coach/BestTimesInput'
+import type { BestTimes } from '@/types/ai-coach/types'
 
 export default function AICoachPage() {
   const [prompt, setPrompt] = useState('')

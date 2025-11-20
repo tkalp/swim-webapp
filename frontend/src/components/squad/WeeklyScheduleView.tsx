@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Calendar, Clock, Plus, Edit, Trash2, MapPin, Users } from 'lucide-react'
-import { useScheduleApi } from '../../hooks/api'
-import ScheduleFormModal from './ScheduleFormModal'
-import { SquadPageHeader } from './SquadPageHeader'
+import { useScheduleApi } from '@/hooks/api'
+import ScheduleFormModal from '@/components/squad/ScheduleFormModal'
+import { SquadPageHeader } from '@/components/squad/SquadPageHeader'
 
 type TrainingSchedule = {
   id: string

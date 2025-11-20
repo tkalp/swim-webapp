@@ -5,7 +5,7 @@ import {
   getExternalSwimmerFinaPoints,
   type SwimRankingsSearchResult,
   type ExternalSwimmerFinaPoints,
-} from '../../services/swimRankingsService';
+} from '@/services/swimRankingsService';
 
 interface ExternalSwimmerModalProps {
   isOpen: boolean;

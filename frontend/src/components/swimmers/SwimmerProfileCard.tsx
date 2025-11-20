@@ -1,6 +1,6 @@
 // components/swimmers/SwimmerProfileCard.tsx
-import Avatar from '../ui/Avatar';
-import Badge from '../ui/Badge';
+import Avatar from '@/components/ui/Avatar';
+import Badge from '@/components/ui/Badge';
 
 type Swimmer = {
   id?: string;

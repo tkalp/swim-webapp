@@ -1,10 +1,10 @@
 // components/swimmers/AddToSquadModal.tsx
 import { useState, useEffect } from 'react'
 import { Users, Check, Loader2, UserPlus } from 'lucide-react'
-import Modal from '../ui/Modal'
-import { getSquadsForCoach, type SquadCard } from '../../services/squadService'
-import { useCurrentUser, useAllSquads } from '../../hooks/useStores'
-import { useSquadStore } from '../../stores/squadStore'
+import Modal from '@/components/ui/Modal'
+import { getSquadsForCoach, type SquadCard } from '@/services/squadService'
+import { useCurrentUser, useAllSquads } from '@/hooks/useStores'
+import { useSquadStore } from '@/stores/squadStore'
 
 type ExternalSwimmerData = {
   athlete_id: string

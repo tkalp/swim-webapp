@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { analytics } from '../lib/mixpanel';
+import { analytics } from '@/lib/mixpanel';
 
 /**
  * Custom hook for Mixpanel analytics tracking

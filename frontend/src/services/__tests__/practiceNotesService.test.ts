@@ -7,7 +7,7 @@ import {
   deletePrePracticeNote,
   deletePostPracticeNote
 } from '../practiceNotesService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('practiceNotesService', () => {
   beforeEach(() => {

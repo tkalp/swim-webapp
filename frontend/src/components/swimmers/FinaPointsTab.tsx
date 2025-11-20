@@ -1,6 +1,6 @@
 // components/swimmers/FinaPointsTab.tsx
 import { useState } from "react";
-import FinaPointsRadarChart from "./bestTimes/FinaPointsRadarChart";
+import FinaPointsRadarChart from '@/components/swimmers/bestTimes/FinaPointsRadarChart';
 
 type Swimmer = {
   first_name?: string;

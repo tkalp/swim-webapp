@@ -1,7 +1,7 @@
 // services/workoutResultService.ts
-import { supabase } from '../lib/supabase'
-import { getApiUrl } from '../lib/api'
-import { authenticatedFetch } from '../lib/apiClient'
+import { supabase } from '@/lib/supabase'
+import { getApiUrl } from '@/lib/api'
+import { authenticatedFetch } from '@/lib/apiClient'
 
 export type StrokeType = 'free' | 'back' | 'breast' | 'fly' | 'im'
 export type ActivityType = 'swim' | 'kick' | 'pull' | 'drill'

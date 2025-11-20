@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingDown, TrendingUp, Trophy } from 'lucide-react';
-import { EventSummary, formatTimeFromSeconds } from '../../../services/metricsService';
-import { formatEventName, getActivityBadgeStyles, formatActivity } from './utils';
+import { EventSummary, formatTimeFromSeconds } from '@/services/metricsService';
+import { formatEventName, getActivityBadgeStyles, formatActivity } from '@/components/squad/performance/utils';
 
 interface EventCardProps {
   event: EventSummary;

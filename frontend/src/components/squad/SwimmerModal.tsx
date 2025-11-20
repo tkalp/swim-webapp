@@ -1,9 +1,9 @@
 // components/squad/SwimmerModal.tsx
 import { useState, useEffect } from 'react'
-import DateInput from '../ui/DateInput'
-import Modal from '../ui/Modal'
-import SwimRankingsLink from '../swimmers/SwimRankingsLink'
-import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '../../services/swimmerService'
+import DateInput from '@/components/ui/DateInput'
+import Modal from '@/components/ui/Modal'
+import SwimRankingsLink from '@/components/swimmers/SwimRankingsLink'
+import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '@/services/swimmerService'
 
 type SwimmerFormData = {
   first_name: string
@@ -66,14 +66,10 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
       }
 
       if (mode === 'add') {
-        const result = await onSubmit(swimmerData)
-        // After creating, show tracking option if we got the swimmer back
-        if (result && 'id' in result) {
-          setCreatedSwimmerId(result.id)
-          setShowTracking(true)
-        } else {
-          onClose()
-        }
+        await onSubmit(swimmerData)
+        // Close modal immediately after creating swimmer
+        // Users can add tracking from the swimmer's detail page
+        onClose()
       } else if (swimmer) {
         await onSubmit(swimmerData, swimmer.id)
         onClose()

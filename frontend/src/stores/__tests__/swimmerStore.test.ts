@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useSwimmerStore } from '../swimmerStore'
-import { mockSwimmer } from '../../__tests__/testUtils'
+import { mockSwimmer } from '@/__tests__/testUtils'
 
 describe('swimmerStore', () => {
   beforeEach(() => {

@@ -1,9 +1,9 @@
 // pages/AddSquadPage.tsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import { FormCard, FormField, TextInput, TextArea, FormActions } from '../components/form'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
+import { FormCard, FormField, TextInput, TextArea, FormActions } from '@/components/form'
 import { ArrowLeft, Users } from 'lucide-react'
 
 export default function AddSquadPage() {

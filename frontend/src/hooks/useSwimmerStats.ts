@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getAttendanceStats, getSessionsPerWeek, getSwimmerBasicInfo } from '../services/swimmerService';
-import type { Att, WeekRow } from '../types/stats';
-import { getWeekKey } from '../utils/dateRanges';
+import { getAttendanceStats, getSessionsPerWeek, getSwimmerBasicInfo } from '@/services/swimmerService';
+import type { Att, WeekRow } from '@/types/stats';
+import { getWeekKey } from '@/utils/dateRanges';
 
 export function useSwimmerStats(
   swimmerId: string | undefined,

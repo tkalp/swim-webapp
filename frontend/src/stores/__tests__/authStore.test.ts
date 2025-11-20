@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAuthStore } from '../authStore'
-import { mockUser, mockSupabaseSuccess, mockSupabaseError } from '../../__tests__/testUtils'
-import { mockSupabaseClient } from '../../__tests__/setup'
+import { mockUser, mockSupabaseSuccess, mockSupabaseError } from '@/__tests__/testUtils'
+import { mockSupabaseClient } from '@/__tests__/setup'
 
 describe('authStore', () => {
   beforeEach(() => {

@@ -1,1 +1,1 @@
-export { default as RealtimeWorkoutAnalyzer } from './RealtimeWorkoutAnalyzer';
+export { default as RealtimeWorkoutAnalyzer } from '@/components/workout/RealtimeWorkoutAnalyzer';

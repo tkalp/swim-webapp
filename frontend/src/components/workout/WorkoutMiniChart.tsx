@@ -1,8 +1,8 @@
 // components/workout/WorkoutMiniChart.tsx
 import { useState, useEffect } from 'react';
 import { BarChart3, Loader2 } from 'lucide-react';
-import { getWorkout } from '../../features/workout/api';
-import MiniStackedBar from '../ui/charts/MiniStackedBar';
+import { getWorkoutTemplate } from '@/services/workoutTemplateService';
+import MiniStackedBar from '@/components/ui/charts/MiniStackedBar';
 
 type WorkoutData = {
   id: string;
@@ -63,7 +63,7 @@ export default function WorkoutMiniChart({
     async function fetchWorkout() {
       try {
         setLoading(true);
-        const data = await getWorkout(workoutId);
+        const data = await getWorkoutTemplate(workoutId);
         setWorkout(data);
         // Trigger fade-in animation after data loads
         setTimeout(() => setIsVisible(true), 50);

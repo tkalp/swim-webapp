@@ -1,7 +1,7 @@
 // components/index.ts
-export { WorkoutFormHeader } from './WorkoutFormHeader';
-export { ErrorAlert } from './ErrorAlert';
-export { WorkoutNameInput } from './WorkoutNameInput';
-export { WorkoutDescriptionTextarea } from './WorkoutDescriptionTextarea';
-export { EffortLevelSlider } from './EffortLevelSlider';
-export { EditMetricModal } from './EditMetricModal';
+export { WorkoutFormHeader } from '@/pages/WorkoutForm/components/WorkoutFormHeader';
+export { ErrorAlert } from '@/pages/WorkoutForm/components/ErrorAlert';
+export { WorkoutNameInput } from '@/pages/WorkoutForm/components/WorkoutNameInput';
+export { WorkoutDescriptionTextarea } from '@/pages/WorkoutForm/components/WorkoutDescriptionTextarea';
+export { EffortLevelSlider } from '@/pages/WorkoutForm/components/EffortLevelSlider';
+export { EditMetricModal } from '@/pages/WorkoutForm/components/EditMetricModal';

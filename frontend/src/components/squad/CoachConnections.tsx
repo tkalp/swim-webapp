@@ -1,9 +1,9 @@
 // components/squad/CoachConnections.tsx
 import { useState, useEffect } from 'react';
 import { UserPlus, Check, X, Clock, Mail } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCoachApi } from '../../hooks/api/useCoachApi';
-import type { CoachConnection } from '../../services/coachService';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCoachApi } from '@/hooks/api/useCoachApi';
+import type { CoachConnection } from '@/services/coachService';
 
 export function CoachConnections() {
   const { user } = useAuth();

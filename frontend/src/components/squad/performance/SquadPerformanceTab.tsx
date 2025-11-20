@@ -3,12 +3,12 @@ import { Loader2 } from 'lucide-react';
 import { 
   getSquadPerformance, 
   SquadPerformanceData,
-} from '../../../services/metricsService';
-import { SquadSummaryStats } from '../../squad-analytics/SquadSummaryStats';
+} from '@/services/metricsService';
+import { SquadSummaryStats } from '@/components/squad-analytics/SquadSummaryStats';
 import { SquadPageHeader } from '../SquadPageHeader';
-import { PerformanceHeader } from './PerformanceHeader';
-import { PerformanceTable } from './PerformanceTable';
-import { getDefaultDateRange } from './utils';
+import { PerformanceHeader } from '@/components/squad/performance/PerformanceHeader';
+import { PerformanceTable } from '@/components/squad/performance/PerformanceTable';
+import { getDefaultDateRange } from '@/components/squad/performance/utils';
 
 interface SquadPerformanceTabProps {
   squadId: string;

@@ -9,7 +9,7 @@ import {
   removeTagFromWorkout,
   setWorkoutTags
 } from '../workoutTagService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('workoutTagService', () => {
   beforeEach(() => {

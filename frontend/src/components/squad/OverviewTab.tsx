@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { BarChart3, Trophy, TrendingUp, Lock, CalendarCheck } from 'lucide-react';
-import { usePermissions } from '../../hooks/usePermissions';
-import SquadMetricsTab from './SquadMetrics';
-import SquadRankings from './SquadRankings';
-import { SquadPerformanceTab } from './performance';
-import SquadAttendanceTab from './attendance';
+import { usePermissions } from '@/hooks/usePermissions';
+import SquadMetricsTab from '@/components/squad/SquadMetrics';
+import SquadRankings from '@/components/squad/SquadRankings';
+import { SquadPerformanceTab } from '@/components/squad/performance';
+import SquadAttendanceTab from '@/components/squad/attendance';
 
 interface OverviewTabProps {
   squadId: string;

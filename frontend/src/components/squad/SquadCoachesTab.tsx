@@ -1,6 +1,6 @@
 // components/squad/SquadCoachesTab.tsx
-import { usePermissions } from '../../hooks/usePermissions';
-import { ManageCoaches } from './ManageCoaches';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ManageCoaches } from '@/components/squad/ManageCoaches';
 
 interface SquadCoachesTabProps {
   squadId: string;

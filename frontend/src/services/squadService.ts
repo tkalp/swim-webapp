@@ -1,5 +1,5 @@
 // services/squadService.ts
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 export type Squad = {
   id: string

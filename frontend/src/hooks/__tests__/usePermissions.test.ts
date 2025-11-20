@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { usePermissions } from '../usePermissions'
-import { usePermissionStore } from '../../stores/permissionStore'
-import { useAuth } from '../../contexts/AuthContext'
-import type { SquadPermissions } from '../../services/permissionService'
+import { usePermissionStore } from '@/stores/permissionStore'
+import { useAuth } from '@/contexts/AuthContext'
+import type { SquadPermissions } from '@/services/permissionService'
 
 // Mock the dependencies
 vi.mock('../../contexts/AuthContext', () => ({

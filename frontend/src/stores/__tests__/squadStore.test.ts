@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useSquadStore } from '../squadStore'
-import { mockSquad, mockSquadCard, mockSession, mockSchedule } from '../../__tests__/testUtils'
+import { mockSquad, mockSquadCard, mockSession, mockSchedule } from '@/__tests__/testUtils'
 
 describe('squadStore', () => {
   beforeEach(() => {

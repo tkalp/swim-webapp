@@ -1,6 +1,6 @@
 // components/workout/WorkoutTag.tsx
 import { X } from 'lucide-react';
-import type { WorkoutTag as WorkoutTagType } from '../../types/workoutTags';
+import type { WorkoutTag as WorkoutTagType } from '@/types/workoutTags';
 
 interface WorkoutTagProps {
   tag: WorkoutTagType;

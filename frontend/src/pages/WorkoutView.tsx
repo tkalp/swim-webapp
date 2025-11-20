@@ -19,10 +19,10 @@ import {
   CheckCircle,
   Tag,
 } from "lucide-react";
-import useWorkout from "../hooks/useWorkout";
-import WorkoutBreakdownCharts from "../components/workout/WorkoutBreakdownCharts";
-import { getWorkoutTags } from "../services/workoutTagService";
-import type { WorkoutTag } from "../types/workoutTags";
+import useWorkout from '@/hooks/useWorkout';
+import WorkoutBreakdownCharts from '@/components/workout/WorkoutBreakdownCharts';
+import { getWorkoutTags } from '@/services/workoutTagService';
+import type { WorkoutTag } from '@/types/workoutTags';
 
 export default function WorkoutViewPage() {
   const { workoutId } = useParams<{ workoutId: string }>();

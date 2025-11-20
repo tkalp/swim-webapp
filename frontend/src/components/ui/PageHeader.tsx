@@ -1,7 +1,7 @@
 // components/ui/PageHeader.tsx
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import logo from '@/assets/logo.png';
 
 type Tab = {
   key: string;

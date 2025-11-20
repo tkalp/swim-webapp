@@ -7,7 +7,7 @@ import {
   removeConnection,
   addCoachToSquad,
 } from '../coachService';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {

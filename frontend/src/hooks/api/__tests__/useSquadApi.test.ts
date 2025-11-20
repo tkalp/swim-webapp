@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useSquadApi } from '../useSquadApi'
-import { useSquadStore } from '../../../stores/squadStore'
-import { useUIStore } from '../../../stores/uiStore'
-import * as squadService from '../../../services/squadService'
-import { mockSquad, mockSquadCard } from '../../../__tests__/testUtils'
+import { useSquadStore } from '@/stores/squadStore'
+import { useUIStore } from '@/stores/uiStore'
+import * as squadService from '@/services/squadService'
+import { mockSquad, mockSquadCard } from '@/__tests__/testUtils'
 
 // Mock the services
 vi.mock('../../../services/squadService', () => ({

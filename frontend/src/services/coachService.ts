@@ -1,5 +1,5 @@
 // services/coachService.ts
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface Coach {
   id: string;

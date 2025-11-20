@@ -1,5 +1,5 @@
 // pages/CoachNetwork.tsx
-import { CoachConnections } from '../components/squad/CoachConnections';
+import { CoachConnections } from '@/components/squad/CoachConnections';
 
 export default function CoachNetworkPage() {
   return (

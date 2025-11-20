@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
-import { analytics } from '../lib/mixpanel'
+import { supabase } from '@/lib/supabase'
+import { analytics } from '@/lib/mixpanel'
 
 interface AuthState {
   // State

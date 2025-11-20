@@ -6,7 +6,7 @@ import {
   deactivateSchedule,
   type CreateScheduleData
 } from '../scheduleService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('scheduleService', () => {
   beforeEach(() => {

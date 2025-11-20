@@ -1,8 +1,8 @@
 // components/squads/SquadModal.tsx
 import { useState, useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import Modal from '../ui/Modal'
-import type { Squad, UpdateSquadData } from '../../services/squadService'
+import Modal from '@/components/ui/Modal'
+import type { Squad, UpdateSquadData } from '@/services/squadService'
 
 type SquadFormData = {
   name: string

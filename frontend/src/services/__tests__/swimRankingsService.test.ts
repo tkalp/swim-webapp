@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { searchSwimRankings, linkSwimmer, getSwimmerLinks } from '../swimRankingsService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 // Mock global fetch
 global.fetch = vi.fn()

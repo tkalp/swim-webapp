@@ -1,10 +1,10 @@
 // components/squad/sessions/CreateFromScheduleModal.tsx
 import { useState, useEffect } from 'react';
 import { Calendar, CalendarCheck, CheckCircle } from 'lucide-react';
-import Modal from '../../ui/Modal';
-import DateInput from '../../ui/DateInput';
+import Modal from '@/components/ui/Modal';
+import DateInput from '@/components/ui/DateInput';
 import { format } from 'date-fns';
-import type { TrainingSchedule } from '../../../services/sessionService';
+import type { TrainingSchedule } from '@/services/sessionService';
 
 type CreateFromScheduleModalProps = {
   open: boolean;

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
 
 /**
  * Provider component that initializes the auth store.

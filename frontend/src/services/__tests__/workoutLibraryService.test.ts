@@ -6,7 +6,7 @@ import {
   deleteWorkout,
   duplicateWorkout
 } from '../workoutLibraryService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('workoutLibraryService', () => {
   beforeEach(() => {

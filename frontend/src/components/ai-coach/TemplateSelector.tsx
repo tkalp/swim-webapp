@@ -1,5 +1,5 @@
 // components/ai-coach/TemplateSelector.tsx
-import { WORKOUT_TEMPLATES } from '../../features/ai-coach/api'
+import { WORKOUT_TEMPLATES } from '@/services/aiCoachService'
 
 interface TemplateSelectorProps {
   onSelect: (prompt: string) => void

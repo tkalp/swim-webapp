@@ -10,17 +10,17 @@ import {
   Edit2,
   Trash2,
 } from "lucide-react";
-import SquadModal from "../components/squads/SquadModal";
-import SquadFormModal from "../components/squads/SquadFormModal";
+import SquadModal from '@/components/squads/SquadModal';
+import SquadFormModal from '@/components/squads/SquadFormModal';
 import { 
   useCurrentUser,
   useAllSquads,
   useModal,
-} from "../hooks/useStores";
-import { useSquadApi } from "../hooks/api";
-import { useSquadStore, type Squad, type SquadCard } from "../stores/squadStore";
-import { useUIStore } from "../stores/uiStore";
-import type { UpdateSquadData, CreateSquadData } from "../services/api";
+} from '@/hooks/useStores';
+import { useSquadApi } from '@/hooks/api';
+import { useSquadStore, type Squad, type SquadCard } from '@/stores/squadStore';
+import { useUIStore } from '@/stores/uiStore';
+import type { UpdateSquadData, CreateSquadData } from '@/services/api';
 
 export default function SquadsPage() {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { TrendingDown, TrendingUp, Trophy } from 'lucide-react';
-import { SwimmerPerformance } from '../../../services/metricsService';
-import { getSwimmerInitials } from './utils';
-import { EventCard } from './EventCard';
-import { EventProgressModal } from './EventProgressModal';
+import { SwimmerPerformance } from '@/services/metricsService';
+import { getSwimmerInitials } from '@/components/squad/performance/utils';
+import { EventCard } from '@/components/squad/performance/EventCard';
+import { EventProgressModal } from '@/components/squad/performance/EventProgressModal';
 
 interface SwimmerRowProps {
   swimmer: SwimmerPerformance;

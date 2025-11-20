@@ -17,15 +17,15 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import DateInput from "../ui/DateInput";
-import WorkoutMiniChart from "../workout/WorkoutMiniChart";
-import AddEditSessionModal from "./sessions/AddEditSessionModal";
-import CreateFromScheduleModal from "./sessions/CreateFromScheduleModal";
-import AttendanceModal from "./sessions/AttendanceModal";
-import PracticeNotesModal from "./sessions/PracticeNotesModal";
-import { SquadPageHeader } from "./SquadPageHeader";
-import { createSessionsFromSchedules, type TrainingSchedule } from "../../services/sessionService";
-import { useSessionApi } from "../../hooks/api";
+import DateInput from '@/components/ui/DateInput';
+import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
+import AddEditSessionModal from '@/components/squad/sessions/AddEditSessionModal';
+import CreateFromScheduleModal from '@/components/squad/sessions/CreateFromScheduleModal';
+import AttendanceModal from '@/components/squad/sessions/AttendanceModal';
+import PracticeNotesModal from '@/components/squad/sessions/PracticeNotesModal';
+import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
+import { createSessionsFromSchedules, type TrainingSchedule } from '@/services/sessionService';
+import { useSessionApi } from '@/hooks/api';
 import "@/styles/SessionsList.css";
 
 type Session = {

@@ -1,9 +1,9 @@
 // pages/Login.tsx
 import { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from '@/contexts/AuthContext';
 import { Link, Navigate } from "react-router-dom";
 import { Mail, Lock, LogIn, AlertCircle } from "lucide-react";
-import logo from "../assets/logo.png";
+import logo from '@/assets/logo.png';
 
 export default function Login() {
   const { user, signIn } = useAuth();

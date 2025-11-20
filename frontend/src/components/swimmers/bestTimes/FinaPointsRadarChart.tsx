@@ -10,8 +10,8 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { getSwimmerFinaPoints, type FinaPointsResponse } from "../../../services/finaPointsService";
-import { formatTime } from "../../../utils/timeUtils";
+import { getSwimmerFinaPoints, type FinaPointsResponse } from '@/services/finaPointsService';
+import { formatTime } from '@/utils/timeUtils';
 import { Trophy, Activity } from "lucide-react";
 
 interface FinaPointsRadarChartProps {

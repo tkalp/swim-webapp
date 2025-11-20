@@ -1,7 +1,7 @@
 // pages/WorkoutsLibrary.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dumbbell,
   Plus,
@@ -18,16 +18,16 @@ import {
   Tag as TagIcon,
   X,
 } from "lucide-react";
-import WorkoutMiniChart from "../components/workout/WorkoutMiniChart";
-import { WorkoutTag } from "../components/workout/WorkoutTag";
+import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
+import { WorkoutTag } from '@/components/workout/WorkoutTag';
 import {
   getCoachWorkouts,
   deleteWorkout,
   duplicateWorkout,
   type WorkoutTemplate,
-} from "../services/workoutLibraryService";
-import { getCoachTags } from "../services/workoutTagService";
-import type { WorkoutTag as WorkoutTagType } from "../types/workoutTags";
+} from '@/services/workoutLibraryService';
+import { getCoachTags } from '@/services/workoutTagService';
+import type { WorkoutTag as WorkoutTagType } from '@/types/workoutTags';
 
 export default function WorkoutsLibrary() {
   const navigate = useNavigate();

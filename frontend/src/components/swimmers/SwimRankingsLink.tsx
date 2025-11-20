@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link2, Trash2, Search, CheckCircle, X, RefreshCw } from 'lucide-react';
-import { useToast } from '../../contexts/ToastContext';
+import { useToast } from '@/contexts/ToastContext';
 import {
   searchSwimRankings,
   linkSwimmer,
@@ -8,8 +8,8 @@ import {
   deleteLink,
   type SwimRankingsSearchResult,
   type SwimmerExternalLink,
-} from '../../services/swimRankingsService';
-import { triggerSwimmerSync } from '../../services/swimmerService';
+} from '@/services/swimRankingsService';
+import { triggerSwimmerSync } from '@/services/swimmerService';
 
 interface SwimRankingsLinkProps {
   swimmerId: string;
@@ -17,6 +17,9 @@ interface SwimRankingsLinkProps {
   lastName?: string;
   onSyncTrigger?: () => void;
   syncStatus?: 'idle' | 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
+  syncProgress?: number;
+  syncTotal?: number;
+  onCancelSync?: () => void;
 }
 
 export default function SwimRankingsLink({
@@ -25,6 +28,9 @@ export default function SwimRankingsLink({
   lastName,
   onSyncTrigger,
   syncStatus,
+  syncProgress,
+  syncTotal,
+  onCancelSync,
 }: SwimRankingsLinkProps) {
   const { showToast } = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -153,49 +159,82 @@ export default function SwimRankingsLink({
       ) : links.length > 0 ? (
         <div className="space-y-2">
           {links.map(link => (
-            <div
-              key={link.id}
-              className="group relative flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 hover:from-primary/10 hover:via-accent/10 hover:to-primary/10 rounded-xl border border-primary/20 hover:border-primary/40 shadow-sm hover:shadow-md transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-accent/5 to-primary/0 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300"></div>
-              <div className="relative flex items-center gap-3">
-                <div className="p-2 bg-primary/10 group-hover:bg-primary/20 rounded-lg transition-colors duration-300">
-                  <Link2 className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">
-                      Tracked Swimmer
+            <div key={link.id} className="space-y-2">
+              <div
+                className="group relative flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 hover:from-primary/10 hover:via-accent/10 hover:to-primary/10 rounded-xl border border-primary/20 hover:border-primary/40 shadow-sm hover:shadow-md transition-all duration-300"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-accent/5 to-primary/0 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300"></div>
+                <div className="relative flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 group-hover:bg-primary/20 rounded-lg transition-colors duration-300">
+                    <Link2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">
+                        Tracked Swimmer
+                      </span>
+                      {link.verified && (
+                        <CheckCircle className="w-3.5 h-3.5 text-success" />
+                      )}
+                    </div>
+                    <span className="text-xs text-text-secondary">
+                      {link.external_name}
+                      {link.club_name && ` • ${link.club_name}`}
+                      {link.birth_year && ` • ${link.birth_year}`}
                     </span>
-                    {link.verified && (
-                      <CheckCircle className="w-3.5 h-3.5 text-success" />
+                  </div>
+                </div>
+                <div className="relative flex items-center ml-2 gap-1">
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing || syncStatus === 'pending' || syncStatus === 'in_progress'}
+                    className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={syncStatus === 'pending' || syncStatus === 'in_progress' ? "Disabled During Sync" : "Sync Data"}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(link.id)}
+                    disabled={syncStatus === 'pending' || syncStatus === 'in_progress'}
+                    className="p-2 text-text-secondary hover:text-danger hover:bg-danger/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={syncStatus === 'pending' || syncStatus === 'in_progress' ? "Disabled During Sync" : "Remove link"}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Sync Progress - Small inline loader */}
+              {(syncStatus === 'pending' || syncStatus === 'in_progress') && (
+                <div className="px-4 py-2.5 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 text-cyan-400 animate-spin flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-cyan-400">
+                        {syncStatus === 'pending' ? 'Preparing import...' : 'Syncing...'}
+                      </p>
+                      {syncProgress !== undefined && syncTotal !== undefined && syncTotal > 0 && (
+                        <div className="mt-1.5">
+                          <div className="w-full bg-cyan-500/20 rounded-full h-1 overflow-hidden">
+                            <div 
+                              className="bg-cyan-400 h-full transition-all duration-300 ease-out"
+                              style={{ width: `${(syncProgress / syncTotal) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {onCancelSync && (
+                      <button
+                        onClick={onCancelSync}
+                        className="px-2 py-1 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition-colors flex-shrink-0"
+                      >
+                        Cancel
+                      </button>
                     )}
                   </div>
-                  <span className="text-xs text-text-secondary">
-                    {link.external_name}
-                    {link.club_name && ` • ${link.club_name}`}
-                    {link.birth_year && ` • ${link.birth_year}`}
-                  </span>
                 </div>
-              </div>
-              <div className="relative flex items-center ml-2 gap-1">
-                <button
-                  onClick={handleSync}
-                  disabled={syncing || syncStatus === 'pending' || syncStatus === 'in_progress'}
-                  className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={syncStatus === 'pending' || syncStatus === 'in_progress' ? "Disabled During Sync" : "Sync Data"}
-                >
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                </button>
-                <button
-                  onClick={() => handleDelete(link.id)}
-                  disabled={syncStatus === 'pending' || syncStatus === 'in_progress'}
-                  className="p-2 text-text-secondary hover:text-danger hover:bg-danger/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={syncStatus === 'pending' || syncStatus === 'in_progress' ? "Disabled During Sync" : "Remove link"}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              )}
             </div>
           ))}
         </div>

@@ -10,9 +10,9 @@ import {
   cancelSwimmerSync as cancelSwimmerSyncService,
   type CreateSwimmerData,
   type UpdateSwimmerData
-} from '../../services/swimmerService'
-import { useSwimmerStore } from '../../stores/swimmerStore'
-import { useUIStore } from '../../stores/uiStore'
+} from '@/services/swimmerService'
+import { useSwimmerStore } from '@/stores/swimmerStore'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Swimmer API hooks with automatic store synchronization

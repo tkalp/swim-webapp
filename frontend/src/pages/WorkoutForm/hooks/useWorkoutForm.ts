@@ -1,10 +1,10 @@
 // hooks/useWorkoutForm.ts
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
-import { createWorkoutForSession, getWorkout, updateWorkout } from "../../../features/workout/api";
-import { useAuth } from "../../../contexts/AuthContext";
-import { getWorkoutTags, setWorkoutTags } from "../../../services/workoutTagService";
-import type { WorkoutTag } from "../../../types/workoutTags";
+import { createWorkoutForSession, getWorkoutTemplate, updateWorkoutTemplate } from '@/services/workoutTemplateService';
+import { useAuth } from '@/contexts/AuthContext';
+import { getWorkoutTags, setWorkoutTags } from '@/services/workoutTagService';
+import type { WorkoutTag } from '@/types/workoutTags';
 
 export type WorkoutFormData = {
   name: string;
@@ -53,7 +53,7 @@ export function useWorkoutForm() {
     (async () => {
       try {
         setLoadingWorkout(true);
-        const workout = await getWorkout(workoutId);
+        const workout = await getWorkoutTemplate(workoutId);
         if (!mounted) return;
         
         // Load tags for this workout
@@ -138,7 +138,7 @@ export function useWorkoutForm() {
           json_description: formData.jsonDescription ? JSON.parse(formData.jsonDescription) : null,
         };
 
-        await updateWorkout(workoutId, updatedWorkout);
+        await updateWorkoutTemplate(workoutId, updatedWorkout);
         
         // Save tags
         try {

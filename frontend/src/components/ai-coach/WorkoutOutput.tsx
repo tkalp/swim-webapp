@@ -1,8 +1,8 @@
 // components/ai-coach/WorkoutOutput.tsx
 import { Download, Copy } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import type { GeneratedWorkout } from '../../types/ai-coach/types'
-import logo from '../../assets/logo.png'
+import type { GeneratedWorkout } from '@/types/ai-coach/types'
+import logo from '@/assets/logo.png'
 
 interface WorkoutOutputProps {
   workout: GeneratedWorkout | null

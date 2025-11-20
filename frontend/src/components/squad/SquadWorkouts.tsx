@@ -15,14 +15,14 @@ import {
   TrendingUp,
   Eye,
 } from "lucide-react";
-import { SquadPageHeader } from "./SquadPageHeader";
-import WorkoutMiniChart from "../workout/WorkoutMiniChart";
+import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
+import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
 import {
   getSquadWorkouts,
   deleteWorkout,
   duplicateWorkout,
   type WorkoutTemplate,
-} from "../../services/workoutLibraryService";
+} from '@/services/workoutLibraryService';
 
 type Props = {
   squadId: string;

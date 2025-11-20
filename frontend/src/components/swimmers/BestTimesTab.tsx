@@ -4,13 +4,13 @@ import {
   getSwimmerBestTimes,
   type BestTimeResult,
   type EventQuery,
-} from "../../services/workoutResultService";
-import GroupedBestTimesView from "./bestTimes/GroupedBestTimesView";
-import AttemptsModal from "./bestTimes/AttemptsModal";
-import AddEditWorkoutResultModal from "./bestTimes/AddEditWorkoutResultModal";
-import type { Option } from "../ui/CustomSelect";
-import CustomSelect from "../ui/CustomSelect";
-import { supabase } from "../../lib/supabase";
+} from '@/services/workoutResultService';
+import GroupedBestTimesView from '@/components/swimmers/bestTimes/GroupedBestTimesView';
+import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
+import AddEditWorkoutResultModal from '@/components/swimmers/bestTimes/AddEditWorkoutResultModal';
+import type { Option } from '@/components/ui/CustomSelect';
+import CustomSelect from '@/components/ui/CustomSelect';
+import { supabase } from '@/lib/supabase';
 import { Activity, TrendingUp, Filter, RotateCcw, Plus } from "lucide-react";
 
 type SortOption = "time" | "event" | "date";

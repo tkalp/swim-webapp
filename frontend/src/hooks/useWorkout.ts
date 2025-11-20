@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { getWorkout } from "../features/workout/api";
+import { useState } from 'react';
+import { getWorkoutTemplate } from '@/services/workoutTemplateService';
 
 export type Workout = {
   id: string;
@@ -39,7 +39,7 @@ export default function useWorkout() {
   const fetchWorkout = async (id: string) => {
     try {
       setWorkoutLoading(true);
-      const workout = await getWorkout(id);
+      const workout = await getWorkoutTemplate(id);
       console.log("Fetched workout:", workout);
     
       // Convert to Workout type

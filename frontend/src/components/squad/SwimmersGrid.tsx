@@ -2,8 +2,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, ChevronRight, User, Plus, Edit2, Trash2 } from 'lucide-react'
-import SwimmerModal from './SwimmerModal'
-import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '../../services/swimmerService'
+import SwimmerModal from '@/components/squad/SwimmerModal'
+import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '@/services/swimmerService'
 
 type Props = {
   swimmers: Swimmer[]

@@ -1,10 +1,10 @@
 // components/swimmers/bestTimes/AddEditWorkoutResultModal.tsx
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Ruler, Clock, Target } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
-import CustomSelect, { type Option } from '../../ui/CustomSelect';
-import DateInput from '../../ui/DateInput';
-import Modal from '../../ui/Modal';
+import { supabase } from '@/lib/supabase';
+import CustomSelect, { type Option } from '@/components/ui/CustomSelect';
+import DateInput from '@/components/ui/DateInput';
+import Modal from '@/components/ui/Modal';
 import { format } from 'date-fns';
 
 type WorkoutResultFormData = {

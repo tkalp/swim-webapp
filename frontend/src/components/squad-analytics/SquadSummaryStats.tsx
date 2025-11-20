@@ -1,5 +1,5 @@
 import React from 'react';
-import { SquadSummary } from '../../services/metricsService';
+import { SquadSummary } from '@/services/metricsService';
 import { Users, TrendingDown, Trophy, Award } from 'lucide-react';
 
 interface SquadSummaryStatsProps {

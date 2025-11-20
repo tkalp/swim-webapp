@@ -1,8 +1,8 @@
 // pages/Home.tsx
-import { useAuth } from "../contexts/AuthContext"
+import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from "react-router-dom"
 import { Sparkles, Users, Wrench, Settings as SettingsIcon, LogOut, TrendingUp } from "lucide-react"
-import logo from "../assets/logo.png"
+import logo from '@/assets/logo.png'
 
 export default function Home() {
   const { user, signOut } = useAuth()

@@ -5,7 +5,7 @@ import {
   getSessionAttendanceWithSwimmers,
   bulkUpsertAttendance,
   type AttendanceStatus,
-} from "../../../services/attendanceService";
+} from '@/services/attendanceService';
 
 type AttendanceModalProps = {
   open: boolean;

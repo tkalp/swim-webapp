@@ -1,11 +1,11 @@
 // components/layout/GlobalNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, useEffect } from "react";
-import { NotificationBell } from "./NotificationBell";
-import { SwimmerSearchBar } from "../swimmers/SwimmerSearchBar";
-import logo from "../../assets/logo.png";
+import { NotificationBell } from '@/components/layout/NotificationBell';
+import { SwimmerSearchBar } from '@/components/swimmers/SwimmerSearchBar';
+import logo from '@/assets/logo.png';
 
 interface NavLinkProps {
   to: string;

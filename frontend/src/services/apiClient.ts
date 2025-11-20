@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import { API_BASE_URL } from '../lib/api'
-import { supabase } from '../lib/supabase'
+import { API_BASE_URL } from '@/lib/api'
+import { supabase } from '@/lib/supabase'
 
 // Custom error class for API errors
 export class ApiError extends Error {

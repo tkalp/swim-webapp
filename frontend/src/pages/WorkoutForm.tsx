@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import "@/styles/CreateWorkout.css";
-import { RealtimeWorkoutAnalyzer } from "../components/workout";
-import { TagManager } from "../components/workout/TagManager";
-import { useAuth } from "../contexts/AuthContext";
-import { useWorkoutForm } from "./WorkoutForm/hooks/useWorkoutForm";
+import { RealtimeWorkoutAnalyzer } from '@/components/workout';
+import { TagManager } from '@/components/workout/TagManager';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWorkoutForm } from '@/pages/WorkoutForm/hooks/useWorkoutForm';
 import {
   WorkoutFormHeader,
   ErrorAlert,
@@ -13,7 +13,7 @@ import {
   WorkoutDescriptionTextarea,
   EffortLevelSlider,
   EditMetricModal,
-} from "./WorkoutForm/components";
+} from '@/pages/WorkoutForm/components';
 
 export default function WorkoutFormPage() {
   const { user } = useAuth();

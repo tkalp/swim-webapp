@@ -5,10 +5,10 @@ import {
   getSquadSchedules,
   getSquadSessions,
   getSquadCalendarEvents
-} from '../../services/squadService'
-import { useSquadStore } from '../../stores/squadStore'
-import { useSwimmerStore } from '../../stores/swimmerStore'
-import { useUIStore } from '../../stores/uiStore'
+} from '@/services/squadService'
+import { useSquadStore } from '@/stores/squadStore'
+import { useSwimmerStore } from '@/stores/swimmerStore'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Training data API hooks with automatic store synchronization

@@ -1,7 +1,7 @@
 // services/swimmerService.ts
-import { supabase } from '../lib/supabase'
-import { API_BASE_URL } from '../lib/api'
-import { authenticatedFetch } from '../lib/apiClient'
+import { supabase } from '@/lib/supabase'
+import { API_BASE_URL } from '@/lib/api'
+import { authenticatedFetch } from '@/lib/apiClient'
 
 // Sync status types
 export type SyncStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'

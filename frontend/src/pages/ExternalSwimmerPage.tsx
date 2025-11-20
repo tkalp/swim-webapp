@@ -16,13 +16,13 @@ import {
   type SwimRankingsSearchResult,
   type ExternalSwimmerFinaPoints,
   type ExternalSwimmerBestTime,
-} from '../services/swimRankingsService';
+} from '@/services/swimRankingsService';
 import { 
   createSwimmerWithExternalLink, 
   getSwimmerSyncStatus,
   type SwimmerSyncStatus 
-} from '../services/swimmerService';
-import AddToSquadModal from '../components/swimmers/AddToSquadModal';
+} from '@/services/swimmerService';
+import AddToSquadModal from '@/components/swimmers/AddToSquadModal';
 
 export default function ExternalSwimmerPage() {
   const { slug } = useParams<{ slug: string }>();

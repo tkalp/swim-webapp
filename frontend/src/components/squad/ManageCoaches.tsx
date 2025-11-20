@@ -1,8 +1,8 @@
 // components/squad/ManageCoaches.tsx
 import { useState, useEffect } from 'react';
 import { UserPlus, Shield, Trash2, Mail, Check, X, Settings } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCoachApi } from '../../hooks/api/useCoachApi';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCoachApi } from '@/hooks/api/useCoachApi';
 import {
   getSquadCoaches,
   updateCoachPermissions,
@@ -10,8 +10,8 @@ import {
   DEFAULT_PERMISSIONS,
   type CoachSquadMembership,
   type SquadPermissions,
-} from '../../services/permissionService';
-import type { CoachConnection } from '../../services/coachService';
+} from '@/services/permissionService';
+import type { CoachConnection } from '@/services/coachService';
 
 interface ManageCoachesProps {
   squadId: string;

@@ -2,15 +2,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Users, Loader2 } from "lucide-react";
-import { getSquadById } from "../services/squadService";
-import { updateSquad } from "../services/squadService";
+import { getSquadById } from '@/services/squadService';
+import { updateSquad } from '@/services/squadService';
 import {
   FormCard,
   FormField,
   TextInput,
   TextArea,
   FormActions,
-} from "../components/form";
+} from '@/components/form';
 
 export default function EditSquadPage() {
   const { squadId } = useParams<{ squadId: string }>();

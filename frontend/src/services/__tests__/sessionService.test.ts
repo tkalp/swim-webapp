@@ -5,7 +5,7 @@ import {
   deleteSession,
   createSessionFromSchedule
 } from '../sessionService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('sessionService', () => {
   beforeEach(() => {

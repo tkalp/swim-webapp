@@ -1,22 +1,21 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "../lib/supabase";
-import { usePermissions } from "../hooks/usePermissions";
-import { getSwimmerSyncStatus, type SwimmerSyncStatus } from "../services/swimmerService";
+import { usePermissions } from '@/hooks/usePermissions';
+import { getSwimmerSyncStatus, type SwimmerSyncStatus } from '@/services/swimmerService';
 import { Loader2, TrendingUp, AlertCircle } from "lucide-react";
 
-import AttendanceChart from "../components/charts/AttendanceChart";
-import SessionsPerWeekChart from "../components/charts/SessionsPerWeekChart";
-import SwimmerOverviewStats from "../components/stats/SwimmerOverviewStats";
-import RangeToolbar from "../components/range/RangeToolbar";
-import BestTimesTab from "../components/swimmers/BestTimesTab";
-import FinaPointsTab from "../components/swimmers/FinaPointsTab";
-import SwimRankingsLink from "../components/swimmers/SwimRankingsLink";
+import AttendanceChart from '@/components/charts/AttendanceChart';
+import SessionsPerWeekChart from '@/components/charts/SessionsPerWeekChart';
+import SwimmerOverviewStats from '@/components/stats/SwimmerOverviewStats';
+import RangeToolbar from '@/components/range/RangeToolbar';
+import BestTimesTab from '@/components/swimmers/BestTimesTab';
+import FinaPointsTab from '@/components/swimmers/FinaPointsTab';
+import SwimRankingsLink from '@/components/swimmers/SwimRankingsLink';
 
-import type { RangeKey } from "../types/stats";
-import { useSwimmerStats } from "../hooks/useSwimmerStats";
-import { presetRange, formatRangeSubtitle } from "../utils/dateRanges";
-import PageHeader from "../components/ui/PageHeader";
+import type { RangeKey } from '@/types/stats';
+import { useSwimmerStats } from '@/hooks/useSwimmerStats';
+import { presetRange, formatRangeSubtitle } from '@/utils/dateRanges';
+import PageHeader from '@/components/ui/PageHeader';
 
 
 const TABS = [
@@ -233,57 +232,26 @@ export default function SwimmerPage() {
               lastName={swimmer.last_name}
               onSyncTrigger={handleSyncTrigger}
               syncStatus={syncStatus?.sync_status}
+              syncProgress={syncStatus?.sync_progress}
+              syncTotal={syncStatus?.sync_total}
+              onCancelSync={handleCancelSync}
             />
           )
         }
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
-        {/* Sync Status Banner */}
-        {syncStatus && (syncStatus.sync_status === 'pending' || syncStatus.sync_status === 'in_progress' || syncStatus.sync_status === 'failed') && (
-          <div className={`p-4 rounded-xl border ${
-            syncStatus.sync_status === 'failed'
-              ? 'bg-red-500/10 border-red-500/30 text-red-400'
-              : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
-          }`}>
+        {/* Sync Status Banner - Only show failure */}
+        {syncStatus && syncStatus.sync_status === 'failed' && (
+          <div className="p-4 rounded-xl border bg-red-500/10 border-red-500/30 text-red-400">
             <div className="flex items-center gap-3">
-              {syncStatus.sync_status === 'pending' || syncStatus.sync_status === 'in_progress' ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0 text-cyan-400" />
-                  <div className="flex-1">
-                    <p className="font-semibold">
-                      {syncStatus.sync_status === 'pending' ? 'Preparing to import data...' : 'Importing swimmer data...'}
-                    </p>
-                    {syncStatus.sync_progress !== undefined && syncStatus.sync_total !== undefined && syncStatus.sync_total > 0 && (
-                      <div className="mt-2">
-                        <div className="flex items-center justify-end text-sm mb-1">
-                          <span>{Math.round((syncStatus.sync_progress / syncStatus.sync_total) * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-cyan-500/20 rounded-full h-2 overflow-hidden">
-                          <div 
-                            className="bg-cyan-500 h-full transition-all duration-300 ease-out"
-                            style={{ width: `${(syncStatus.sync_progress / syncStatus.sync_total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={handleCancelSync}
-                    className="px-3 py-1.5 text-sm font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="w-5 h-5" />
-                  <p className="font-semibold">Data import failed</p>
-                  {syncStatus.sync_error && (
-                    <p className="text-sm opacity-80 ml-2">{syncStatus.sync_error}</p>
-                  )}
-                </>
-              )}
+              <AlertCircle className="w-5 h-5" />
+              <div>
+                <p className="font-semibold">Data import failed</p>
+                {syncStatus.sync_error && (
+                  <p className="text-sm opacity-80">{syncStatus.sync_error}</p>
+                )}
+              </div>
             </div>
           </div>
         )}

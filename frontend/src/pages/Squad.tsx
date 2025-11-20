@@ -1,16 +1,16 @@
 // pages/Squad.tsx
 import { useParams, useSearchParams } from 'react-router-dom'
-import { useSquadData, type TabKey } from '../hooks/useSquadData'
-import { usePermissions } from '../hooks/usePermissions'
-import { Shimmer, ErrorToast } from '../components/ui/Loaders'
-import SwimmersGrid from '../components/squad/SwimmersGrid'
-import SquadWorkouts from '../components/squad/SquadWorkouts'
-import { SquadSidebar, SquadMobileNav } from '../components/squad/SquadSidebar'
-import { OverviewTab } from '../components/squad/OverviewTab'
-import { TrainingTab } from '../components/squad/TrainingTab'
-import { SquadCoachesTab } from '../components/squad/SquadCoachesTab'
-import { useSwimmerApi } from '../hooks/api'
-import type { CreateSwimmerData, UpdateSwimmerData } from '../services/swimmerService'
+import { useSquadData, type TabKey } from '@/hooks/useSquadData'
+import { usePermissions } from '@/hooks/usePermissions'
+import { Shimmer, ErrorToast } from '@/components/ui/Loaders'
+import SwimmersGrid from '@/components/squad/SwimmersGrid'
+import SquadWorkouts from '@/components/squad/SquadWorkouts'
+import { SquadSidebar, SquadMobileNav } from '@/components/squad/SquadSidebar'
+import { OverviewTab } from '@/components/squad/OverviewTab'
+import { TrainingTab } from '@/components/squad/TrainingTab'
+import { SquadCoachesTab } from '@/components/squad/SquadCoachesTab'
+import { useSwimmerApi } from '@/hooks/api'
+import type { CreateSwimmerData, UpdateSwimmerData } from '@/services/swimmerService'
 
 export default function SquadPage() {
   const { squadId } = useParams<{ squadId: string }>()

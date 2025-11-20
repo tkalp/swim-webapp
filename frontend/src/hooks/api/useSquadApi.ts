@@ -7,9 +7,9 @@ import {
   deleteSquad as deleteSquadService,
   type CreateSquadData,
   type UpdateSquadData
-} from '../../services/squadService'
-import { useSquadStore } from '../../stores/squadStore'
-import { useUIStore } from '../../stores/uiStore'
+} from '@/services/squadService'
+import { useSquadStore } from '@/stores/squadStore'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Squad API hooks with automatic store synchronization

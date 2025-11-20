@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import GlobalNav from './GlobalNav';
-import { CommandPalette } from './CommandPalette';
+import GlobalNav from '@/components/layout/GlobalNav';
+import { CommandPalette } from '@/components/layout/CommandPalette';
 
 interface GlobalLayoutProps {
   children: React.ReactNode;

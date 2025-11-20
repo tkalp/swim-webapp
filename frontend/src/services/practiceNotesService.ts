@@ -1,5 +1,5 @@
 // services/practiceNotesService.ts
-import { supabase } from "../lib/supabase";
+import { supabase } from '@/lib/supabase';
 import type {
   PrePracticeNote,
   PostPracticeNote,
@@ -7,7 +7,7 @@ import type {
   CreatePostPracticeNoteData,
   UpdatePrePracticeNoteData,
   UpdatePostPracticeNoteData,
-} from "../types/practiceNotes";
+} from '@/types/practiceNotes';
 
 /**
  * Get pre-practice note for a training session

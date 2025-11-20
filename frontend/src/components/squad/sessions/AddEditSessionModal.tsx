@@ -1,9 +1,9 @@
 // components/squad/sessions/AddEditSessionModal.tsx
 import { useState, useEffect } from 'react';
 import { Clock, Calendar, Type, FileText } from 'lucide-react';
-import Modal from '../../ui/Modal';
-import DateInput from '../../ui/DateInput';
-import CustomSelect, { type Option } from '../../ui/CustomSelect';
+import Modal from '@/components/ui/Modal';
+import DateInput from '@/components/ui/DateInput';
+import CustomSelect, { type Option } from '@/components/ui/CustomSelect';
 import { format } from 'date-fns';
 
 type SessionFormData = {

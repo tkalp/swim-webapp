@@ -6,7 +6,7 @@ import {
   type StrokeType,
   type ActivityType
 } from '../workoutResultService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('workoutResultService', () => {
   beforeEach(() => {

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useSwimmerApi } from '../useSwimmerApi'
-import { useSwimmerStore } from '../../../stores/swimmerStore'
-import { useUIStore } from '../../../stores/uiStore'
-import * as swimmerService from '../../../services/swimmerService'
-import { mockSwimmer } from '../../../__tests__/testUtils'
+import { useSwimmerStore } from '@/stores/swimmerStore'
+import { useUIStore } from '@/stores/uiStore'
+import * as swimmerService from '@/services/swimmerService'
+import { mockSwimmer } from '@/__tests__/testUtils'
 
 // Mock the services
 vi.mock('../../../services/swimmerService', () => ({

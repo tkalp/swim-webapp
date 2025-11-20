@@ -1,5 +1,5 @@
 import React from 'react';
-import DateInput from '../../ui/DateInput';
+import DateInput from '@/components/ui/DateInput';
 
 interface PerformanceHeaderProps {
   startDate: string;

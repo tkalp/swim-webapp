@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { usePermissionStore } from '../permissionStore'
-import * as permissionService from '../../services/permissionService'
+import * as permissionService from '@/services/permissionService'
 
 vi.mock('../../services/permissionService', () => ({
   getCoachPermissions: vi.fn(),

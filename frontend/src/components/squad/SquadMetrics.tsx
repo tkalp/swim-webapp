@@ -8,12 +8,12 @@ import {
   getSquadTotalMeters,
   type StrokeBreakdown,
   type ActivityBreakdown,
-} from "../../services/metricsService";
-import AttendanceChart from "../charts/AttendanceChart";
-import DistancePerWeekChart from "../charts/WeeklyDistanceChart";
-import BreakdownChart from "../charts/BreakdownChart";
-import DateInput from "../ui/DateInput";
-import { SquadPageHeader } from "./SquadPageHeader";
+} from '@/services/metricsService';
+
+import DistancePerWeekChart from '@/components/charts/WeeklyDistanceChart';
+import BreakdownChart from '@/components/charts/BreakdownChart';
+import DateInput from '@/components/ui/DateInput';
+import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
 import { Waves, Zap, Calendar, TrendingUp, Users, Check, Activity } from "lucide-react";
 
 export type RangeKey =

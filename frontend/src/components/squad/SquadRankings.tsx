@@ -6,8 +6,8 @@ import {
   type StrokeType, 
   type ActivityType, 
   type SwimmerRanking 
-} from "../../services/workoutResultService";
-import { SquadPageHeader } from "./SquadPageHeader";
+} from '@/services/workoutResultService';
+import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
 import { Trophy, Medal, Award, Timer } from "lucide-react";
 
 const STROKES: { value: StrokeType; label: string }[] = [

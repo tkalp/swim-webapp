@@ -1,5 +1,5 @@
-import { supabase } from '../lib/supabase';
-import { API_BASE_URL } from '../lib/api';
+import { supabase } from '@/lib/supabase';
+import { API_BASE_URL } from '@/lib/api';
 
 export interface SwimRankingsSearchResult {
   athlete_id: string;

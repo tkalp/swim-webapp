@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Timer, Plus, X, Info, ChevronDown, Zap } from 'lucide-react'
-import type { BestTimes } from '../../types/ai-coach/types'
+import type { BestTimes } from '@/types/ai-coach/types'
 
 interface BestTimesInputProps {
   bestTimes: BestTimes

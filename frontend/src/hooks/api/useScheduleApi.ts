@@ -6,10 +6,10 @@ import {
   type CreateScheduleData,
   type UpdateScheduleData,
   type TrainingSchedule
-} from '../../services/scheduleService'
-import { getSquadSchedules } from '../../services/squadService'
-import { useSquadStore } from '../../stores/squadStore'
-import { useUIStore } from '../../stores/uiStore'
+} from '@/services/scheduleService'
+import { getSquadSchedules } from '@/services/squadService'
+import { useSquadStore } from '@/stores/squadStore'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Schedule API hooks with automatic store synchronization

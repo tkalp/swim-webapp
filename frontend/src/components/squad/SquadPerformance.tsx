@@ -3,9 +3,9 @@ import {
   getSquadPerformance, 
   SquadPerformanceData,
   formatTimeFromSeconds 
-} from '../../services/metricsService';
-import { SquadSummaryStats } from '../squad-analytics/SquadSummaryStats';
-import DateInput from '../ui/DateInput';
+} from '@/services/metricsService';
+import { SquadSummaryStats } from '@/components/squad-analytics/SquadSummaryStats';
+import DateInput from '@/components/ui/DateInput';
 import { Loader2, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 
 interface SquadPerformanceTabProps {

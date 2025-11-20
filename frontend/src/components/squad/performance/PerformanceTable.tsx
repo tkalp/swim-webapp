@@ -1,6 +1,6 @@
 import React from 'react';
-import { SwimmerPerformance } from '../../../services/metricsService';
-import { SwimmerRow } from './SwimmerRow';
+import { SwimmerPerformance } from '@/services/metricsService';
+import { SwimmerRow } from '@/components/squad/performance/SwimmerRow';
 
 interface PerformanceTableProps {
   swimmers: SwimmerPerformance[];

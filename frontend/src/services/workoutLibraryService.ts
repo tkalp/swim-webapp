@@ -1,6 +1,6 @@
 // services/workoutLibraryService.ts
-import { supabase } from "../lib/supabase";
-import type { WorkoutTag } from "../types/workoutTags";
+import { supabase } from '@/lib/supabase';
+import type { WorkoutTag } from '@/types/workoutTags';
 
 export type WorkoutTemplate = {
   id: string;

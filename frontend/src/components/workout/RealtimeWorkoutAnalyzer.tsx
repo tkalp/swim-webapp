@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BarChart3, Target, Clock, Waves, ChevronDown, ChevronUp, Activity, Flame, Edit2 } from 'lucide-react';
-import { analyzeWorkout, type WorkoutAnalysis } from '../../services/workoutAnalysisService';
-import { useAnimatedValues } from '../../hooks/useAnimatedValue';
+import { analyzeWorkout, type WorkoutAnalysis } from '@/services/workoutAnalysisService';
+import { useAnimatedValues } from '@/hooks/useAnimatedValue';
 
 interface RealtimeWorkoutAnalyzerProps {
   workoutText: string;

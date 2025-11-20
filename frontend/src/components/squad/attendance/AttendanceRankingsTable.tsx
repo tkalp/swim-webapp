@@ -1,5 +1,5 @@
 import React from 'react';
-import { SwimmerAttendance } from '../../../services/attendanceService';
+import { SwimmerAttendance } from '@/services/attendanceService';
 
 interface AttendanceRankingsTableProps {
   swimmers: SwimmerAttendance[];

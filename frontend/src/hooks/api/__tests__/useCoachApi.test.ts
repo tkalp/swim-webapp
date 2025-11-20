@@ -2,8 +2,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCoachApi } from '../useCoachApi';
-import { useUIStore } from '../../../stores/uiStore';
-import * as coachService from '../../../services/coachService';
+import { useUIStore } from '@/stores/uiStore';
+import * as coachService from '@/services/coachService';
 
 // Mock the service
 vi.mock('../../../services/coachService', () => ({

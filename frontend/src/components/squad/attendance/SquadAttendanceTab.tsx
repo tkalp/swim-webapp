@@ -3,11 +3,11 @@ import { Loader2 } from 'lucide-react';
 import { 
   getSquadAttendanceRankings, 
   SquadAttendanceData,
-} from '../../../services/attendanceService';
+} from '@/services/attendanceService';
 import { SquadPageHeader } from '../SquadPageHeader';
-import { AttendanceHeader } from './AttendanceHeader';
-import { AttendanceStats } from './AttendanceStats';
-import { AttendanceRankingsTable } from './AttendanceRankingsTable';
+import { AttendanceHeader } from '@/components/squad/attendance/AttendanceHeader';
+import { AttendanceStats } from '@/components/squad/attendance/AttendanceStats';
+import { AttendanceRankingsTable } from '@/components/squad/attendance/AttendanceRankingsTable';
 import { getDefaultDateRange } from '../performance/utils';
 
 interface SquadAttendanceTabProps {

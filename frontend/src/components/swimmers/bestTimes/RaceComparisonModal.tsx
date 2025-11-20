@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, TrendingDown, TrendingUp, Minus, BarChart3, Clock, Timer } from "lucide-react";
-import { formatTime, intervalToSeconds } from "../../../utils/timeUtils";
-import type { RaceSplit } from "../../../services/workoutResultService";
+import { formatTime, intervalToSeconds } from '@/utils/timeUtils';
+import type { RaceSplit } from '@/services/workoutResultService';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 type RaceAttempt = {

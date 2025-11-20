@@ -8,13 +8,13 @@ import {
   intervalToSeconds,
   type RaceSplit,
   type BestSplitsResponse,
-} from "../../../services/workoutResultService";
-import AttemptsStats from "./AttemptsStats";
-import AttemptsChart from "./AttemptsChart";
-import RaceComparisonModal from "./RaceComparisonModal";
+} from '@/services/workoutResultService';
+import AttemptsStats from '@/components/swimmers/bestTimes/AttemptsStats';
+import AttemptsChart from '@/components/swimmers/bestTimes/AttemptsChart';
+import RaceComparisonModal from '@/components/swimmers/bestTimes/RaceComparisonModal';
 import { X, AlertCircle, Activity, Edit2, Trash2, Calendar, Clock, ChevronDown, TrendingUp, TrendingDown, GitCompare } from "lucide-react";
-import { supabase } from "../../../lib/supabase";
-import { useAnalytics } from "../../../hooks/useAnalytics";
+import { supabase } from '@/lib/supabase';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function AttemptsModal({
   open,

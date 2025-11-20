@@ -1,4 +1,4 @@
-import type { RangeKey } from "../types/stats";
+import type { RangeKey } from '@/types/stats';
 
 
 export function startOfWeek(d = new Date()) {

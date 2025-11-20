@@ -1,10 +1,10 @@
 // components/workout/TagManager.tsx
 import { useState, useEffect } from 'react';
 import { Plus, X, Check } from 'lucide-react';
-import { WorkoutTag } from './WorkoutTag';
-import { getCoachTags, createTag } from '../../services/workoutTagService';
-import type { WorkoutTag as WorkoutTagType } from '../../types/workoutTags';
-import { TAG_COLORS } from '../../types/workoutTags';
+import { WorkoutTag } from '@/components/workout/WorkoutTag';
+import { getCoachTags, createTag } from '@/services/workoutTagService';
+import type { WorkoutTag as WorkoutTagType } from '@/types/workoutTags';
+import { TAG_COLORS } from '@/types/workoutTags';
 
 interface TagManagerProps {
   coachId: string;

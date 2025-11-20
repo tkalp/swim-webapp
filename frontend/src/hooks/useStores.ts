@@ -3,10 +3,10 @@
  * These hooks provide optimized selectors to prevent unnecessary re-renders.
  */
 
-import { useAuthStore } from '../stores/authStore'
-import { useSwimmerStore } from '../stores/swimmerStore'
-import { useSquadStore } from '../stores/squadStore'
-import { useUIStore } from '../stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useSwimmerStore } from '@/stores/swimmerStore'
+import { useSquadStore } from '@/stores/squadStore'
+import { useUIStore } from '@/stores/uiStore'
 import { useMemo } from 'react'
 
 // ============ Auth Hooks ============

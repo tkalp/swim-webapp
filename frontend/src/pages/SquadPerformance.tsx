@@ -5,8 +5,8 @@ import {
   SquadPerformanceData,
   SwimmerPerformance,
   formatTimeFromSeconds 
-} from '../services/metricsService';
-import { SquadSummaryStats } from '../components/squad-analytics/SquadSummaryStats';
+} from '@/services/metricsService';
+import { SquadSummaryStats } from '@/components/squad-analytics/SquadSummaryStats';
 import { ArrowLeft, Calendar, Loader2, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 
 export const SquadPerformance: React.FC = () => {

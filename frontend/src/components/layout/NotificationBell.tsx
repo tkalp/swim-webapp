@@ -1,7 +1,7 @@
 // components/layout/NotificationBell.tsx
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, X } from 'lucide-react';
-import { useNotifications } from '../../hooks/useNotifications';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
 
 export function NotificationBell() {

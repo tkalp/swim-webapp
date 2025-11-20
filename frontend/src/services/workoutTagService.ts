@@ -1,7 +1,7 @@
 // services/workoutTagService.ts
-import { supabase } from "../lib/supabase";
-import type { WorkoutTag, CreateTagData, UpdateTagData } from "../types/workoutTags";
-import { API_BASE_URL as API_URL } from '../lib/api';
+import { supabase } from '@/lib/supabase';
+import type { WorkoutTag, CreateTagData, UpdateTagData } from '@/types/workoutTags';
+import { API_BASE_URL as API_URL } from '@/lib/api';
 
 /**
  * Get all tags for a coach

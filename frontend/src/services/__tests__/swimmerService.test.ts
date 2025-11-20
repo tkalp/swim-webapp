@@ -9,7 +9,7 @@ import {
   triggerSwimmerSync,
   cancelSwimmerSync
 } from '../swimmerService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('swimmerService', () => {
   beforeEach(() => {

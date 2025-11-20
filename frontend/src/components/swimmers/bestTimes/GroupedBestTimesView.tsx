@@ -1,7 +1,7 @@
 // components/swimmer/bestTimes/GroupedBestTimesView.tsx
 import { useMemo } from "react";
-import type { BestTimeResult } from "../../../services/workoutResultService";
-import { formatTime } from "../../../utils/timeUtils";
+import type { BestTimeResult } from '@/services/workoutResultService';
+import { formatTime } from '@/utils/timeUtils';
 import { Clock, Activity, Edit2, TrendingDown, TrendingUp, Minus } from "lucide-react";
 
 const STROKE_ORDER = ["free", "back", "breast", "fly", "im"] as const;

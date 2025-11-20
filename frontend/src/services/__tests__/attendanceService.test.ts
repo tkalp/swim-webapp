@@ -8,7 +8,7 @@ import {
   getSessionAttendanceWithSwimmers,
   type AttendanceStatus
 } from '../attendanceService'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 describe('attendanceService', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 // lib/apiClient.ts
-import { supabase } from './supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Get authorization headers for API requests

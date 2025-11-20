@@ -6,8 +6,8 @@ import {
   getPostPracticeNote,
   upsertPrePracticeNote,
   upsertPostPracticeNote,
-} from '../../../services/practiceNotesService';
-import type { PrePracticeNote, PostPracticeNote } from '../../../types/practiceNotes';
+} from '@/services/practiceNotesService';
+import type { PrePracticeNote, PostPracticeNote } from '@/types/practiceNotes';
 
 interface PracticeNotesModalProps {
   open: boolean;

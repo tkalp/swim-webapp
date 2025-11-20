@@ -1,7 +1,7 @@
 // hooks/useAICoach.ts
 import { useState, useCallback } from 'react'
-import { generateWorkout } from '../features/ai-coach/api'
-import type { GeneratedWorkout, BestTimes } from '../types/ai-coach/types'
+import { generateWorkout } from '@/services/aiCoachService'
+import type { GeneratedWorkout, BestTimes } from '@/types/ai-coach/types'
 
 export function useAICoach() {
   const [loading, setLoading] = useState(false)

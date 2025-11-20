@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import "@/styles/CreateWorkout.css";
-import { RealtimeWorkoutAnalyzer } from "../../components/workout";
-import { useWorkoutForm } from "./hooks/useWorkoutForm";
+import { RealtimeWorkoutAnalyzer } from '@/components/workout';
+import { useWorkoutForm } from '@/pages/WorkoutForm/hooks/useWorkoutForm';
 import {
   WorkoutFormHeader,
   ErrorAlert,
@@ -11,7 +11,7 @@ import {
   WorkoutDescriptionTextarea,
   EffortLevelSlider,
   EditMetricModal,
-} from "./components";
+} from '@/pages/WorkoutForm/components';
 
 export default function WorkoutFormPage() {
   const {

@@ -1,5 +1,5 @@
 // services/sessionService.ts
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 export type TrainingSession = {
   id: string

@@ -12,7 +12,7 @@ import {
   ArrowRight,
   Clock
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Command {
   id: string;
