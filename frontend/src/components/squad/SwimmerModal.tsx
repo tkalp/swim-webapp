@@ -86,7 +86,6 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
   }
 
   const handleClose = () => {
-    const wasTracking = showTracking
     setFormData({
       first_name: '',
       last_name: '',
@@ -96,11 +95,6 @@ export default function SwimmerModal({ isOpen, mode, swimmer, squadId, onClose, 
     setShowTracking(false)
     setCreatedSwimmerId(null)
     onClose()
-    
-    // If we were showing tracking, reload to show the new swimmer
-    if (wasTracking) {
-      window.location.reload()
-    }
   }
 
   if (!isOpen) return null

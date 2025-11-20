@@ -71,7 +71,7 @@ cd /root
 git clone git@github.com:lablytics/aquilus-webapp.git
 
 cd aquilus-webapp
-git checkout feature/improving-layout
+git checkout feature/add-search-swimmer-feature
 
 # Create .env file with secrets from Terraform
 cat > /root/aquilus-webapp/.env << 'ENVFILE'
@@ -108,8 +108,17 @@ cat > /root/aquilus-webapp/deploy.sh << 'DEPLOYSCRIPT'
 cd /root/aquilus-webapp
 git pull
 docker-compose down
-docker-compose build
+docker-compose build --no-cache
 docker-compose up -d
+
+# Verify all services are running
+echo "Checking service health..."
+sleep 10
+docker-compose ps
+
+# Show worker logs to verify it started
+echo "Worker service logs:"
+docker-compose logs worker --tail 50
 DEPLOYSCRIPT
 chmod +x /root/aquilus-webapp/deploy.sh
 
@@ -121,6 +130,14 @@ cat > /etc/logrotate.d/aquilus << 'LOGROTATE'
     compress
     missingok
     notifempty
+}
+/var/lib/docker/containers/*/*.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+    maxsize 100M
 }
 LOGROTATE
 

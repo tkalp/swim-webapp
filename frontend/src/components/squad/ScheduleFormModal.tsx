@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Clock, Calendar, MapPin, Users } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { useScheduleApi } from '../../hooks/api'
 
 type TrainingSchedule = {
   id: string
@@ -40,6 +40,7 @@ export default function ScheduleFormModal({
   onClose, 
   onSave 
 }: ScheduleFormModalProps) {
+  const { createSchedule, updateSchedule } = useScheduleApi()
   const [formData, setFormData] = useState({
     day_of_week: (initialDay as any) || 'Monday',
     start_time: '17:00',
@@ -103,26 +104,17 @@ export default function ScheduleFormModal({
       }
 
       if (schedule) {
-        // Update existing schedule
-        const { error } = await supabase
-          .from('training_schedules')
-          .update(data)
-          .eq('id', schedule.id)
-        
-        if (error) throw error
+        // Update existing schedule - store is automatically updated
+        await updateSchedule(schedule.id, squadId, data)
       } else {
-        // Create new schedule
-        const { error } = await supabase
-          .from('training_schedules')
-          .insert([data])
-        
-        if (error) throw error
+        // Create new schedule - store is automatically updated
+        await createSchedule(data)
       }
 
-      onSave()
+      onSave() // Close modal
     } catch (error) {
+      // Error toast is automatically shown by the hook
       console.error('Error saving schedule:', error)
-      alert('Failed to save schedule. Please try again.')
     } finally {
       setLoading(false)
     }

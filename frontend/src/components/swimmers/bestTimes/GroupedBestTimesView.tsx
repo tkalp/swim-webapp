@@ -106,15 +106,7 @@ function TableView({
       }
       eventMap.get(key)!.items.push(item);
     });
-    
-    // Log for debugging
-    console.log(`Stroke: ${group.label}`, Array.from(eventMap.entries()).map(([key, event]) => ({
-      key,
-      distance: event.distance,
-      itemDistances: event.items.map(i => i.distance),
-      itemCourses: event.items.map(i => i.resultUnits)
-    })));
-    
+        
     return {
       ...group,
       events: Array.from(eventMap.values()).sort((a, b) => a.distance - b.distance)

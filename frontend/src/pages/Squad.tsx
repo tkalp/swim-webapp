@@ -1,6 +1,5 @@
 // pages/Squad.tsx
-import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Waves, Users } from 'lucide-react'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useSquadData, type TabKey } from '../hooks/useSquadData'
 import { useSquadPermissions } from '../hooks/useSquadPermissions'
 import { Shimmer, ErrorToast } from '../components/ui/Loaders'
@@ -10,21 +9,25 @@ import { SquadSidebar, SquadMobileNav } from '../components/squad/SquadSidebar'
 import { OverviewTab } from '../components/squad/OverviewTab'
 import { TrainingTab } from '../components/squad/TrainingTab'
 import { SquadCoachesTab } from '../components/squad/SquadCoachesTab'
-import { createSwimmer, updateSwimmer, deleteSwimmer, type CreateSwimmerData, type UpdateSwimmerData } from '../services/swimmerService'
+import { useSwimmerApi } from '../hooks/api'
+import type { CreateSwimmerData, UpdateSwimmerData } from '../services/swimmerService'
 
 export default function SquadPage() {
   const { squadId } = useParams<{ squadId: string }>()
-  const { squad, swimmers, schedules, sessions, events, loading, err } = useSquadData(squadId)
+  const { squad, swimmers, schedules, sessions, events, loading, err, refetch } = useSquadData(squadId)
   const { hasPermission } = useSquadPermissions(squadId || '')
   const [params, setParams] = useSearchParams()
   const tab = (params.get('tab') as TabKey) || 'overview'
+  
+  // Use API hooks with auto-store-sync
+  const { createSwimmer, updateSwimmer, deleteSwimmer } = useSwimmerApi()
 
   const setTab = (t: TabKey) => {
     params.set('tab', t)
     setParams(params, { replace: true })
   }
 
-  // Swimmer CRUD handlers
+  // Swimmer CRUD handlers - now using API hooks that auto-update the store
   const handleAddSwimmer = async (swimmerData: CreateSwimmerData) => {
     if (!squadId) throw new Error('Squad ID is required')
     
@@ -39,16 +42,16 @@ export default function SquadPage() {
 
   const handleEditSwimmer = async (swimmerId: string, updates: UpdateSwimmerData) => {
     await updateSwimmer(swimmerId, updates)
-    
-    // Reload to show updated data
-    window.location.reload()
+    // No need to reload - store is automatically updated!
   }
 
   const handleDeleteSwimmer = async (swimmerId: string) => {
     await deleteSwimmer(swimmerId)
-    
-    // For now, we'll let the parent component handle the refetch
-    window.location.reload()
+    // No need to reload - store is automatically updated!
+  }
+
+  const handleRefresh = async () => {
+    await refetch()
   }
 
   return (
@@ -81,13 +84,13 @@ export default function SquadPage() {
               {tab === 'training' && squadId && (
                 <TrainingTab 
                   squadId={squadId}
-                  schedules={schedules}
-                  sessions={sessions}
-                  events={events}
+                  schedules={schedules || []}
+                  sessions={sessions || []}
+                  events={events || []}
                   canManageSessions={hasPermission('can_manage_sessions')}
                   canManageSchedules={hasPermission('can_manage_schedules')}
                   canManageAttendance={hasPermission('can_manage_attendance')}
-                  onRefresh={() => window.location.reload()}
+                  onRefresh={handleRefresh}
                 />
               )}
               {tab === 'workouts' && squadId && (

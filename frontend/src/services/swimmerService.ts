@@ -1,8 +1,6 @@
 // services/swimmerService.ts
 import { supabase } from '../lib/supabase'
-
-// API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../lib/api'
 
 // Sync status types
 export type SyncStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'
@@ -132,7 +130,7 @@ export async function createSwimmerWithExternalLink(
   }
 
   // Call new backend endpoint that handles both creation and sync
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/swimmers/with-external-link`, {
+  const response = await fetch(`${API_BASE_URL}/swimmers/with-external-link`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -244,25 +244,24 @@ export default function SwimmerPage() {
           <div className={`p-4 rounded-xl border ${
             syncStatus.sync_status === 'failed'
               ? 'bg-red-500/10 border-red-500/30 text-red-400'
-              : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+              : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
           }`}>
             <div className="flex items-center gap-3">
               {syncStatus.sync_status === 'pending' || syncStatus.sync_status === 'in_progress' ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
+                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0 text-cyan-400" />
                   <div className="flex-1">
                     <p className="font-semibold">
                       {syncStatus.sync_status === 'pending' ? 'Preparing to import data...' : 'Importing swimmer data...'}
                     </p>
                     {syncStatus.sync_progress !== undefined && syncStatus.sync_total !== undefined && syncStatus.sync_total > 0 && (
                       <div className="mt-2">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span>{syncStatus.sync_progress} / {syncStatus.sync_total} events processed</span>
+                        <div className="flex items-center justify-end text-sm mb-1">
                           <span>{Math.round((syncStatus.sync_progress / syncStatus.sync_total) * 100)}%</span>
                         </div>
-                        <div className="w-full bg-blue-500/20 rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-cyan-500/20 rounded-full h-2 overflow-hidden">
                           <div 
-                            className="bg-blue-500 h-full transition-all duration-300 ease-out"
+                            className="bg-cyan-500 h-full transition-all duration-300 ease-out"
                             style={{ width: `${(syncStatus.sync_progress / syncStatus.sync_total) * 100}%` }}
                           />
                         </div>

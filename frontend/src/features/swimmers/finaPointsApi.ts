@@ -1,5 +1,6 @@
 // features/swimmers/finaPointsApi.ts
 import { getApiUrl } from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 
 export interface FinaPointsByStroke {
   best_fina_points: number;
@@ -57,6 +58,13 @@ export async function getSwimmerFinaPoints(
   activity: string = "swim",
   equipment: string = "none"
 ): Promise<FinaPointsResponse> {
+  // Get the current session for authentication
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    throw new Error('Not authenticated')
+  }
+
   const params = new URLSearchParams({
     gender,
     course,
@@ -65,7 +73,12 @@ export async function getSwimmerFinaPoints(
   });
 
   const response = await fetch(
-    getApiUrl(`swimmers/${swimmerId}/fina-points?${params.toString()}`)
+    getApiUrl(`swimmers/${swimmerId}/fina-points?${params.toString()}`),
+    {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    }
   );
 
   if (!response.ok) {
@@ -90,8 +103,20 @@ export interface SupportedEventsResponse {
 export async function getSupportedFinaEvents(
   course: "LCM" | "SCM" = "LCM"
 ): Promise<SupportedEventsResponse> {
+  // Get the current session for authentication
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    throw new Error('Not authenticated')
+  }
+
   const response = await fetch(
-    getApiUrl(`swimmers/fina/supported-events?course=${course}`)
+    getApiUrl(`swimmers/fina/supported-events?course=${course}`),
+    {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    }
   );
 
   if (!response.ok) {

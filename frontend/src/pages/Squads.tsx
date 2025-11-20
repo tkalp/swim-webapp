@@ -1,6 +1,5 @@
 // pages/SquadsPage.tsx
-import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -13,53 +12,53 @@ import {
 } from "lucide-react";
 import SquadModal from "../components/squads/SquadModal";
 import SquadFormModal from "../components/squads/SquadFormModal";
-import {
-  getSquadsForCoach,
-  deleteSquad,
-  updateSquad,
-  createSquad,
-  type SquadCard,
-  type Squad,
-  type UpdateSquadData,
-  type CreateSquadData,
-} from "../services/squadService";
+import { 
+  useCurrentUser,
+  useAllSquads,
+  useModal,
+} from "../hooks/useStores";
+import { useSquadApi } from "../hooks/api";
+import { useSquadStore, type Squad, type SquadCard } from "../stores/squadStore";
+import { useUIStore } from "../stores/uiStore";
+import type { UpdateSquadData, CreateSquadData } from "../services/api";
 
 export default function SquadsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const user = useCurrentUser();
   const coachId = user?.id;
 
-  const [items, setItems] = useState<SquadCard[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string>("");
-
-  // Modal states
-  const [showModal, setShowModal] = useState(false)
-  const [modalMode, setModalMode] = useState<'edit' | 'delete'>('edit')
-  const [selectedSquad, setSelectedSquad] = useState<Squad | null>(null)
+  // Use stores instead of local state
+  const items = useAllSquads();
+  const loading = useSquadStore(state => state.loading);
+  const error = useSquadStore(state => state.error);
   
-  // Create squad modal state
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  // Use API hook with auto-store-sync
+  const { fetchSquadsForCoach, createSquad, updateSquad, deleteSquad } = useSquadApi();
+  
+  // Use UI store for modals
+  const editModal = useModal('squad-edit');
+  const deleteModal = useModal('squad-delete');
+  const createModal = useModal('squad-create');
 
   useEffect(() => {
     if (!coachId) return;
     let mounted = true;
+    
+    const { setLoading, setError } = useSquadStore.getState();
+    
     setLoading(true);
-    getSquadsForCoach(coachId)
-      .then((data) => {
+    fetchSquadsForCoach(coachId)
+      .catch((e) => {
         if (mounted) {
-          setItems(data);
-          setErr("");
+          setError(e.message ?? "Failed to load squads");
         }
       })
-      .catch((e) => {
-        if (mounted) setErr(e.message ?? "Failed to load squads");
-      })
       .finally(() => mounted && setLoading(false));
+    
     return () => {
       mounted = false;
     };
-  }, [coachId]);
+  }, [coachId, fetchSquadsForCoach]);
 
   const empty = useMemo(() => !loading && items.length === 0, [loading, items]);
 
@@ -70,95 +69,74 @@ export default function SquadsPage() {
 
   // Modal handlers
   const handleOpenEditModal = (squad: SquadCard) => {
-    setSelectedSquad({
+    const squadData: Squad = {
       id: squad.id,
       name: squad.name,
       description: squad.description,
       created_at: squad.created_at
-    })
-    setModalMode('edit')
-    setShowModal(true)
-  }
+    };
+    editModal.open(squadData);
+  };
 
   const handleOpenDeleteModal = (squad: SquadCard) => {
-    setSelectedSquad({
+    const squadData: Squad = {
       id: squad.id,
       name: squad.name,
       description: squad.description,
       created_at: squad.created_at
-    })
-    setModalMode('delete')
-    setShowModal(true)
-  }
-
-  const handleCloseModal = () => {
-    setShowModal(false)
-    setSelectedSquad(null)
-  }
+    };
+    deleteModal.open(squadData);
+  };
 
   const handleModalSubmit = async (updates?: UpdateSquadData, squadId?: string) => {
-    if (!squadId) return
+    if (!squadId) return;
 
     try {
-      if (modalMode === 'edit' && updates) {
-        const updatedSquad = await updateSquad(squadId, updates)
-        setItems(prev => prev.map(squad => 
-          squad.id === squadId 
-            ? { ...squad, name: updatedSquad.name, description: updatedSquad.description }
-            : squad
-        ))
-      } else if (modalMode === 'delete') {
-        await deleteSquad(squadId)
-        setItems(prev => prev.filter(squad => squad.id !== squadId))
+      if (editModal.isOpen && updates) {
+        // updateSquad hook already updates store and shows toast
+        await updateSquad(squadId, updates);
+        editModal.close();
+      } else if (deleteModal.isOpen) {
+        // deleteSquad hook already updates store and shows toast
+        await deleteSquad(squadId);
+        deleteModal.close();
       }
     } catch (error: any) {
-      setErr(error?.message || `Failed to ${modalMode} squad`)
-      throw error
+      // Error already handled by hook with toast
+      throw error;
     }
-  }
+  };
 
-  // Create squad modal handlers
-  const handleOpenCreateModal = () => setShowCreateModal(true)
-  const handleCloseCreateModal = () => setShowCreateModal(false)
-  
   const handleCreateSquad = async (squadData: CreateSquadData) => {
-    if (!coachId) return
+    if (!coachId) return;
 
     try {
-      const newSquad = await createSquad(coachId, squadData)
-      
-      // Update local state
-      setItems(prev => [...prev, {
-        id: newSquad.id,
-        name: newSquad.name,
-        description: newSquad.description,
-        created_at: newSquad.created_at,
-        role: 'owner' as const, // New squads have owner role
-        swimmers_count: 0
-      }])
-      handleCloseCreateModal()
-    } catch (error) {
-      console.error('Error creating squad:', error)
-      throw error // Let the modal handle the error display
+      // createSquad hook already updates store and shows toast
+      await createSquad(coachId, squadData);
+      createModal.close();
+    } catch (error: any) {
+      // Error already handled by hook with toast
+      console.error('Error creating squad:', error);
+      throw error;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
-      {/* Error Toast */}
-      {err && (
+      {/* Error Toast - Now handled by UI store, but keeping for backwards compatibility */}
+      {error && (
         <div className="fixed top-20 right-4 sm:right-6 bg-background-elevated border border-danger rounded-xl p-4 shadow-lg flex items-start gap-3 max-w-[90vw] sm:max-w-md z-1000 animate-in slide-in-from-right duration-300">
           <div className="flex-1 min-w-0">
             <strong className="block text-danger text-sm font-semibold mb-1">
               Error
             </strong>
             <p className="m-0 text-text-secondary text-sm leading-relaxed">
-              {err}
+              {error}
             </p>
           </div>
           <button
             className="text-text-muted hover:text-text-primary text-xl p-0 transition-colors"
-            onClick={() => setErr("")}
+            onClick={() => useSquadStore.getState().clearError()}
           >
             ×
           </button>
@@ -249,7 +227,7 @@ export default function SquadsPage() {
               </p>
               <button
                 className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
-                onClick={handleOpenCreateModal}
+                onClick={() => createModal.open()}
               >
                 <Plus size={20} />
                 <span>Create Your First Squad</span>
@@ -347,19 +325,28 @@ export default function SquadsPage() {
           </section>
         )}
 
-        {/* Squad Modal */}
+        {/* Edit Squad Modal */}
         <SquadModal
-          isOpen={showModal}
-          mode={modalMode}
-          squad={selectedSquad}
-          onClose={handleCloseModal}
+          isOpen={editModal.isOpen}
+          mode='edit'
+          squad={editModal.data}
+          onClose={editModal.close}
+          onSubmit={handleModalSubmit}
+        />
+
+        {/* Delete Squad Modal */}
+        <SquadModal
+          isOpen={deleteModal.isOpen}
+          mode='delete'
+          squad={deleteModal.data}
+          onClose={deleteModal.close}
           onSubmit={handleModalSubmit}
         />
 
         {/* Create Squad Modal */}
         <SquadFormModal
-          isOpen={showCreateModal}
-          onClose={handleCloseCreateModal}
+          isOpen={createModal.isOpen}
+          onClose={createModal.close}
           onSubmit={handleCreateSquad}
         />
       </main>

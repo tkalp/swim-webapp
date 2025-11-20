@@ -79,15 +79,25 @@ export default function ExternalSwimmerPage() {
       ? 'Male' 
       : 'Other';
 
-    // Split name into first and last
+    // Split name into first and last, capitalize properly, and remove commas
     const nameParts = swimmer.name.split(' ');
-    const lastName = nameParts.pop() || '';
-    const firstName = nameParts.join(' ');
+    const firstName = nameParts.pop() || '';
+    const lastName = nameParts.join(' ');
+
+    // Helper function to capitalize first letter and lowercase the rest
+    const capitalizeProper = (name: string) => {
+      return name
+        .replace(/,/g, '') // Remove commas
+        .trim()
+        .split(' ')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+    };
 
     const result = await createSwimmerWithExternalLink(
       {
-        first_name: firstName,
-        last_name: lastName,
+        first_name: capitalizeProper(firstName),
+        last_name: capitalizeProper(lastName),
         sex: gender,
         squad_id: squadId,
         date_of_birth: swimmer.birth_year ? `${swimmer.birth_year}-01-01` : null,
@@ -104,29 +114,8 @@ export default function ExternalSwimmerPage() {
       }
     );
 
-    // Start tracking sync status if sync was started
-    if (result.sync_started) {
-      setIsSyncing(true);
-      pollSyncStatus(result.external_link_id);
-    }
-  };
-
-  // Poll for sync status updates
-  const pollSyncStatus = async (externalLinkId: string) => {
-    try {
-      const status = await getSwimmerSyncStatus(externalLinkId);
-      setSyncStatus(status);
-
-      // Continue polling if still in progress
-      if (status.sync_status === 'in_progress' || status.sync_status === 'pending') {
-        setTimeout(() => pollSyncStatus(externalLinkId), 2000); // Poll every 2 seconds
-      } else {
-        setIsSyncing(false);
-      }
-    } catch (err) {
-      console.error('Error polling sync status:', err);
-      setIsSyncing(false);
-    }
+    // Navigate to the swimmer's page
+    navigate(`/swimmers/${result.swimmer.id}`);
   };
 
   // Get top performances - unique events only (best time per event)
@@ -221,25 +210,24 @@ export default function ExternalSwimmerPage() {
               ? 'bg-green-500/10 border-green-500/30 text-green-400'
               : syncStatus.sync_status === 'failed'
               ? 'bg-red-500/10 border-red-500/30 text-red-400'
-              : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+              : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
           }`}>
             <div className="flex items-center gap-3">
               {syncStatus.sync_status === 'pending' || syncStatus.sync_status === 'in_progress' ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
+                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0 text-cyan-400" />
                   <div className="flex-1">
                     <p className="font-semibold">
                       {syncStatus.sync_status === 'pending' ? 'Preparing to import data...' : 'Importing swimmer data...'}
                     </p>
                     {syncStatus.sync_progress !== undefined && syncStatus.sync_total !== undefined && syncStatus.sync_total > 0 && (
                       <div className="mt-2">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span>{syncStatus.sync_progress} / {syncStatus.sync_total} events processed</span>
+                        <div className="flex items-center justify-end text-sm mb-1">
                           <span>{Math.round((syncStatus.sync_progress / syncStatus.sync_total) * 100)}%</span>
                         </div>
-                        <div className="w-full bg-blue-500/20 rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-cyan-500/20 rounded-full h-2 overflow-hidden">
                           <div 
-                            className="bg-blue-500 h-full transition-all duration-300 ease-out"
+                            className="bg-cyan-500 h-full transition-all duration-300 ease-out"
                             style={{ width: `${(syncStatus.sync_progress / syncStatus.sync_total) * 100}%` }}
                           />
                         </div>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Calendar, Clock, Plus, Edit, Trash2, MapPin, Users } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { useScheduleApi } from '../../hooks/api'
 import ScheduleFormModal from './ScheduleFormModal'
 import { SquadPageHeader } from './SquadPageHeader'
 
@@ -29,6 +29,7 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<TrainingSchedule | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const { deleteSchedule } = useScheduleApi()
 
   // Group schedules by day
   const schedulesByDay = useMemo(() => {
@@ -84,16 +85,11 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
     }
 
     try {
-      const { error } = await supabase
-        .from('training_schedules')
-        .delete()
-        .eq('id', scheduleId)
-
-      if (error) throw error
-      onUpdate()
+      await deleteSchedule(scheduleId, squadId)
+      // Store is automatically updated by the hook
     } catch (error) {
+      // Error toast is automatically shown by the hook
       console.error('Error deleting schedule:', error)
-      alert('Failed to delete schedule')
     }
   }
 

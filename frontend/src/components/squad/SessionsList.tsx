@@ -24,7 +24,8 @@ import CreateFromScheduleModal from "./sessions/CreateFromScheduleModal";
 import AttendanceModal from "./sessions/AttendanceModal";
 import PracticeNotesModal from "./sessions/PracticeNotesModal";
 import { SquadPageHeader } from "./SquadPageHeader";
-import { createSession, updateSession, createSessionsFromSchedules, deleteSession, type TrainingSchedule } from "../../services/sessionService";
+import { createSessionsFromSchedules, type TrainingSchedule } from "../../services/sessionService";
+import { useSessionApi } from "../../hooks/api";
 import "@/styles/SessionsList.css";
 
 type Session = {
@@ -48,6 +49,7 @@ type SessionsListProps = {
 
 export default function SessionsList({ sessions, squadId, schedules, canManage, canManageAttendance, onRefresh }: SessionsListProps) {
   const navigate = useNavigate();
+  const { createSession, updateSession, deleteSession } = useSessionApi();
   
   // Load date range state from localStorage or use default
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -236,13 +238,11 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
     }
 
     try {
-      await deleteSession(sessionId);
-      if (onRefresh) {
-        onRefresh();
-      }
+      await deleteSession(sessionId, squadId);
+      // Store is automatically updated by the hook
     } catch (error) {
+      // Error toast is automatically shown by the hook
       console.error('Error deleting session:', error);
-      alert('Failed to delete session. Please try again.');
     }
   };
 
@@ -252,15 +252,15 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
       const endDateTime = new Date(`${formData.end_date}T${formData.end_time}`);
 
       if (editingSession) {
-        // Update existing session
-        await updateSession(editingSession.id, {
+        // Update existing session - store is automatically updated
+        await updateSession(editingSession.id, squadId, {
           start_date: startDateTime.toISOString(),
           end_date: endDateTime.toISOString(),
           training_type: "Swim",
           workout_id: formData.workout_id,
         });
       } else {
-        // Create new session
+        // Create new session - store is automatically updated
         await createSession({
           squad_id: squadId,
           start_date: startDateTime.toISOString(),
@@ -269,12 +269,9 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
           workout_id: formData.workout_id,
         });
       }
-
-      // Trigger refresh after successful create/update
-      if (onRefresh) {
-        onRefresh();
-      }
+      // Store is automatically updated by the hook, no refresh needed
     } catch (error) {
+      // Error toast is automatically shown by the hook
       console.error('Error saving session:', error);
       throw error; // Re-throw so modal can handle it
     }
