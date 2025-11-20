@@ -9,7 +9,7 @@ import {
   type TrainingSession,
   type TrainingSchedule
 } from '../../services/sessionService'
-import { listSessions } from '../../features/squads/detailApi'
+import { getSquadSessions } from '../../services/squadService'
 import { useSquadStore } from '../../stores/squadStore'
 import { useUIStore } from '../../stores/uiStore'
 
@@ -26,7 +26,7 @@ export const useSessionApi = () => {
    */
   const fetchSessions = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
-      const sessions = await listSessions(squadId, fromISO, toISO)
+      const sessions = await getSquadSessions(squadId, fromISO, toISO)
       setSessions(squadId, sessions)
       return sessions
     } catch (error: any) {

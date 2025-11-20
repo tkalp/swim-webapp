@@ -3,7 +3,7 @@ import {
   getSquadPerformance, 
   SquadPerformanceData,
   formatTimeFromSeconds 
-} from '../../features/squads/metricsApi';
+} from '../../services/metricsService';
 import { SquadSummaryStats } from '../squad-analytics/SquadSummaryStats';
 import DateInput from '../ui/DateInput';
 import { Loader2, TrendingDown, TrendingUp, Trophy } from 'lucide-react';

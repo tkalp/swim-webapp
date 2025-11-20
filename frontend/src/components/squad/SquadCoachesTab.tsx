@@ -1,5 +1,5 @@
 // components/squad/SquadCoachesTab.tsx
-import { useSquadPermissions } from '../../hooks/useSquadPermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import { ManageCoaches } from './ManageCoaches';
 
 interface SquadCoachesTabProps {
@@ -7,7 +7,7 @@ interface SquadCoachesTabProps {
 }
 
 export function SquadCoachesTab({ squadId }: SquadCoachesTabProps) {
-  const { loading, hasPermission } = useSquadPermissions(squadId);
+  const { loading, hasPermission } = usePermissions(squadId);
 
   if (loading) {
     return (

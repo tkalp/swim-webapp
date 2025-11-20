@@ -4,7 +4,7 @@ import { useScheduleApi } from '../useScheduleApi'
 import { useSquadStore } from '../../../stores/squadStore'
 import { useUIStore } from '../../../stores/uiStore'
 import * as scheduleService from '../../../services/scheduleService'
-import * as detailApi from '../../../features/squads/detailApi'
+import * as squadService from '../../../services/squadService'
 import { mockSchedule } from '../../../__tests__/testUtils'
 
 // Mock the services
@@ -14,8 +14,8 @@ vi.mock('../../../services/scheduleService', () => ({
   deleteSchedule: vi.fn(),
 }))
 
-vi.mock('../../../features/squads/detailApi', () => ({
-  listSchedules: vi.fn(),
+vi.mock('../../../services/squadService', () => ({
+  getSquadSchedules: vi.fn(),
 }))
 
 describe('useScheduleApi', () => {
@@ -46,7 +46,7 @@ describe('useScheduleApi', () => {
   describe('fetchSchedules', () => {
     it('should fetch schedules and update store', async () => {
       const schedules = [mockSchedule, { ...mockSchedule, id: 'schedule-2' }]
-      vi.mocked(detailApi.listSchedules).mockResolvedValue(schedules)
+      vi.mocked(squadService.getSquadSchedules).mockResolvedValue(schedules)
 
       const { result } = renderHook(() => useScheduleApi())
 
@@ -55,7 +55,7 @@ describe('useScheduleApi', () => {
         returnedSchedules = await result.current.fetchSchedules('squad-1')
       })
 
-      expect(detailApi.listSchedules).toHaveBeenCalledWith('squad-1')
+      expect(squadService.getSquadSchedules).toHaveBeenCalledWith('squad-1')
       expect(returnedSchedules).toEqual(schedules)
       
       // Check store was updated
@@ -66,7 +66,7 @@ describe('useScheduleApi', () => {
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch schedules')
-      vi.mocked(detailApi.listSchedules).mockRejectedValue(error)
+      vi.mocked(squadService.getSquadSchedules).mockRejectedValue(error)
 
       const { result } = renderHook(() => useScheduleApi())
 

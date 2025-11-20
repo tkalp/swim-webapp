@@ -8,7 +8,7 @@ import {
   intervalToSeconds,
   type RaceSplit,
   type BestSplitsResponse,
-} from "../../../features/swimmers/bestTimesApi";
+} from "../../../services/workoutResultService";
 import AttemptsStats from "./AttemptsStats";
 import AttemptsChart from "./AttemptsChart";
 import RaceComparisonModal from "./RaceComparisonModal";

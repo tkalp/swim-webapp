@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { useSquadPermissions } from "../hooks/useSquadPermissions";
+import { usePermissions } from "../hooks/usePermissions";
 import { getSwimmerSyncStatus, type SwimmerSyncStatus } from "../services/swimmerService";
 import { Loader2, TrendingUp, AlertCircle } from "lucide-react";
 
@@ -50,7 +50,7 @@ export default function SwimmerPage() {
 
   // Fetch squad_id from swimmer to check permissions
   const [squadId, setSquadId] = useState<string | null>(null);
-  const { hasPermission } = useSquadPermissions(squadId || '');
+  const { hasPermission } = usePermissions(squadId || '');
   const [syncStatus, setSyncStatus] = useState<SwimmerSyncStatus | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const externalLinkIdRef = useRef<string | null>(null);

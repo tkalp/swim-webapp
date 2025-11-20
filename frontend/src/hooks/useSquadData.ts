@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSquad, listSwimmers, listSchedules, listSessions, listCalendarEvents } from '../features/squads/detailApi'
+import { 
+  getSquadById, 
+  getSquadSwimmers, 
+  getSquadSchedules, 
+  getSquadSessions, 
+  getSquadCalendarEvents 
+} from '../services/squadService'
 import { useSquadDetails, useSwimmersBySquad, useSquadSchedules, useSquadSessions, useSquadEvents } from './useStores'
 import { useSquadStore } from '../stores/squadStore'
 import { useSwimmerStore } from '../stores/swimmerStore'
@@ -7,6 +13,10 @@ import { useSwimmerStore } from '../stores/swimmerStore'
 export type TabKey = 'overview' | 'team' | 'training' | 'workouts' | 'coaches'
 export type TrainingSubTab = 'schedule' | 'sessions' | 'calendar'
 
+/**
+ * @deprecated Use useSquadApi instead. This hook will be removed in future versions.
+ * Legacy hook for loading squad data. Prefer using the new useSquadApi pattern.
+ */
 export function useSquadData(squadId?: string) {
   // Get all data from stores
   const squad = useSquadDetails(squadId ?? null)
@@ -25,11 +35,11 @@ export function useSquadData(squadId?: string) {
     ;(async () => {
       try {
         const [sq, sw, sc, ss, ev] = await Promise.all([
-          getSquad(squadId),
-          listSwimmers(squadId),
-          listSchedules(squadId),
-          listSessions(squadId),
-          listCalendarEvents(squadId),
+          getSquadById(squadId),
+          getSquadSwimmers(squadId),
+          getSquadSchedules(squadId),
+          getSquadSessions(squadId),
+          getSquadCalendarEvents(squadId),
         ])
         if (!mounted) return
         
@@ -69,11 +79,11 @@ export function useSquadData(squadId?: string) {
     setLoading(true)
     try {
       const [sq, sw, sc, ss, ev] = await Promise.all([
-        getSquad(squadId),
-        listSwimmers(squadId),
-        listSchedules(squadId),
-        listSessions(squadId),
-        listCalendarEvents(squadId),
+        getSquadById(squadId),
+        getSquadSwimmers(squadId),
+        getSquadSchedules(squadId),
+        getSquadSessions(squadId),
+        getSquadCalendarEvents(squadId),
       ])
       
       // Update stores

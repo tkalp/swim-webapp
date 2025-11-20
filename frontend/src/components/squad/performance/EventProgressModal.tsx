@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { EventSummary, formatTimeFromSeconds } from '../../../features/squads/metricsApi';
+import { EventSummary, formatTimeFromSeconds } from '../../../services/metricsService';
 import { formatEventName, formatActivity, getActivityBadgeStyles } from './utils';
 
 interface EventProgressModalProps {

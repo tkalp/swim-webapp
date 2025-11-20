@@ -61,7 +61,7 @@ const DEFAULT_PERMISSIONS: Record<
     can_manage_schedules: true,
     can_view_analytics: true,
     can_manage_squad_settings: false,
-    can_manage_coaches: false,
+    can_manage_coaches: true,
     can_manage_sessions: true,
     can_manage_notes: true,
     can_view_notes: true,

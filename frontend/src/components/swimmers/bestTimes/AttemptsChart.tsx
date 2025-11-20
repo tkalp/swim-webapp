@@ -1,5 +1,5 @@
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { formatTime } from '../../../features/swimmers/bestTimesApi';
+import { formatTime } from '../../../utils/timeUtils';
 import { BarChart3 } from 'lucide-react';
 
 type ChartDataPoint = {

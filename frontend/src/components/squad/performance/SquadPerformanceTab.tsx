@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { 
   getSquadPerformance, 
   SquadPerformanceData,
-} from '../../../features/squads/metricsApi';
+} from '../../../services/metricsService';
 import { SquadSummaryStats } from '../../squad-analytics/SquadSummaryStats';
 import { SquadPageHeader } from '../SquadPageHeader';
 import { PerformanceHeader } from './PerformanceHeader';

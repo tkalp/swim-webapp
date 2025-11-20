@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getAttendanceStats, getSessionsPerWeek, getSwimmerBasicInfo } from '../features/swimmers/api';
+import { getAttendanceStats, getSessionsPerWeek, getSwimmerBasicInfo } from '../services/swimmerService';
 import type { Att, WeekRow } from '../types/stats';
 import { getWeekKey } from '../utils/dateRanges';
 

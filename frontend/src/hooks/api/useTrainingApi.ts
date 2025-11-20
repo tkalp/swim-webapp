@@ -1,11 +1,11 @@
 import { useCallback } from 'react'
 import { 
-  getSquad,
-  listSwimmers,
-  listSchedules,
-  listSessions,
-  listCalendarEvents
-} from '../../features/squads/detailApi'
+  getSquadById,
+  getSquadSwimmers,
+  getSquadSchedules,
+  getSquadSessions,
+  getSquadCalendarEvents
+} from '../../services/squadService'
 import { useSquadStore } from '../../stores/squadStore'
 import { useSwimmerStore } from '../../stores/swimmerStore'
 import { useUIStore } from '../../stores/uiStore'
@@ -25,11 +25,11 @@ export const useTrainingApi = () => {
   const fetchSquadData = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
       const [squad, swimmers, schedules, sessions, events] = await Promise.all([
-        getSquad(squadId),
-        listSwimmers(squadId),
-        listSchedules(squadId),
-        listSessions(squadId, fromISO, toISO),
-        listCalendarEvents(squadId, fromISO, toISO),
+        getSquadById(squadId),
+        getSquadSwimmers(squadId),
+        getSquadSchedules(squadId),
+        getSquadSessions(squadId, fromISO, toISO),
+        getSquadCalendarEvents(squadId, fromISO, toISO),
       ])
 
       // Update stores
@@ -61,7 +61,7 @@ export const useTrainingApi = () => {
    */
   const fetchSchedules = useCallback(async (squadId: string) => {
     try {
-      const schedules = await listSchedules(squadId)
+      const schedules = await getSquadSchedules(squadId)
       setSchedules(squadId, schedules)
       return schedules
     } catch (error: any) {
@@ -75,7 +75,7 @@ export const useTrainingApi = () => {
    */
   const fetchSessions = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
-      const sessions = await listSessions(squadId, fromISO, toISO)
+      const sessions = await getSquadSessions(squadId, fromISO, toISO)
       setSessions(squadId, sessions)
       return sessions
     } catch (error: any) {
@@ -89,7 +89,7 @@ export const useTrainingApi = () => {
    */
   const fetchEvents = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
-      const events = await listCalendarEvents(squadId, fromISO, toISO)
+      const events = await getSquadCalendarEvents(squadId, fromISO, toISO)
       setEvents(squadId, events)
       return events
     } catch (error: any) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SwimmerPerformance } from '../../../features/squads/metricsApi';
+import { SwimmerPerformance } from '../../../services/metricsService';
 import { SwimmerRow } from './SwimmerRow';
 
 interface PerformanceTableProps {

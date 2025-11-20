@@ -8,7 +8,7 @@ import {
   getSquadTotalMeters,
   type StrokeBreakdown,
   type ActivityBreakdown,
-} from "../../features/squads/metricsApi";
+} from "../../services/metricsService";
 import AttendanceChart from "../charts/AttendanceChart";
 import DistancePerWeekChart from "../charts/WeeklyDistanceChart";
 import BreakdownChart from "../charts/BreakdownChart";

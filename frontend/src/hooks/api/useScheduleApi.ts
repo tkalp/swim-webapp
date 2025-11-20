@@ -7,7 +7,7 @@ import {
   type UpdateScheduleData,
   type TrainingSchedule
 } from '../../services/scheduleService'
-import { listSchedules } from '../../features/squads/detailApi'
+import { getSquadSchedules } from '../../services/squadService'
 import { useSquadStore } from '../../stores/squadStore'
 import { useUIStore } from '../../stores/uiStore'
 
@@ -24,7 +24,7 @@ export const useScheduleApi = () => {
    */
   const fetchSchedules = useCallback(async (squadId: string) => {
     try {
-      const schedules = await listSchedules(squadId)
+      const schedules = await getSquadSchedules(squadId)
       setSchedules(squadId, schedules)
       return schedules
     } catch (error: any) {

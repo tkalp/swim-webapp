@@ -4,7 +4,7 @@ import {
   getSwimmerBestTimes,
   type BestTimeResult,
   type EventQuery,
-} from "../../features/swimmers/bestTimesApi";
+} from "../../services/workoutResultService";
 import GroupedBestTimesView from "./bestTimes/GroupedBestTimesView";
 import AttemptsModal from "./bestTimes/AttemptsModal";
 import AddEditWorkoutResultModal from "./bestTimes/AddEditWorkoutResultModal";

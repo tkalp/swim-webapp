@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TrendingDown, TrendingUp, Trophy } from 'lucide-react';
-import { SwimmerPerformance } from '../../../features/squads/metricsApi';
+import { SwimmerPerformance } from '../../../services/metricsService';
 import { getSwimmerInitials } from './utils';
 import { EventCard } from './EventCard';
 import { EventProgressModal } from './EventProgressModal';

@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { 
   getSquadAttendanceRankings, 
   SquadAttendanceData,
-} from '../../../features/squads/attendanceApi';
+} from '../../../services/attendanceService';
 import { SquadPageHeader } from '../SquadPageHeader';
 import { AttendanceHeader } from './AttendanceHeader';
 import { AttendanceStats } from './AttendanceStats';

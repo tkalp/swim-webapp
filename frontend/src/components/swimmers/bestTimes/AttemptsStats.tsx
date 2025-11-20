@@ -1,4 +1,4 @@
-import { formatTime } from '../../../features/swimmers/bestTimesApi';
+import { formatTime } from '../../../utils/timeUtils';
 import { TrendingDown, TrendingUp, Minus, Clock, Target } from 'lucide-react';
 
 type RecentTrend = {

@@ -161,8 +161,9 @@ export const useSquadStore = create<SquadState>()(
       // Granular session methods
       addSession: (squadId, session) => {
         const squadDetails = new Map(get().squadDetails)
-        const existing = squadDetails.get(squadId) || get().squads.get(squadId)
-        const currentSessions = existing?.sessions || []
+        const existing = squadDetails.get(squadId) || get().squads.get(squadId) || { id: squadId } as SquadCard
+        const existingDetails = squadDetails.get(squadId)
+        const currentSessions = existingDetails?.sessions || []
         
         squadDetails.set(squadId, { 
           ...existing, 
@@ -174,9 +175,10 @@ export const useSquadStore = create<SquadState>()(
       updateSessionInStore: (squadId, sessionId, updates) => {
         const squadDetails = new Map(get().squadDetails)
         const existing = squadDetails.get(squadId) || get().squads.get(squadId)
-        const currentSessions = existing?.sessions || []
+        const existingDetails = squadDetails.get(squadId)
+        const currentSessions = existingDetails?.sessions || []
         
-        const updatedSessions = currentSessions.map(s => 
+        const updatedSessions = currentSessions.map((s: any) => 
           s.id === sessionId ? { ...s, ...updates } : s
         )
         
@@ -190,9 +192,10 @@ export const useSquadStore = create<SquadState>()(
       removeSession: (squadId, sessionId) => {
         const squadDetails = new Map(get().squadDetails)
         const existing = squadDetails.get(squadId) || get().squads.get(squadId)
-        const currentSessions = existing?.sessions || []
+        const existingDetails = squadDetails.get(squadId)
+        const currentSessions = existingDetails?.sessions || []
         
-        const filteredSessions = currentSessions.filter(s => s.id !== sessionId)
+        const filteredSessions = currentSessions.filter((s: any) => s.id !== sessionId)
         
         squadDetails.set(squadId, { 
           ...existing, 
@@ -205,7 +208,8 @@ export const useSquadStore = create<SquadState>()(
       addSchedule: (squadId, schedule) => {
         const squadDetails = new Map(get().squadDetails)
         const existing = squadDetails.get(squadId) || get().squads.get(squadId)
-        const currentSchedules = existing?.schedules || []
+        const existingDetails = squadDetails.get(squadId)
+        const currentSchedules = existingDetails?.schedules || []
         
         squadDetails.set(squadId, { 
           ...existing, 
@@ -217,9 +221,10 @@ export const useSquadStore = create<SquadState>()(
       updateScheduleInStore: (squadId, scheduleId, updates) => {
         const squadDetails = new Map(get().squadDetails)
         const existing = squadDetails.get(squadId) || get().squads.get(squadId)
-        const currentSchedules = existing?.schedules || []
+        const existingDetails = squadDetails.get(squadId)
+        const currentSchedules = existingDetails?.schedules || []
         
-        const updatedSchedules = currentSchedules.map(s => 
+        const updatedSchedules = currentSchedules.map((s: any) => 
           s.id === scheduleId ? { ...s, ...updates } : s
         )
         
@@ -233,9 +238,10 @@ export const useSquadStore = create<SquadState>()(
       removeSchedule: (squadId, scheduleId) => {
         const squadDetails = new Map(get().squadDetails)
         const existing = squadDetails.get(squadId) || get().squads.get(squadId)
-        const currentSchedules = existing?.schedules || []
+        const existingDetails = squadDetails.get(squadId)
+        const currentSchedules = existingDetails?.schedules || []
         
-        const filteredSchedules = currentSchedules.filter(s => s.id !== scheduleId)
+        const filteredSchedules = currentSchedules.filter((s: any) => s.id !== scheduleId)
         
         squadDetails.set(squadId, { 
           ...existing, 

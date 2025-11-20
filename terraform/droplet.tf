@@ -22,7 +22,6 @@ resource "digitalocean_droplet" "aquilus" {
     vite_supabase_url       = var.supabase_url
     vite_supabase_anon_key  = var.supabase_anon_key
     vite_api_url            = var.vite_api_url
-    allowed_origins         = var.allowed_origins
     domain_name             = var.domain_name
     allowed_origins         = join(",", var.allowed_origins)
     supabase_jwt_secret     = var.supabase_jwt_secret

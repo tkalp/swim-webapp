@@ -4,16 +4,16 @@ import { useTrainingApi } from '../useTrainingApi'
 import { useSquadStore } from '../../../stores/squadStore'
 import { useSwimmerStore } from '../../../stores/swimmerStore'
 import { useUIStore } from '../../../stores/uiStore'
-import * as detailApi from '../../../features/squads/detailApi'
+import * as squadService from '../../../services/squadService'
 import { mockSquad, mockSwimmer, mockSchedule, mockSession } from '../../../__tests__/testUtils'
 
-// Mock the detail API
-vi.mock('../../../features/squads/detailApi', () => ({
-  getSquad: vi.fn(),
-  listSwimmers: vi.fn(),
-  listSchedules: vi.fn(),
-  listSessions: vi.fn(),
-  listCalendarEvents: vi.fn(),
+// Mock the squad service
+vi.mock('../../../services/squadService', () => ({
+  getSquadById: vi.fn(),
+  getSquadSwimmers: vi.fn(),
+  getSquadSchedules: vi.fn(),
+  getSquadSessions: vi.fn(),
+  getSquadCalendarEvents: vi.fn(),
 }))
 
 describe('useTrainingApi', () => {
@@ -62,11 +62,11 @@ describe('useTrainingApi', () => {
         event_type: 'Competition'
       }]
 
-      vi.mocked(detailApi.getSquad).mockResolvedValue(mockSquad)
-      vi.mocked(detailApi.listSwimmers).mockResolvedValue(swimmers)
-      vi.mocked(detailApi.listSchedules).mockResolvedValue(schedules)
-      vi.mocked(detailApi.listSessions).mockResolvedValue(sessions)
-      vi.mocked(detailApi.listCalendarEvents).mockResolvedValue(events)
+      vi.mocked(squadService.getSquadById).mockResolvedValue(mockSquad)
+      vi.mocked(squadService.getSquadSwimmers).mockResolvedValue(swimmers)
+      vi.mocked(squadService.getSquadSchedules).mockResolvedValue(schedules)
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
+      vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue(events)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -75,11 +75,11 @@ describe('useTrainingApi', () => {
         returnedData = await result.current.fetchSquadData('squad-1')
       })
 
-      expect(detailApi.getSquad).toHaveBeenCalledWith('squad-1')
-      expect(detailApi.listSwimmers).toHaveBeenCalledWith('squad-1')
-      expect(detailApi.listSchedules).toHaveBeenCalledWith('squad-1')
-      expect(detailApi.listSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
-      expect(detailApi.listCalendarEvents).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(squadService.getSquadById).toHaveBeenCalledWith('squad-1')
+      expect(squadService.getSquadSwimmers).toHaveBeenCalledWith('squad-1')
+      expect(squadService.getSquadSchedules).toHaveBeenCalledWith('squad-1')
+      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(squadService.getSquadCalendarEvents).toHaveBeenCalledWith('squad-1', undefined, undefined)
 
       expect(returnedData).toEqual({
         squad: mockSquad,
@@ -104,11 +104,11 @@ describe('useTrainingApi', () => {
     })
 
     it('should fetch with date range', async () => {
-      vi.mocked(detailApi.getSquad).mockResolvedValue(mockSquad)
-      vi.mocked(detailApi.listSwimmers).mockResolvedValue([])
-      vi.mocked(detailApi.listSchedules).mockResolvedValue([])
-      vi.mocked(detailApi.listSessions).mockResolvedValue([])
-      vi.mocked(detailApi.listCalendarEvents).mockResolvedValue([])
+      vi.mocked(squadService.getSquadById).mockResolvedValue(mockSquad)
+      vi.mocked(squadService.getSquadSwimmers).mockResolvedValue([])
+      vi.mocked(squadService.getSquadSchedules).mockResolvedValue([])
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue([])
+      vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue([])
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -116,16 +116,16 @@ describe('useTrainingApi', () => {
         await result.current.fetchSquadData('squad-1', '2024-01-01', '2024-01-31')
       })
 
-      expect(detailApi.listSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
-      expect(detailApi.listCalendarEvents).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(squadService.getSquadCalendarEvents).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
     })
 
     it('should handle null squad', async () => {
-      vi.mocked(detailApi.getSquad).mockResolvedValue(null as any)
-      vi.mocked(detailApi.listSwimmers).mockResolvedValue([])
-      vi.mocked(detailApi.listSchedules).mockResolvedValue([])
-      vi.mocked(detailApi.listSessions).mockResolvedValue([])
-      vi.mocked(detailApi.listCalendarEvents).mockResolvedValue([])
+      vi.mocked(squadService.getSquadById).mockResolvedValue(null as any)
+      vi.mocked(squadService.getSquadSwimmers).mockResolvedValue([])
+      vi.mocked(squadService.getSquadSchedules).mockResolvedValue([])
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue([])
+      vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue([])
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -145,7 +145,7 @@ describe('useTrainingApi', () => {
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch squad data')
-      vi.mocked(detailApi.getSquad).mockRejectedValue(error)
+      vi.mocked(squadService.getSquadById).mockRejectedValue(error)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -167,7 +167,7 @@ describe('useTrainingApi', () => {
   describe('fetchSchedules', () => {
     it('should fetch schedules and update store', async () => {
       const schedules = [mockSchedule, { ...mockSchedule, id: 'schedule-2' }]
-      vi.mocked(detailApi.listSchedules).mockResolvedValue(schedules)
+      vi.mocked(squadService.getSquadSchedules).mockResolvedValue(schedules)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -176,7 +176,7 @@ describe('useTrainingApi', () => {
         returnedSchedules = await result.current.fetchSchedules('squad-1')
       })
 
-      expect(detailApi.listSchedules).toHaveBeenCalledWith('squad-1')
+      expect(squadService.getSquadSchedules).toHaveBeenCalledWith('squad-1')
       expect(returnedSchedules).toEqual(schedules)
       
       const store = useSquadStore.getState()
@@ -186,7 +186,7 @@ describe('useTrainingApi', () => {
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch schedules')
-      vi.mocked(detailApi.listSchedules).mockRejectedValue(error)
+      vi.mocked(squadService.getSquadSchedules).mockRejectedValue(error)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -206,7 +206,7 @@ describe('useTrainingApi', () => {
   describe('fetchSessions', () => {
     it('should fetch sessions and update store', async () => {
       const sessions = [mockSession, { ...mockSession, id: 'session-2' }]
-      vi.mocked(detailApi.listSessions).mockResolvedValue(sessions)
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -215,7 +215,7 @@ describe('useTrainingApi', () => {
         returnedSessions = await result.current.fetchSessions('squad-1')
       })
 
-      expect(detailApi.listSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
       expect(returnedSessions).toEqual(sessions)
       
       const store = useSquadStore.getState()
@@ -225,7 +225,7 @@ describe('useTrainingApi', () => {
 
     it('should fetch sessions with date range', async () => {
       const sessions = [mockSession]
-      vi.mocked(detailApi.listSessions).mockResolvedValue(sessions)
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -233,12 +233,12 @@ describe('useTrainingApi', () => {
         await result.current.fetchSessions('squad-1', '2024-01-01', '2024-01-31')
       })
 
-      expect(detailApi.listSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
     })
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch sessions')
-      vi.mocked(detailApi.listSessions).mockRejectedValue(error)
+      vi.mocked(squadService.getSquadSessions).mockRejectedValue(error)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -273,7 +273,7 @@ describe('useTrainingApi', () => {
           event_type: 'Training'
         }
       ]
-      vi.mocked(detailApi.listCalendarEvents).mockResolvedValue(events)
+      vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue(events)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -282,7 +282,7 @@ describe('useTrainingApi', () => {
         returnedEvents = await result.current.fetchEvents('squad-1')
       })
 
-      expect(detailApi.listCalendarEvents).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(squadService.getSquadCalendarEvents).toHaveBeenCalledWith('squad-1', undefined, undefined)
       expect(returnedEvents).toEqual(events)
       
       const store = useSquadStore.getState()
@@ -298,7 +298,7 @@ describe('useTrainingApi', () => {
         end_date: '2024-01-15T12:00:00Z',
         event_type: 'Competition'
       }]
-      vi.mocked(detailApi.listCalendarEvents).mockResolvedValue(events)
+      vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue(events)
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -306,12 +306,12 @@ describe('useTrainingApi', () => {
         await result.current.fetchEvents('squad-1', '2024-01-01', '2024-01-31')
       })
 
-      expect(detailApi.listCalendarEvents).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(squadService.getSquadCalendarEvents).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
     })
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch events')
-      vi.mocked(detailApi.listCalendarEvents).mockRejectedValue(error)
+      vi.mocked(squadService.getSquadCalendarEvents).mockRejectedValue(error)
 
       const { result } = renderHook(() => useTrainingApi())
 

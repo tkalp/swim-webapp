@@ -207,7 +207,8 @@ describe('workoutResultService', () => {
     })
 
     it('should handle very large times', () => {
-      expect(formatTime(3665)).toBe('61:05.00')
+      // Times over an hour show H:MM:SS format (1 hour 1 minute 5 seconds)
+      expect(formatTime(3665)).toBe('1:01:05.00')
     })
   })
 })

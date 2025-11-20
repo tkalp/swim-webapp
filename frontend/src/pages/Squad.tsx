@@ -1,7 +1,7 @@
 // pages/Squad.tsx
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useSquadData, type TabKey } from '../hooks/useSquadData'
-import { useSquadPermissions } from '../hooks/useSquadPermissions'
+import { usePermissions } from '../hooks/usePermissions'
 import { Shimmer, ErrorToast } from '../components/ui/Loaders'
 import SwimmersGrid from '../components/squad/SwimmersGrid'
 import SquadWorkouts from '../components/squad/SquadWorkouts'
@@ -15,7 +15,7 @@ import type { CreateSwimmerData, UpdateSwimmerData } from '../services/swimmerSe
 export default function SquadPage() {
   const { squadId } = useParams<{ squadId: string }>()
   const { squad, swimmers, schedules, sessions, events, loading, err, refetch } = useSquadData(squadId)
-  const { hasPermission } = useSquadPermissions(squadId || '')
+  const { hasPermission } = usePermissions(squadId || '')
   const [params, setParams] = useSearchParams()
   const tab = (params.get('tab') as TabKey) || 'overview'
   

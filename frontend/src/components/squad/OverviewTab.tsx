@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BarChart3, Trophy, TrendingUp, Lock, CalendarCheck } from 'lucide-react';
-import { useSquadPermissions } from '../../hooks/useSquadPermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import SquadMetricsTab from './SquadMetrics';
 import SquadRankings from './SquadRankings';
 import { SquadPerformanceTab } from './performance';
@@ -25,7 +25,7 @@ const SUB_TABS: Array<{
 
 export function OverviewTab({ squadId }: OverviewTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<OverviewSubTab>('metrics');
-  const { hasPermission, loading } = useSquadPermissions(squadId);
+  const { hasPermission, loading } = usePermissions(squadId);
 
   return (
     <div className="flex flex-col h-full">

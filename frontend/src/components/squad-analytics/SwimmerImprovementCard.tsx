@@ -1,5 +1,5 @@
 import React from 'react';
-import { SwimmerPerformance } from '../../features/squads/metricsApi';
+import { SwimmerPerformance } from '../../services/metricsService';
 import { TrendingDown, TrendingUp, Activity, Trophy, Target } from 'lucide-react';
 
 interface SwimmerImprovementCardProps {

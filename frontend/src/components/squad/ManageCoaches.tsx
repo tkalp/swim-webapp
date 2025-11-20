@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Shield, Trash2, Mail, Check, X, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { useCoachApi } from '../../hooks/api/useCoachApi';
 import {
   getSquadCoaches,
   updateCoachPermissions,
@@ -10,20 +10,8 @@ import {
   DEFAULT_PERMISSIONS,
   type CoachSquadMembership,
   type SquadPermissions,
-} from '../../hooks/useSquadPermissions';
-
-interface Coach {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
-
-interface Connection {
-  id: string;
-  requester_id: string;
-  recipient_id: string;
-  coach?: Coach;
-}
+} from '../../services/permissionService';
+import type { CoachConnection } from '../../services/coachService';
 
 interface ManageCoachesProps {
   squadId: string;
@@ -32,8 +20,9 @@ interface ManageCoachesProps {
 
 export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
   const { user } = useAuth();
+  const coachApi = useCoachApi();
   const [coaches, setCoaches] = useState<CoachSquadMembership[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
+  const [connections, setConnections] = useState<CoachConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedCoachId, setSelectedCoachId] = useState('');
@@ -43,7 +32,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
 
   useEffect(() => {
     loadCoaches();
-    if (canManage) {
+    if (canManage) {      
       loadConnections();
     }
   }, [squadId, canManage]);
@@ -52,42 +41,8 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
     if (!user?.id) return;
 
     try {
-      // Get all accepted connections
-      const { data: connectionsData, error: connError } = await supabase
-        .from('coach_connections')
-        .select('*')
-        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .eq('status', 'accepted');
-
-      if (connError) throw connError;
-
-      // Get coach IDs
-      const coachIds = connectionsData?.map(conn => 
-        conn.requester_id === user.id ? conn.recipient_id : conn.requester_id
-      ) || [];
-
-      if (coachIds.length === 0) {
-        setConnections([]);
-        return;
-      }
-
-      // Fetch coach details
-      const { data: coachesData } = await supabase
-        .from('coach')
-        .select('id, first_name, last_name')
-        .in('id', coachIds);
-
-      const coachMap = new Map(coachesData?.map(c => [c.id, c]) || []);
-
-      const connectionsWithCoaches = connectionsData?.map(conn => {
-        const coachId = conn.requester_id === user.id ? conn.recipient_id : conn.requester_id;
-        return {
-          ...conn,
-          coach: coachMap.get(coachId),
-        };
-      }) || [];
-
-      setConnections(connectionsWithCoaches);
+      const result = await coachApi.fetchConnections(user.id);
+      setConnections(result.connections);
     } catch (err: any) {
       console.error('Error loading connections:', err);
     }
@@ -120,17 +75,13 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
       }
 
       // Add coach to squad
-      const { error: insertError } = await supabase
-        .from('coach_squads')
-        .insert({
-          squad_id: squadId,
-          coach_id: selectedCoachId,
-          role: selectedRole,
-          created_by: user.id,
-          ...DEFAULT_PERMISSIONS[selectedRole],
-        });
-
-      if (insertError) throw insertError;
+      await coachApi.addCoachToSquad(
+        squadId,
+        selectedCoachId,
+        selectedRole,
+        user.id,
+        DEFAULT_PERMISSIONS[selectedRole] as Record<string, boolean>
+      );
 
       setShowAdd(false);
       setSelectedCoachId('');
@@ -249,9 +200,10 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                     <option value="">Choose a coach...</option>
                     {availableConnections.map((conn) => {
                       const coachId = conn.requester_id === user?.id ? conn.recipient_id : conn.requester_id;
+                      const coach = conn.requester_id === user?.id ? conn.recipient : conn.requester;
                       return (
                         <option key={conn.id} value={coachId}>
-                          {conn.coach ? `${conn.coach.first_name} ${conn.coach.last_name}` : `Coach ${coachId.substring(0, 8)}`}
+                          {coach ? `${coach.first_name} ${coach.last_name}` : `Coach ${coachId.substring(0, 8)}`}
                         </option>
                       );
                     })}

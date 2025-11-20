@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Users, Loader2 } from "lucide-react";
-import { getSquad } from "../features/squads/detailApi";
-import { updateSquad } from "../features/squads/api";
+import { getSquadById } from "../services/squadService";
+import { updateSquad } from "../services/squadService";
 import {
   FormCard,
   FormField,
@@ -25,14 +25,18 @@ export default function EditSquadPage() {
     if (!squadId) return;
     let mounted = true;
     setLoading(true);
-    getSquad(squadId)
+    getSquadById(squadId)
       .then((data) => {
         if (!mounted) return;
         setName(data?.name ?? "");
         setDescription(data?.description ?? "");
         setError("");
       })
-      .catch((e) => mounted && setError(e.message ?? "Failed to load squad"))
+      .catch((e: unknown) => {
+        if (mounted && e instanceof Error) {
+          setError(e.message ?? "Failed to load squad");
+        }
+      })
       .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;

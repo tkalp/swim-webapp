@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { SwimmerPerformance, formatTimeFromSeconds } from '../../features/squads/metricsApi';
+import { SwimmerPerformance, formatTimeFromSeconds } from '../../services/metricsService';
 
 interface PerformanceChartProps {
   swimmers: SwimmerPerformance[];

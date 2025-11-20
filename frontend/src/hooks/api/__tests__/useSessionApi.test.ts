@@ -4,7 +4,7 @@ import { useSessionApi } from '../useSessionApi'
 import { useSquadStore } from '../../../stores/squadStore'
 import { useUIStore } from '../../../stores/uiStore'
 import * as sessionService from '../../../services/sessionService'
-import * as detailApi from '../../../features/squads/detailApi'
+import * as squadService from '../../../services/squadService'
 import { mockSession, mockSchedule } from '../../../__tests__/testUtils'
 
 // Mock the services
@@ -15,8 +15,8 @@ vi.mock('../../../services/sessionService', () => ({
   createSessionFromSchedule: vi.fn(),
 }))
 
-vi.mock('../../../features/squads/detailApi', () => ({
-  listSessions: vi.fn(),
+vi.mock('../../../services/squadService', () => ({
+  getSquadSessions: vi.fn(),
 }))
 
 describe('useSessionApi', () => {
@@ -47,7 +47,7 @@ describe('useSessionApi', () => {
   describe('fetchSessions', () => {
     it('should fetch sessions and update store', async () => {
       const sessions = [mockSession, { ...mockSession, id: 'session-2' }]
-      vi.mocked(detailApi.listSessions).mockResolvedValue(sessions)
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
 
       const { result } = renderHook(() => useSessionApi())
 
@@ -56,7 +56,7 @@ describe('useSessionApi', () => {
         returnedSessions = await result.current.fetchSessions('squad-1')
       })
 
-      expect(detailApi.listSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
       expect(returnedSessions).toEqual(sessions)
       
       // Check store was updated
@@ -67,7 +67,7 @@ describe('useSessionApi', () => {
 
     it('should fetch sessions with date range', async () => {
       const sessions = [mockSession]
-      vi.mocked(detailApi.listSessions).mockResolvedValue(sessions)
+      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
 
       const { result } = renderHook(() => useSessionApi())
 
@@ -75,12 +75,12 @@ describe('useSessionApi', () => {
         await result.current.fetchSessions('squad-1', '2024-01-01', '2024-01-31')
       })
 
-      expect(detailApi.listSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
     })
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch sessions')
-      vi.mocked(detailApi.listSessions).mockRejectedValue(error)
+      vi.mocked(squadService.getSquadSessions).mockRejectedValue(error)
 
       const { result } = renderHook(() => useSessionApi())
 
