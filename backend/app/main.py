@@ -79,8 +79,8 @@ app.include_router(ai_coach.router)
 app.include_router(workout_analysis.router)
 app.include_router(swimrankings.router)
 app.include_router(squads.router)
-app.include_router(workout_tags.router, prefix="/api", tags=["workout_tags"])
-app.include_router(coach_connections.router, prefix="/api", tags=["coach_connections"])
+app.include_router(workout_tags.router)
+app.include_router(coach_connections.router)
 app.include_router(swimmers.router)
 
 

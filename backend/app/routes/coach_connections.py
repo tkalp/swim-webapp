@@ -1,25 +1,13 @@
 # backend/app/routes/coach_connections.py
-from fastapi import APIRouter, HTTPException, Header
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
-import os
-from supabase import create_client, Client
 
+from app.infrastructure.database import get_supabase_client
+from app.middleware.auth import get_current_user_id
 from app.utils import logger, log_error
 
 router = APIRouter(prefix="/coach-connections", tags=["coach-connections"])
-
-
-def get_supabase_client() -> Client:
-    """Get Supabase client instance"""
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    
-    if not supabase_url or not supabase_key:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables")
-    
-    return create_client(supabase_url, supabase_key)
 
 
 class ConnectionRequest(BaseModel):
@@ -33,101 +21,103 @@ class ConnectionResponse(BaseModel):
 
 @router.get("/my-connections")
 async def get_my_connections(
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """Get all accepted connections for the current user"""
     try:
         supabase = get_supabase_client()
+        logger.info(f"Fetching connections for user {user_id}")
         
-        # Extract user ID from authorization header
-        # This is a simplified version - in production, properly verify the JWT
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        # Query coach_connections table for accepted connections
+        response = supabase.table("coach_connections").select("*").or_(
+            f"requester_id.eq.{user_id},recipient_id.eq.{user_id}"
+        ).eq("status", "accepted").execute()
         
-        # For now, we'll need to extract the user ID from the token
-        # In a real implementation, you'd verify and decode the JWT
-        # For simplicity, we'll assume the frontend passes the user_id
-        
-        logger.info(f"Fetching connections for user")
-        
-        # This endpoint should be called from frontend with proper user context
-        # For now, return empty list - frontend should use Supabase client directly
-        return {"connections": []}
+        return {"connections": response.data}
         
     except Exception as e:
-        log_error(logger, e, {"endpoint": "get_my_connections"})
+        logger.error(f"Error fetching connections: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/request")
 async def send_connection_request(
     request: ConnectionRequest,
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """Send a connection request to another coach"""
     try:
         supabase = get_supabase_client()
+        logger.info(f"User {user_id} sending connection request to {request.recipient_id}")
         
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        # Insert connection request
+        response = supabase.table("coach_connections").insert({
+            "requester_id": user_id,
+            "recipient_id": request.recipient_id,
+            "status": "pending"
+        }).execute()
         
-        logger.info(f"Sending connection request to {request.recipient_id}")
-        
-        # Frontend should use Supabase client directly for this
-        # This is just a placeholder endpoint
-        
-        return {"message": "Connection request sent", "success": True}
+        return {"message": "Connection request sent", "success": True, "connection": response.data[0]}
         
     except Exception as e:
-        log_error(logger, e, {"endpoint": "send_connection_request", "recipient_id": request.recipient_id})
+        logger.error(f"Error sending connection request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/respond")
 async def respond_to_connection(
     response: ConnectionResponse,
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """Accept or decline a connection request"""
     try:
         supabase = get_supabase_client()
+        logger.info(f"User {user_id} responding to connection {response.connection_id} | accept={response.accept}")
         
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        # Update connection status
+        status = "accepted" if response.accept else "declined"
+        update_response = supabase.table("coach_connections").update({
+            "status": status
+        }).eq("id", response.connection_id).eq("recipient_id", user_id).execute()
         
-        logger.info(f"Responding to connection {response.connection_id} | accept={response.accept}")
+        if not update_response.data:
+            raise HTTPException(status_code=404, detail="Connection not found or unauthorized")
         
-        # Frontend should use Supabase client directly for this
-        # This is just a placeholder endpoint
+        return {"message": "Response recorded", "success": True, "connection": update_response.data[0]}
         
-        return {"message": "Response recorded", "success": True}
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        log_error(logger, e, {"endpoint": "respond_to_connection", "connection_id": response.connection_id})
+        logger.error(f"Error responding to connection: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/{connection_id}")
 async def remove_connection(
     connection_id: str,
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """Remove a connection"""
     try:
         supabase = get_supabase_client()
+        logger.info(f"User {user_id} removing connection {connection_id}")
         
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        # Delete connection (user must be either requester or recipient)
+        delete_response = supabase.table("coach_connections").delete().eq(
+            "id", connection_id
+        ).or_(
+            f"requester_id.eq.{user_id},recipient_id.eq.{user_id}"
+        ).execute()
         
-        logger.info(f"Removing connection {connection_id}")
-        
-        # Frontend should use Supabase client directly for this
-        # This is just a placeholder endpoint
+        if not delete_response.data:
+            raise HTTPException(status_code=404, detail="Connection not found or unauthorized")
         
         return {"message": "Connection removed", "success": True}
         
+    except HTTPException:
+        raise
     except Exception as e:
-        log_error(logger, e, {"endpoint": "remove_connection", "connection_id": connection_id})
+        logger.error(f"Error removing connection: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -135,22 +125,29 @@ async def remove_connection(
 async def search_coaches(
     email: Optional[str] = None,
     name: Optional[str] = None,
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """Search for coaches by email or name"""
     try:
         supabase = get_supabase_client()
+        logger.info(f"User {user_id} searching coaches | email={email} | name={name}")
         
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        # Search in auth.users for coaches (assuming coaches have a role or metadata)
+        # This is a simplified version - adjust based on your auth setup
+        query = supabase.table("profiles").select("*")
         
-        logger.info(f"Searching coaches | email={email} | name={name}")
+        if email:
+            query = query.ilike("email", f"%{email}%")
+        if name:
+            query = query.or_(f"first_name.ilike.%{name}%,last_name.ilike.%{name}%")
         
-        # Frontend should use Supabase client directly for this
-        # This is just a placeholder endpoint
+        # Exclude current user
+        query = query.neq("id", user_id)
         
-        return {"coaches": []}
+        response = query.execute()
+        
+        return {"coaches": response.data}
         
     except Exception as e:
-        log_error(logger, e, {"endpoint": "search_coaches", "email": email, "name": name})
+        logger.error(f"Error searching coaches: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

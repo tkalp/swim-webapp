@@ -1,25 +1,14 @@
 # backend/app/routes/squads.py
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from datetime import datetime, timedelta
 from collections import defaultdict
-import os
-from supabase import create_client, Client
 
+from app.infrastructure.database import get_supabase_client
+from app.middleware.auth import get_current_user_id
 from app.utils import logger, log_error
 
 router = APIRouter(prefix="/squads", tags=["squads"])
-
-
-def get_supabase_client() -> Client:
-    """Get Supabase client instance"""
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    
-    if not supabase_url or not supabase_key:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables")
-    
-    return create_client(supabase_url, supabase_key)
 
 
 @router.get("/{squad_id}/performance")
@@ -27,7 +16,7 @@ async def get_squad_performance(
     squad_id: str,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """
     Get performance analytics for all swimmers in a squad over a date range.
@@ -37,7 +26,7 @@ async def get_squad_performance(
     """
     try:
         supabase = get_supabase_client()
-        logger.info(f"Fetching squad performance | squad_id={squad_id} | date_range={start_date} to {end_date}")
+        logger.info(f"User {user_id} fetching squad performance | squad_id={squad_id} | date_range={start_date} to {end_date}")
         
         # Parse and validate dates
         if not start_date:
@@ -300,7 +289,7 @@ async def get_squad_attendance(
     squad_id: str,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    authorization: str = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ):
     """
     Get attendance analytics for all swimmers in a squad over a date range.
@@ -310,7 +299,7 @@ async def get_squad_attendance(
     """
     try:
         supabase = get_supabase_client()
-        logger.info(f"Fetching squad attendance | squad_id={squad_id} | date_range={start_date} to {end_date}")
+        logger.info(f"User {user_id} fetching squad attendance | squad_id={squad_id} | date_range={start_date} to {end_date}")
         
         # Parse and validate dates
         if not start_date:

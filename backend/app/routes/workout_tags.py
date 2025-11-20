@@ -3,21 +3,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-import os
-from supabase import create_client, Client
+
+from app.infrastructure.database import get_supabase_client
+from app.middleware.auth import get_current_user_id
 
 router = APIRouter()
-
-
-def get_supabase_client() -> Client:
-    """Get Supabase client instance"""
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    
-    if not supabase_url or not supabase_key:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables")
-    
-    return create_client(supabase_url, supabase_key)
 
 
 class CreateTagRequest(BaseModel):

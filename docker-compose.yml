@@ -9,7 +9,7 @@ services:
       args:
         - VITE_SUPABASE_URL=${SUPABASE_URL}
         - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-        - VITE_API_URL=${VITE_API_URL}
+        - VITE_API_URL=/api
         - VITE_MIXPANEL_TOKEN=${VITE_MIXPANEL_TOKEN}
     container_name: aquilus-frontend
     ports:
@@ -40,8 +40,11 @@ services:
       - OXYLABS_USERNAME=${OXYLABS_USERNAME}
       - OXYLABS_PASSWORD=${OXYLABS_PASSWORD}
       - OXYLABS_COUNTRY=${OXYLABS_COUNTRY}
+      - REDIS_URL=redis://redis:6379/0
     expose:
       - "8000"
+    depends_on:
+      - redis
     restart: unless-stopped
     networks:
       - aquilus-network
@@ -51,6 +54,49 @@ services:
       timeout: 10s
       retries: 3
 
+  # Redis - Message broker for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: aquilus-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    expose:
+      - "6379"
+    restart: unless-stopped
+    networks:
+      - aquilus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Worker - Celery worker for background tasks
+  worker:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    container_name: aquilus-worker
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - USE_OXYLABS_PROXY=${USE_OXYLABS_PROXY}
+      - OXYLABS_USERNAME=${OXYLABS_USERNAME}
+      - OXYLABS_PASSWORD=${OXYLABS_PASSWORD}
+      - OXYLABS_COUNTRY=${OXYLABS_COUNTRY}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - aquilus-network
+
 networks:
   aquilus-network:
     driver: bridge
+
+volumes:
+  redis-data:

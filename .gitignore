@@ -5,3 +5,5 @@
 experiments/
 # For now, ignore
 jobs/
+
+**/.pytest_cache/
