@@ -37,9 +37,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Playwright browsers
 RUN playwright install chromium
 
-# Copy jobs directory first (contains shared code)
-COPY jobs /app/jobs
-
 # Copy worker code
 COPY worker /app/worker
 
