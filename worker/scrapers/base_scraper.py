@@ -85,9 +85,9 @@ class BaseScraper(ABC):
         jitter = random.uniform(0, 1)
         return delay + jitter
     
-    def fetch_page_sync(self, url: str, retry_count: int = 0) -> str:
+    async def fetch_page(self, url: str, retry_count: int = 0) -> str:
         """
-        Fetch page content using Playwright with retry logic
+        Fetch page content using Playwright async API with retry logic
         
         Args:
             url: URL to fetch
@@ -96,50 +96,69 @@ class BaseScraper(ABC):
         Returns:
             HTML content
         """
-        from playwright.sync_api import sync_playwright, TimeoutError
+        from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
         
         try:
+            # Get fresh proxy configuration for each attempt (generates new session ID)
+            proxy_config = WorkerConfig.get_proxy_config()
+            
             logger.debug(f"Launching Playwright browser for: {url}")
-            with sync_playwright() as p:
-                # Get proxy configuration
-                proxy_config = WorkerConfig.get_proxy_config()
+            async with async_playwright() as p:
+                # Configure browser launch options
+                launch_options = {'headless': True}
                 
                 if proxy_config:
                     logger.info(f"Using Oxylabs proxy for request")
-                    browser = p.chromium.launch(
-                        headless=True,
-                        proxy=proxy_config
-                    )
+                    # Set proxy at browser launch with separate username/password
+                    launch_options['proxy'] = {
+                        "server": "http://pr.oxylabs.io:7777",
+                        "username": proxy_config["username"],
+                        "password": proxy_config["password"]
+                    }
                 else:
                     logger.debug("No proxy configured, using direct connection")
-                    browser = p.chromium.launch(headless=True)
                 
-                context = browser.new_context(
+                browser = await p.chromium.launch(**launch_options)
+                
+                context = await browser.new_context(
                     viewport={'width': 1920, 'height': 1080},
                     user_agent=self.get_random_user_agent()
                 )
-                page = context.new_page()
+                page = await context.new_page()
                 
                 logger.debug("Navigating to page and waiting for network idle...")
-                page.goto(url, wait_until="networkidle", timeout=30000)
+                await page.goto(url, wait_until="networkidle", timeout=30000)
                 
                 # Simulate human-like behavior: small random delay before reading content
-                time.sleep(random.uniform(0.1, 0.3))
+                await asyncio.sleep(random.uniform(0.1, 0.3))
                 
-                html = page.content()
-                browser.close()
-                logger.debug("Browser closed, page content retrieved")
-            
+                html = await page.content()
+                html_size = len(html)
+                await browser.close()
+                logger.debug(f"Browser closed, page content retrieved (size: {html_size} bytes)")
+                
+                # Log and retry if we got a suspiciously small response (likely blocked)
+                if html_size < 500:
+                    logger.warning(f"Suspiciously small HTML response ({html_size} bytes). Content:\n{html}")
+                    
+                    # If this was a block page and we haven't retried too many times, retry
+                    if retry_count < self.MAX_RETRIES:
+                        logger.warning(f"Detected block page, retrying with new session...")
+                        delay = self.calculate_retry_delay(retry_count) + random.uniform(2.0, 5.0)
+                        logger.info(f"Waiting {delay:.2f}s before retry...")
+                        await asyncio.sleep(delay)
+                        return await self.fetch_page(url, retry_count + 1)
+                
             return html
             
-        except (TimeoutError, Exception) as e:
+        except (PlaywrightTimeoutError, Exception) as e:
             logger.warning(f"Error fetching page (attempt {retry_count + 1}/{self.MAX_RETRIES}): {e}")
             
             if retry_count < self.MAX_RETRIES:
                 delay = self.calculate_retry_delay(retry_count)
                 logger.info(f"Retrying in {delay:.2f}s...")
-                time.sleep(delay)
-                return self.fetch_page_sync(url, retry_count + 1)
+                await asyncio.sleep(delay)
+                return await self.fetch_page(url, retry_count + 1)
             else:
                 logger.error(f"Failed to fetch page after {self.MAX_RETRIES} attempts")
                 raise

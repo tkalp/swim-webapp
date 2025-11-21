@@ -74,6 +74,8 @@ services:
 
   # Worker - Celery worker for background tasks
   worker:
+    mem_limit: 1g
+    mem_reservation: 512m
     build:
       context: .
       dockerfile: ./worker/Dockerfile
@@ -88,6 +90,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SCRAPER_MIN_DELAY=2.0
+      - SCRAPER_MAX_DELAY=4.0
     depends_on:
       - redis
     restart: unless-stopped

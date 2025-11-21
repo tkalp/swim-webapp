@@ -5,7 +5,6 @@ SwimRankings scraper implementation
 import asyncio
 import logging
 from typing import List, Dict, Optional
-from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
 from worker.scrapers.base_scraper import BaseScraper
@@ -59,93 +58,83 @@ class SwimRankingsScraper(BaseScraper):
         url = f"{self.base_url}/index.php?page=athleteDetail&athleteId={athlete_id}&styleId={style_id}"
         
         try:
-            # Run Playwright in a separate thread to avoid Windows asyncio subprocess issues
-            loop = asyncio.get_event_loop()
+            # Fetch main page using async Playwright
+            logger.info(f"Fetching athlete detail page: {url}")
+            html = await self.fetch_page(url)
+            logger.info(f"Successfully fetched page, HTML size: {len(html)} bytes")
             
-            with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-                # Fetch main page
-                logger.info(f"Fetching athlete detail page: {url}")
-                html = await loop.run_in_executor(
-                    executor,
-                    self.fetch_page_sync,
-                    url
-                )
-                logger.info(f"Successfully fetched page, HTML size: {len(html)} bytes")
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # Parse attempts
+            logger.info("Parsing event attempts from page...")
+            attempts = self.parser.parse_event_attempts(soup)
+            logger.info(f"Found {len(attempts)} total attempt(s) on page")
+            
+            if limit:
+                original_count = len(attempts)
+                attempts = attempts[:limit]
+                logger.info(f"Limiting results from {original_count} to {len(attempts)} attempt(s)")
+            
+            # Conditionally fetch splits based on skip_no_splits flag
+            if skip_no_splits:
+                logger.info(f"Skipping splits fetch for {len(attempts)} attempt(s) (skip_no_splits=True)")
+                # Return results without splits for maximum speed
+                all_results = [
+                    ResultWithSplits(
+                        attempt=attempt,
+                        reaction_time=None,
+                        splits=[]
+                    )
+                    for attempt in attempts
+                ]
+            else:
+                # Fetch splits for all attempts in parallel with semaphore for rate limiting
+                logger.info(f"Fetching splits for {len(attempts)} attempt(s) using {self.MAX_WORKERS} parallel workers...")
+                semaphore = asyncio.Semaphore(self.MAX_WORKERS)
                 
-                soup = BeautifulSoup(html, 'html.parser')
-                
-                # Parse attempts
-                logger.info("Parsing event attempts from page...")
-                attempts = self.parser.parse_event_attempts(soup)
-                logger.info(f"Found {len(attempts)} total attempt(s) on page")
-                
-                if limit:
-                    original_count = len(attempts)
-                    attempts = attempts[:limit]
-                    logger.info(f"Limiting results from {original_count} to {len(attempts)} attempt(s)")
-                
-                # Conditionally fetch splits based on skip_no_splits flag
-                if skip_no_splits:
-                    logger.info(f"Skipping splits fetch for {len(attempts)} attempt(s) (skip_no_splits=True)")
-                    # Return results without splits for maximum speed
-                    all_results = [
-                        ResultWithSplits(
+                async def fetch_splits_with_semaphore(idx: int, attempt: AttemptData) -> ResultWithSplits:
+                    """Fetch splits for a single attempt with rate limiting"""
+                    async with semaphore:
+                        # Check for cancellation before fetching each split
+                        if check_cancellation_fn and await check_cancellation_fn():
+                            logger.info(f"[{idx}/{len(attempts)}] Sync cancelled, stopping splits fetch")
+                            raise asyncio.CancelledError("Sync cancelled by user")
+                        
+                        logger.info(f"[{idx}/{len(attempts)}] Processing attempt: {attempt.time} on {attempt.date} at {attempt.location}")
+                        
+                        result = ResultWithSplits(
                             attempt=attempt,
                             reaction_time=None,
                             splits=[]
                         )
-                        for attempt in attempts
-                    ]
-                else:
-                    # Fetch splits for all attempts in parallel with semaphore for rate limiting
-                    logger.info(f"Fetching splits for {len(attempts)} attempt(s) using {self.MAX_WORKERS} parallel workers...")
-                    semaphore = asyncio.Semaphore(self.MAX_WORKERS)
-                    
-                    async def fetch_splits_with_semaphore(idx: int, attempt: AttemptData) -> ResultWithSplits:
-                        """Fetch splits for a single attempt with rate limiting"""
-                        async with semaphore:
-                            # Check for cancellation before fetching each split
-                            if check_cancellation_fn and await check_cancellation_fn():
-                                logger.info(f"[{idx}/{len(attempts)}] Sync cancelled, stopping splits fetch")
-                                raise asyncio.CancelledError("Sync cancelled by user")
+                        
+                        if attempt.result_id:
+                            # Apply intelligent rate limiting
+                            await self.rate_limit_delay()
                             
-                            logger.info(f"[{idx}/{len(attempts)}] Processing attempt: {attempt.time} on {attempt.date} at {attempt.location}")
-                            
-                            result = ResultWithSplits(
-                                attempt=attempt,
-                                reaction_time=None,
-                                splits=[]
+                            logger.info(f"[{idx}/{len(attempts)}] Fetching splits for result_id={attempt.result_id}")
+                            splits_data = await self._fetch_splits(
+                                attempt.result_id
                             )
+                            result.reaction_time = splits_data.get('reaction_time')
+                            result.splits = splits_data.get('splits', [])
                             
-                            if attempt.result_id:
-                                # Apply intelligent rate limiting
-                                await self.rate_limit_delay()
-                                
-                                logger.info(f"[{idx}/{len(attempts)}] Fetching splits for result_id={attempt.result_id}")
-                                splits_data = await loop.run_in_executor(
-                                    executor,
-                                    self._fetch_splits_sync,
-                                    attempt.result_id
-                                )
-                                result.reaction_time = splits_data.get('reaction_time')
-                                result.splits = splits_data.get('splits', [])
-                                
-                                if result.splits:
-                                    logger.info(f"[{idx}/{len(attempts)}] Found {len(result.splits)} split(s)" + 
-                                              (f" (reaction time: {result.reaction_time}s)" if result.reaction_time else ""))
-                                else:
-                                    logger.debug(f"[{idx}/{len(attempts)}] No splits found for this result")
+                            if result.splits:
+                                logger.info(f"[{idx}/{len(attempts)}] Found {len(result.splits)} split(s)" + 
+                                          (f" (reaction time: {result.reaction_time}s)" if result.reaction_time else ""))
                             else:
-                                logger.debug(f"[{idx}/{len(attempts)}] No result_id available, skipping splits fetch")
-                            
-                            return result
-                    
-                    # Fetch all splits in parallel
-                    tasks = [fetch_splits_with_semaphore(idx + 1, attempt) for idx, attempt in enumerate(attempts)]
-                    all_results = await asyncio.gather(*tasks)
+                                logger.debug(f"[{idx}/{len(attempts)}] No splits found for this result")
+                        else:
+                            logger.debug(f"[{idx}/{len(attempts)}] No result_id available, skipping splits fetch")
+                        
+                        return result
                 
-                # Count results without result_id for logging
-                skipped_no_result_id = sum(1 for r in all_results if not r.attempt.result_id)
+                # Fetch all splits in parallel
+                tasks = [fetch_splits_with_semaphore(idx + 1, attempt) for idx, attempt in enumerate(attempts)]
+                all_results = await asyncio.gather(*tasks)
+            
+            # Count results without result_id for logging
+            skipped_no_result_id = sum(1 for r in all_results if not r.attempt.result_id)
             
             logger.info(f"Event attempts fetch complete: {len(all_results)} result(s) returned" +
                        (f", {skipped_no_result_id} without result_id" if skipped_no_result_id > 0 else ""))
@@ -155,9 +144,9 @@ class SwimRankingsScraper(BaseScraper):
             logger.error(f"Failed to fetch event attempts: {str(e)}", exc_info=True)
             raise
     
-    def _fetch_splits_sync(self, result_id: str, retry_count: int = 0) -> Dict:
+    async def _fetch_splits(self, result_id: str, retry_count: int = 0) -> Dict:
         """
-        Fetch splits using Playwright (runs in thread) with retry logic
+        Fetch race splits for a single result using async Playwright.
         
         Args:
             result_id: SwimRankings result ID
@@ -166,28 +155,27 @@ class SwimRankingsScraper(BaseScraper):
         Returns:
             Dictionary with 'reaction_time' and 'splits' keys
         """
-        from playwright.sync_api import sync_playwright, TimeoutError
+        from playwright.async_api import async_playwright, TimeoutError
+        import random
         
         url = f"{self.base_url}/index.php?page=resultDetail&id={result_id}"
         
         try:
             logger.debug(f"Fetching splits page for result_id={result_id}")
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                context = browser.new_context(
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context(
                     viewport={'width': 1920, 'height': 1080},
                     user_agent=self.get_random_user_agent()
                 )
-                page = context.new_page()
-                page.goto(url, wait_until="networkidle", timeout=30000)
+                page = await context.new_page()
+                await page.goto(url, wait_until="networkidle", timeout=30000)
                 
                 # Small random delay to simulate human reading
-                import time
-                import random
-                time.sleep(random.uniform(0.1, 0.3))
+                await asyncio.sleep(random.uniform(0.1, 0.3))
                 
-                html = page.content()
-                browser.close()
+                html = await page.content()
+                await browser.close()
             
             soup = BeautifulSoup(html, 'html.parser')
             splits_data = self.parser.parse_result_splits(soup)
@@ -202,11 +190,10 @@ class SwimRankingsScraper(BaseScraper):
             logger.warning(f"Error fetching splits (attempt {retry_count + 1}/{self.MAX_RETRIES}): {e}")
             
             if retry_count < self.MAX_RETRIES:
-                import time
                 delay = self.calculate_retry_delay(retry_count)
                 logger.info(f"Retrying in {delay:.2f}s...")
-                time.sleep(delay)
-                return self._fetch_splits_sync(result_id, retry_count + 1)
+                await asyncio.sleep(delay)
+                return await self._fetch_splits(result_id, retry_count + 1)
             else:
                 logger.error(f"Failed to fetch splits for result {result_id} after {self.MAX_RETRIES} attempts")
                 return {'reaction_time': None, 'splits': []}

@@ -40,14 +40,26 @@ class WorkerConfig:
     def get_proxy_config(cls) -> dict:
         """Get proxy configuration for Playwright"""
         if not cls.USE_OXYLABS_PROXY or not cls.OXYLABS_USERNAME or not cls.OXYLABS_PASSWORD:
+            import logging
+            logger = logging.getLogger('config')
+            logger.info(f"Proxy disabled: USE_PROXY={cls.USE_OXYLABS_PROXY}, has_username={bool(cls.OXYLABS_USERNAME)}, has_password={bool(cls.OXYLABS_PASSWORD)}")
             return {}
         
-        # Oxylabs residential proxy endpoint
-        proxy_url = f"http://{cls.OXYLABS_USERNAME}:{cls.OXYLABS_PASSWORD}@pr.oxylabs.io:7777"
+        import logging
+        logger = logging.getLogger('config')
+        logger.info(f"Configuring Oxylabs proxy with username: {cls.OXYLABS_USERNAME[:5]}...")
+        
+        # Oxylabs residential proxy format: customer-USERNAME-cc-COUNTRY
+        # Use lowercase country code as per Oxylabs docs
+        country_code = cls.OXYLABS_COUNTRY.lower()
+        proxy_username = f"customer-{cls.OXYLABS_USERNAME}-cc-{country_code}"
+        proxy_url = f"http://{proxy_username}:{cls.OXYLABS_PASSWORD}@pr.oxylabs.io:7777"
+        
+        logger.info(f"Using Oxylabs proxy with country: {country_code.upper()}")
         
         return {
             'server': proxy_url,
-            'username': cls.OXYLABS_USERNAME,
+            'username': proxy_username,
             'password': cls.OXYLABS_PASSWORD
         }
     

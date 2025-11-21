@@ -24,13 +24,13 @@ variable "github_deploy_key" {
 variable "region" {
   description = "Digital Ocean region"
   type        = string
-  default     = "tor1"  # Toronto
+  default     = "tor1"
 }
 
 variable "droplet_size" {
   description = "Droplet size"
   type        = string
-  default     = "s-1vcpu-2gb"  # $18/mo
+  default     = "s-2vcpu-4gb"
 }
 
 variable "domain_name" {
@@ -105,7 +105,7 @@ variable "spaces_region" {
 }
 
 variable "use_oxylabs_proxy" {
-  description = "Whether to use Oxylabs residential proxy for SwimRankings scraping"
+  description = "Whether to use Oxylabs residential proxy for data ingestion"
   type        = string
   default     = "false"
 }
