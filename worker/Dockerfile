@@ -44,4 +44,4 @@ COPY worker /app/worker
 ENV PYTHONPATH=/app:/app/jobs
 
 # Run Celery worker
-CMD ["celery", "-A", "worker.celery_app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "sync"]
+CMD ["celery", "-A", "worker.celery_app", "worker", "--loglevel=info", "--concurrency=1", "-Q", "sync"]

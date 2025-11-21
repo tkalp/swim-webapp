@@ -19,8 +19,8 @@ cd /root/aquilus-webapp
 
 echo "🔄 Pulling latest changes from git..."
 git fetch origin
-git checkout feature/improving-layout
-git pull origin feature/improving-layout
+git checkout feature/add-search-swimmer-feature
+git pull origin feature/add-search-swimmer-feature
 
 echo "🛑 Stopping containers..."
 docker-compose down
