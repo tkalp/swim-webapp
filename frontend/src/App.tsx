@@ -16,6 +16,7 @@ import WorkoutViewPage from './pages/WorkoutView';
 import WorkoutFormPage from './pages/WorkoutForm';
 import WorkoutsLibraryPage from './pages/WorkoutsLibrary';
 import CoachNetworkPage from './pages/CoachNetwork';
+import AdminSyncPage from './pages/AdminSyncPage';
 import { analytics } from './lib/mixpanel';
 
 export default function App() {
@@ -125,6 +126,14 @@ export default function App() {
             </GlobalLayout>
           }
           path="/ai-coach"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <AdminSyncPage />
+            </GlobalLayout>
+          }
+          path="/admin/sync"
         />
       </Route>
       <Route path="/login" element={<Login />} />

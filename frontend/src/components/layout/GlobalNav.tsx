@@ -1,6 +1,6 @@
 // components/layout/GlobalNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home } from "lucide-react";
+import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home, Shield } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, useEffect } from "react";
 import { NotificationBell } from '@/components/layout/NotificationBell';
@@ -118,6 +118,7 @@ function ProfileMenu() {
 
   const userName = user?.user_metadata?.full_name || user?.email || "User";
   const userInitial = userName[0]?.toUpperCase() || "U";
+  const isAdmin = user?.email === 'teddy.kalp@lablytics.com';
 
   return (
     <div className="relative" ref={menuRef}>
@@ -147,6 +148,19 @@ function ProfileMenu() {
               <Home size={16} className="text-primary" />
               <span className="text-sm font-medium">Home</span>
             </button>
+            
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  navigate("/admin/sync");
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-text-primary hover:bg-background-secondary/80 transition-colors"
+              >
+                <Shield size={16} className="text-orange-500" />
+                <span className="text-sm font-medium">Admin Sync</span>
+              </button>
+            )}
             
             <div className="my-2 border-t border-border/40"></div>
             

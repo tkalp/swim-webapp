@@ -30,15 +30,12 @@ SWIMRANKINGS_STYLE_IDS: Dict[str, str] = {
     '200m Butterfly': '17',
     
     # Individual Medley
+    # Note: 100m IM is SCM only, not syncing LCM
     '100m Individual Medley': '20',
     '200m Individual Medley': '18',
     '400m Individual Medley': '19',
     
-    # 25m events
-    '25m Freestyle': '47',
-    '25m Backstroke': '48',
-    '25m Breaststroke': '49',
-    '25m Butterfly': '50',
+    # 25m events excluded from sync
 }
 
 # Reverse mapping for looking up event names
@@ -72,3 +69,65 @@ def get_all_events() -> List[str]:
 def get_stroke_enum(stroke_name: str) -> Optional[str]:
     """Get stroke enum from stroke name"""
     return STROKE_NAME_TO_ENUM.get(stroke_name)
+
+
+def get_all_event_keys() -> set:
+    """
+    Get all possible event keys (distance_stroke_course combinations)
+    
+    Returns:
+        Set of event keys in format: "{distance}_{stroke}_{course}"
+        Example: "100_free_LCM", "200_back_SCM"
+    """
+    event_keys = set()
+    courses = ['LCM', 'SCM']
+    
+    for event_name in SWIMRANKINGS_STYLE_IDS.keys():
+        # Parse distance from event name (e.g., "100m Freestyle" -> 100)
+        parts = event_name.split('m ')
+        if len(parts) != 2:
+            continue
+        
+        distance = int(parts[0])
+        stroke_name = parts[1]
+        
+        stroke_enum = get_stroke_enum(stroke_name)
+        
+        if not stroke_enum:
+            continue
+        
+        # Generate event key for both LCM and SCM
+        for course in courses:
+            # Skip 100m IM LCM (doesn't exist), but allow 100m IM SCM
+            if distance == 100 and stroke_name == 'Individual Medley' and course == 'LCM':
+                continue
+            
+            event_key = f"{distance}_{stroke_enum}_{course}"
+            event_keys.add(event_key)
+    
+    return event_keys
+
+
+def parse_event_key(event_name: str, course: str) -> Optional[str]:
+    """
+    Parse event name and course into event key format
+    
+    Args:
+        event_name: Event name (e.g., "100m Freestyle")
+        course: Course type (LCM or SCM)
+        
+    Returns:
+        Event key in format "{distance}_{stroke}_{course}" or None if invalid
+    """
+    parts = event_name.split('m ')
+    if len(parts) != 2:
+        return None
+    
+    distance = int(parts[0])
+    stroke_name = parts[1]
+    stroke_enum = get_stroke_enum(stroke_name)
+    
+    if not stroke_enum:
+        return None
+    
+    return f"{distance}_{stroke_enum}_{course}"

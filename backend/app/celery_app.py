@@ -21,6 +21,8 @@ celery_app.conf.update(
     # Task routing
     task_routes={
         'worker.sync_tasks.sync_swimmer_task': {'queue': 'sync'},
+        'worker.sync_tasks.bulk_sync_all_swimmers_task': {'queue': 'sync'},
+        'worker.sync_tasks.update_bulk_sync_progress': {'queue': 'sync'},
     },
     
     # Task execution settings

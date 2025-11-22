@@ -36,6 +36,12 @@ class WorkerConfig:
     OXYLABS_PASSWORD: str = os.getenv('OXYLABS_PASSWORD', '')
     OXYLABS_COUNTRY: str = os.getenv('OXYLABS_COUNTRY', 'us')
     
+    # Sync configuration
+    # Results synced within this window (hours) are considered fresh and won't be re-fetched
+    # Default 48h balances avoiding duplicate work vs catching meet corrections
+    # Use 24h for aggressive updates, 72h for lenient
+    SYNC_FRESHNESS_HOURS: int = int(os.getenv('SYNC_FRESHNESS_HOURS', '48'))
+    
     @classmethod
     def get_proxy_config(cls) -> dict:
         """Get proxy configuration for Playwright"""

@@ -79,6 +79,7 @@ async def link_swimmer(
     Returns:
         Created link
     """
+    supabase = get_supabase_client()
     logger.info(f"Linking swimmer {request.swimmer_id} to SwimRankings athlete {request.swimrankings_athlete_id}")
     
     try:

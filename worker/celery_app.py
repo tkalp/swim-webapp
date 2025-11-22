@@ -30,4 +30,6 @@ celery_app.conf.update(
     result_expires=86400,
     task_acks_late=True,
     task_reject_on_worker_lost=True,
+    task_track_started=True,  # Required for callbacks to work properly
+    task_ignore_result=False,  # Must store results for callbacks to work
 )
