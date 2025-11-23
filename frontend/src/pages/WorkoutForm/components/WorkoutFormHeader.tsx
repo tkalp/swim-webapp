@@ -1,5 +1,5 @@
 // components/WorkoutFormHeader.tsx
-import { ArrowLeft, Save, FileText, Check } from "lucide-react";
+import { ArrowLeft, Save, FileText, Check, CheckCircle } from "lucide-react";
 
 type WorkoutFormHeaderProps = {
   isEditMode: boolean;
