@@ -1,7 +1,6 @@
 // pages/WorkoutForm.tsx
 import { useState } from "react";
 import { FileText } from "lucide-react";
-import "@/styles/CreateWorkout.css";
 import { RealtimeWorkoutAnalyzer } from '@/components/workout';
 import { TagManager } from '@/components/workout/TagManager';
 import { useAuth } from '@/contexts/AuthContext';
@@ -129,15 +128,10 @@ export default function WorkoutFormPage() {
               value={formData.rawDescription}
               onChange={(value) => setFormData({ ...formData, rawDescription: value })}
             />
-
-            <EffortLevelSlider
-              value={formData.effortLevel}
-              onChange={(value) => setFormData({ ...formData, effortLevel: value })}
-            />
           </div>
 
-          {/* Right Panel - Analysis & Metrics */}
-          <div className="w-[480px] flex flex-col gap-3 overflow-y-auto pl-2">
+          {/* Right Panel - Analysis & Metrics - Collapsible on mobile, side panel on desktop */}
+          <div className="w-full md:w-[360px] lg:w-[400px] xl:w-[480px] flex flex-col gap-2 md:gap-3 overflow-y-auto md:pl-2 max-h-[400px] md:max-h-none">
             <div className="flex-1 min-h-0">
               <RealtimeWorkoutAnalyzer 
                 workoutText={formData.rawDescription}
@@ -148,6 +142,12 @@ export default function WorkoutFormPage() {
                 }}
               />
             </div>
+            
+            {/* Effort Level - Below Analysis */}
+            <EffortLevelSlider
+              value={formData.effortLevel}
+              onChange={(value) => setFormData({ ...formData, effortLevel: value })}
+            />
           </div>
         </div>
       </form>

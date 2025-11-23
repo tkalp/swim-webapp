@@ -70,7 +70,8 @@ const ACTIVITY_COLORS = {
 export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', onAnalysisUpdate, onEditMetric }: RealtimeWorkoutAnalyzerProps) {
   const [analysis, setAnalysis] = useState<WorkoutAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Collapse by default on mobile (screens < 768px)
+  const [isCollapsed, setIsCollapsed] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
   // Debounced text state to reduce jitter
   const [debouncedText, setDebouncedText] = useState(workoutText);
@@ -293,10 +294,17 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
   if (!workoutText.trim()) {
     return (
-      <div className={`${className}`}>
-        <div className="card-header">
-          <BarChart3 size={20} />
-          <h2>Workout Analysis</h2>
+      <div className={`${className} bg-background-card rounded-lg md:rounded-xl border border-border overflow-hidden`}>
+        <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-3 md:px-4 py-3 md:py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+              <BarChart3 size={16} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
+              <p className="text-[10px] md:text-xs text-slate-400 font-medium mt-0.5">Real-time metrics & breakdown</p>
+            </div>
+          </div>
         </div>
         <div className="flex flex-col items-center justify-center p-6 text-center">
           <BarChart3 size={40} className="text-slate-500 mb-3" />
@@ -309,10 +317,17 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
   if (error) {
     return (
-      <div className={`${className}`}>
-        <div className="card-header">
-          <BarChart3 size={20} />
-          <h2>Workout Analysis</h2>
+      <div className={`${className} bg-background-card rounded-lg md:rounded-xl border border-border overflow-hidden`}>
+        <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-3 md:px-4 py-3 md:py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+              <BarChart3 size={16} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
+              <p className="text-[10px] md:text-xs text-slate-400 font-medium mt-0.5">Real-time metrics & breakdown</p>
+            </div>
+          </div>
         </div>
         <div className="flex flex-col items-center justify-center p-6 text-center">
           <Target className="w-10 h-10 text-orange-500 mb-3" />
@@ -326,25 +341,36 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
   if (!analysis) return null;
 
   return (
-    <div className={`${className}`}>
+    <div className={`${className} bg-background-card rounded-lg md:rounded-xl border border-border overflow-hidden`}>
       {/* Collapsible Header */}
-      <div className="card-header cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
-        <BarChart3 size={20} />
-        <div className="flex-1">
-          <h2>Workout Analysis</h2>
-          {analysis.classification && !isCollapsed && (
-            <p className="card-subtitle text-xs">{analysis.classification}</p>
-          )}
+      <div 
+        className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-3 md:px-4 py-3 md:py-3.5 cursor-pointer hover:from-slate-800/50 hover:to-slate-900/50 transition-colors"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+            <BarChart3 size={16} className="text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
+            {analysis.classification && (
+              <p className="text-[10px] md:text-xs text-slate-400 font-medium mt-0.5">
+                {analysis.classification} • {Math.round(animatedMetrics.totalMeters)}m • {formatTime(animatedMetrics.estimatedDuration)}
+              </p>
+            )}
+          </div>
+          <div className="shrink-0 text-slate-400">
+            {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+          </div>
         </div>
-        {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
       </div>
 
       {!isCollapsed && (
-        <div className="p-4 space-y-4">
-          {/* Key Metrics Cards - Clickable to Edit */}
-          <div className="grid grid-cols-3 gap-2.5">
+        <div className="p-3 md:p-4 space-y-3 md:space-y-4">
+          {/* Key Metrics Cards - Clickable to Edit - Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-2.5">
             <div 
-              className="bg-slate-800/50 rounded-lg p-2.5 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative"
+              className="bg-slate-800/50 rounded-lg p-2.5 md:p-3 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative min-h-20 md:min-h-0"
               onClick={() => onEditMetric?.('distance', Math.round(animatedMetrics.totalMeters))}
               title="Click to edit distance"
             >
@@ -353,12 +379,12 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
                 <span className="text-xs font-medium text-primary">Distance</span>
                 <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-base font-bold text-slate-100">{Math.round(animatedMetrics.totalMeters)}m</p>
+              <p className="text-base md:text-lg font-bold text-slate-100">{Math.round(animatedMetrics.totalMeters)}m</p>
               <p className="text-xs text-slate-400">{Math.round(animatedMetrics.totalSets)} sets</p>
             </div>
             
             <div 
-              className="bg-slate-800/50 rounded-lg p-2.5 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative"
+              className="bg-slate-800/50 rounded-lg p-2.5 md:p-3 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative min-h-20 md:min-h-0"
               onClick={() => onEditMetric?.('duration', Math.round(animatedMetrics.estimatedDuration))}
               title="Click to edit duration"
             >
@@ -367,12 +393,12 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
                 <span className="text-xs font-medium text-green-400">Duration</span>
                 <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-base font-bold text-slate-100">{formatTime(animatedMetrics.estimatedDuration)}</p>
+              <p className="text-base md:text-lg font-bold text-slate-100">{formatTime(animatedMetrics.estimatedDuration)}</p>
               <p className="text-xs text-slate-400">{formatTime(animatedMetrics.swimTime)} swim</p>
             </div>
 
             <div 
-              className="bg-slate-800/50 rounded-lg p-2.5 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative"
+              className="bg-slate-800/50 rounded-lg p-2.5 md:p-3 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative min-h-20 md:min-h-0"
               onClick={() => onEditMetric?.('calories', Math.round(animatedMetrics.calories))}
               title="Click to edit calories"
             >
@@ -381,17 +407,17 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
                 <span className="text-xs font-medium text-orange-400">Calories</span>
                 <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-base font-bold text-slate-100">{Math.round(animatedMetrics.calories)}</p>
+              <p className="text-base md:text-lg font-bold text-slate-100">{Math.round(animatedMetrics.calories)}</p>
               <p className="text-xs text-slate-400">estimated</p>
             </div>
           </div>
 
           {/* Stroke Distribution - Enhanced with Gradients */}
           {strokeChartData.length > 0 && (
-            <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-xl p-4 border border-slate-700/50">
-              <h3 className="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                  <Waves size={14} className="text-cyan-400" />
+            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-3 md:p-4 border border-slate-700/50">
+              <h3 className="text-xs md:text-sm font-semibold text-slate-200 mb-3 md:mb-4 flex items-center gap-2">
+                <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                  <Waves size={12} className="text-cyan-400 md:w-3.5 md:h-3.5" />
                 </div>
                 Stroke Distribution
               </h3>
@@ -424,7 +450,7 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
                             boxShadow: `0 0 12px ${item.colors.glow}`
                           }}
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
+                          <div className="absolute inset-0 bg-linear-to-r from-white/20 to-transparent opacity-50" />
                         </div>
                       </div>
                     </div>
@@ -436,10 +462,10 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
           {/* Activity Distribution - Enhanced with Gradients */}
           {activityChartData.length > 0 && (
-            <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-xl p-4 border border-slate-700/50">
-              <h3 className="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                  <Activity size={14} className="text-purple-400" />
+            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-3 md:p-4 border border-slate-700/50">
+              <h3 className="text-xs md:text-sm font-semibold text-slate-200 mb-3 md:mb-4 flex items-center gap-2">
+                <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                  <Activity size={12} className="text-purple-400 md:w-3.5 md:h-3.5" />
                 </div>
                 Activity Breakdown
               </h3>
@@ -472,7 +498,7 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
                             boxShadow: `0 0 12px ${item.colors.glow}`
                           }}
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
+                          <div className="absolute inset-0 bg-linear-to-r from-white/20 to-transparent opacity-50" />
                         </div>
                       </div>
                     </div>

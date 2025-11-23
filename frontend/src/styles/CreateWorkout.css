@@ -371,9 +371,16 @@
 
 .form-textarea {
   resize: vertical;
-  min-height: 200px;
+  min-height: 300px; /* Increased from 200px for more space */
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
   line-height: 1.6;
+}
+
+/* On medium screens, use viewport height for better space utilization */
+@media (max-width: 1440px) {
+  .form-textarea {
+    min-height: max(300px, 40vh); /* Use at least 40% of viewport height */
+  }
 }
 
 .form-hint {
@@ -501,6 +508,25 @@
 }
 
 /* Responsive Design */
+
+/* Medium screens (15-inch laptops) - Optimize for more textarea space */
+@media (max-width: 1440px) {
+  /* Reduce gaps for more compact layout */
+  #workout-form > div {
+    gap: 0.75rem !important; /* Reduce from gap-4 (1rem) */
+    padding: 0.75rem !important; /* Reduce padding */
+  }
+
+  #workout-form > div > div:first-child {
+    gap: 0.5rem !important; /* Reduce left panel gap from gap-3 */
+  }
+
+  #workout-form > div > div:last-child {
+    width: 400px !important; /* Reduce right panel from 480px to 400px */
+    gap: 0.5rem !important;
+  }
+}
+
 @media (max-width: 1200px) {
   .form-grid {
     grid-template-columns: 1fr;
