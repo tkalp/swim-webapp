@@ -17,7 +17,8 @@ class WorkerConfig:
     REDIS_URL: str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Scraper configuration
-    MAX_WORKERS: int = int(os.getenv('SCRAPER_MAX_WORKERS', '1'))
+    #MAX_WORKERS: int = int(os.getenv('SCRAPER_MAX_WORKERS', '1'))
+    MAX_WORKERS = 1
     MIN_DELAY: float = float(os.getenv('SCRAPER_MIN_DELAY', '0.1'))
     MAX_DELAY: float = float(os.getenv('SCRAPER_MAX_DELAY', '0.5'))
     BASE_RETRY_DELAY: float = float(os.getenv('SCRAPER_RETRY_DELAY', '1.0'))
