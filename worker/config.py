@@ -17,12 +17,15 @@ class WorkerConfig:
     REDIS_URL: str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Scraper configuration
-    #MAX_WORKERS: int = int(os.getenv('SCRAPER_MAX_WORKERS', '1'))
-    MAX_WORKERS = 1
+    MAX_WORKERS: int = int(os.getenv('SCRAPER_MAX_WORKERS', '5'))  # Concurrent split fetches
     MIN_DELAY: float = float(os.getenv('SCRAPER_MIN_DELAY', '0.1'))
     MAX_DELAY: float = float(os.getenv('SCRAPER_MAX_DELAY', '0.5'))
     BASE_RETRY_DELAY: float = float(os.getenv('SCRAPER_RETRY_DELAY', '1.0'))
     MAX_RETRIES: int = int(os.getenv('SCRAPER_MAX_RETRIES', '3'))
+    
+    # Pipeline configuration
+    PIPELINE_QUEUE_SIZE: int = int(os.getenv('PIPELINE_QUEUE_SIZE', '3'))  # Max events in queue
+    SPLIT_BATCH_SIZE: int = int(os.getenv('SPLIT_BATCH_SIZE', '5'))  # Splits per batch
     
     # Task configuration
     TASK_SOFT_TIME_LIMIT: int = int(os.getenv('TASK_SOFT_TIME_LIMIT', '3600'))
@@ -30,6 +33,9 @@ class WorkerConfig:
     
     # SwimRankings configuration
     SWIMRANKINGS_BASE_URL: str = 'https://www.swimrankings.net'
+    
+    # Fetch mode configuration
+    FETCH_MODE: str = os.getenv('FETCH_MODE', 'curl')  # curl, httpx, or playwright
     
     # Proxy configuration
     USE_OXYLABS_PROXY: bool = os.getenv('USE_OXYLABS_PROXY', 'false').lower() == 'true'

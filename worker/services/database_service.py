@@ -77,13 +77,15 @@ class DatabaseService:
     def check_existing_results(
         self, 
         swimrankings_result_ids: List[str],
+        swimmer_id: str,
         chunk_size: int = 50
     ) -> Dict[str, str]:
         """
-        Check which results already exist in database
+        Check which results already exist in database for this specific swimmer
         
         Args:
             swimrankings_result_ids: List of SwimRankings result IDs to check
+            swimmer_id: Database swimmer ID to filter by
             chunk_size: Number of IDs to check per query (to avoid URL length limits)
             
         Returns:
@@ -99,7 +101,7 @@ class DatabaseService:
             chunk = swimrankings_result_ids[i:i + chunk_size]
             result = self.supabase.table('workout_result').select(
                 'id, swimrankings_result_id'
-            ).in_('swimrankings_result_id', chunk).execute()
+            ).eq('swimmer_id', swimmer_id).in_('swimrankings_result_id', chunk).execute()
             
             if result.data:
                 for row in result.data:
@@ -277,7 +279,8 @@ class DatabaseService:
                 'swimrankings_result_id': r.swimrankings_result_id,
                 'reaction_time': r.reaction_time,
                 'activity': r.activity,
-                'equipment': r.equipment
+                'equipment': r.equipment,
+                'has_splits_available': r.has_splits_available
             }
             for r in results
         ]
@@ -287,6 +290,140 @@ class DatabaseService:
         ).execute()
         
         return result.data if result.data else []
+    
+    def bulk_insert_workout_results_with_splits(
+        self,
+        results: List[WorkoutResult],
+        splits_map: Dict[str, List[RaceSplit]]
+    ) -> List[Dict]:
+        """
+        Bulk insert workout results and their splits together
+        
+        Args:
+            results: List of WorkoutResult objects
+            splits_map: Dict mapping swimrankings_result_id to list of RaceSplit objects
+            
+        Returns:
+            List of inserted workout result records with IDs
+        """
+        if not results:
+            return []
+        
+        # First insert workout results
+        inserted_results = self.bulk_insert_workout_results(results)
+        
+        if not inserted_results or not splits_map:
+            return inserted_results
+        
+        # Map swimrankings_result_id to database ID
+        sr_id_to_db_id = {
+            record['swimrankings_result_id']: record['id']
+            for record in inserted_results
+            if record.get('swimrankings_result_id')
+        }
+        
+        # Prepare all splits for bulk insert
+        all_splits = []
+        for sr_id, splits in splits_map.items():
+            workout_result_id = sr_id_to_db_id.get(sr_id)
+            if not workout_result_id:
+                continue
+            
+            for split in splits:
+                all_splits.append({
+                    'workout_result_id': workout_result_id,
+                    'split_distance': split.split_distance,
+                    'split_time': split.split_time,
+                    'cumulative_time': split.cumulative_time,
+                    'split_order': split.split_order
+                })
+        
+        # Insert all splits in one operation
+        if all_splits:
+            self.supabase.table('race_splits').insert(all_splits).execute()
+        
+        # Deduplicate any duplicates that may have been created
+        # This handles cases where fallback IDs vary due to location formatting differences
+        if inserted_results and len(inserted_results) > 0:
+            swimmer_id = inserted_results[0].get('swimmer_id')
+            if swimmer_id:
+                deleted_count = self.deduplicate_swimmer_results(swimmer_id)
+                if deleted_count > 0:
+                    import logging
+                    logger = logging.getLogger('database_service')
+                    logger.info(f"Removed {deleted_count} duplicate results for swimmer {swimmer_id}")
+        
+        return inserted_results
+    
+    def deduplicate_swimmer_results(self, swimmer_id: str) -> int:
+        """
+        Remove duplicate workout results for a swimmer
+        Keeps oldest record for each unique result (same swimmer, stroke, distance, course, time, date, meet)
+        
+        Args:
+            swimmer_id: Swimmer ID to deduplicate results for
+            
+        Returns:
+            Number of duplicate records deleted
+        """
+        dedup_query = """
+        WITH duplicate_groups AS (
+          SELECT 
+            swimmer_id,
+            stroke,
+            distance,
+            result_units,
+            time_result,
+            performed_on,
+            meet_name,
+            MIN(created_at) as keep_created_at,
+            COUNT(*) as duplicate_count
+          FROM workout_result
+          WHERE swimmer_id = %s AND activity = 'swim'
+          GROUP BY 
+            swimmer_id,
+            stroke,
+            distance,
+            result_units,
+            time_result,
+            performed_on,
+            meet_name
+          HAVING COUNT(*) > 1
+        ),
+        records_to_delete AS (
+          SELECT wr.id
+          FROM workout_result wr
+          INNER JOIN duplicate_groups dg ON
+            wr.swimmer_id = dg.swimmer_id
+            AND wr.stroke = dg.stroke
+            AND wr.distance = dg.distance
+            AND wr.result_units = dg.result_units
+            AND wr.time_result = dg.time_result
+            AND wr.performed_on = dg.performed_on
+            AND (wr.meet_name = dg.meet_name OR (wr.meet_name IS NULL AND dg.meet_name IS NULL))
+          WHERE wr.created_at > dg.keep_created_at
+        )
+        DELETE FROM workout_result
+        WHERE id IN (SELECT id FROM records_to_delete);
+        """
+        
+        try:
+            # Execute RPC function to deduplicate
+            result = self.supabase.rpc(
+                'deduplicate_swimmer_results',
+                {'p_swimmer_id': swimmer_id}
+            ).execute()
+            
+            if result.data is not None:
+                return int(result.data) if isinstance(result.data, (int, float)) else 0
+            return 0
+        except Exception as e:
+            # If RPC doesn't exist, log and continue
+            # This is non-critical - duplicates will be cleaned up on next sync
+            import logging
+            logger = logging.getLogger('database_service')
+            logger.warning(f"Could not deduplicate results for swimmer {swimmer_id}: {e}")
+            return 0
     
     def bulk_insert_race_splits(
         self, 

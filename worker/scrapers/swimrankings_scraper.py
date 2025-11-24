@@ -11,6 +11,8 @@ from worker.scrapers.base_scraper import BaseScraper
 from worker.parsers.swimrankings_parser import SwimRankingsParser
 from worker.models import ResultWithSplits, AttemptData, RaceSplit
 from worker.config import WorkerConfig
+from worker.fetchers import FetcherFactory, BaseFetcher
+from worker.utils import DistanceHelper
 
 
 logger = logging.getLogger('swimrankings_scraper')
@@ -19,11 +21,19 @@ logger = logging.getLogger('swimrankings_scraper')
 class SwimRankingsScraper(BaseScraper):
     """Service for scraping SwimRankings.net"""
     
-    def __init__(self, max_workers: Optional[int] = None):
-        """Initialize SwimRankings scraper"""
+    def __init__(self, max_workers: Optional[int] = None, fetch_mode: Optional[str] = None):
+        """
+        Initialize SwimRankings scraper
+        
+        Args:
+            max_workers: Maximum parallel workers for split fetching
+            fetch_mode: Fetch mode ('curl', 'httpx', 'playwright'). Defaults to config.
+        """
         super().__init__(max_workers)
         self.base_url = WorkerConfig.SWIMRANKINGS_BASE_URL
         self.parser = SwimRankingsParser()
+        self.fetcher: BaseFetcher = FetcherFactory.create(mode=fetch_mode)
+        logger.info(f"SwimRankingsScraper initialized with {self.fetcher.get_name()} fetcher")
     
     async def fetch_event_attempts(
         self,
@@ -58,9 +68,9 @@ class SwimRankingsScraper(BaseScraper):
         url = f"{self.base_url}/index.php?page=athleteDetail&athleteId={athlete_id}&styleId={style_id}"
         
         try:
-            # Fetch main page using async Playwright
+            # Fetch main page using configured fetcher
             logger.info(f"Fetching athlete detail page: {url}")
-            html = await self.fetch_page(url)
+            html = await self.fetcher.fetch(url)
             logger.info(f"Successfully fetched page, HTML size: {len(html)} bytes")
             
             soup = BeautifulSoup(html, 'html.parser')
@@ -75,15 +85,43 @@ class SwimRankingsScraper(BaseScraper):
                 attempts = attempts[:limit]
                 logger.info(f"Limiting results from {original_count} to {len(attempts)} attempt(s)")
             
-            # Conditionally fetch splits based on skip_no_splits flag
-            if skip_no_splits:
+            # Check if we should fetch splits for this event distance
+            style_id_int = int(style_id)
+            should_fetch_splits = DistanceHelper.should_fetch_splits(style_id_int)
+            
+            if not should_fetch_splits:
+                logger.info(f"Skipping splits fetch for all {len(attempts)} attempt(s) (event distance <= 50m)")
+                # Return results without splits, marked as unavailable
+                all_results = [
+                    ResultWithSplits(
+                        attempt=attempt,
+                        reaction_time=None,
+                        splits=[],
+                        has_splits_available=False
+                    )
+                    for attempt in attempts
+                ]
+            elif limit:
+                logger.info(f"Skipping splits fetch for {len(attempts)} attempt(s) (limit={limit}, optimization)")
+                # Return results without splits when limiting for speed
+                all_results = [
+                    ResultWithSplits(
+                        attempt=attempt,
+                        reaction_time=None,
+                        splits=[],
+                        has_splits_available=None  # Unknown since we didn't check
+                    )
+                    for attempt in attempts
+                ]
+            elif skip_no_splits:
                 logger.info(f"Skipping splits fetch for {len(attempts)} attempt(s) (skip_no_splits=True)")
                 # Return results without splits for maximum speed
                 all_results = [
                     ResultWithSplits(
                         attempt=attempt,
                         reaction_time=None,
-                        splits=[]
+                        splits=[],
+                        has_splits_available=None  # Unknown since we didn't check
                     )
                     for attempt in attempts
                 ]
@@ -105,19 +143,21 @@ class SwimRankingsScraper(BaseScraper):
                         result = ResultWithSplits(
                             attempt=attempt,
                             reaction_time=None,
-                            splits=[]
+                            splits=[],
+                            has_splits_available=None
                         )
                         
                         if attempt.result_id:
-                            # Apply intelligent rate limiting
-                            await self.rate_limit_delay()
+                            # Note: Rate limiting removed for concurrent split fetching
+                            # Concurrency controlled by semaphore in sync_service
                             
                             logger.info(f"[{idx}/{len(attempts)}] Fetching splits for result_id={attempt.result_id}")
-                            splits_data = await self._fetch_splits(
-                                attempt.result_id
-                            )
+                            splits_data = await self._fetch_splits(attempt.result_id)
                             result.reaction_time = splits_data.get('reaction_time')
                             result.splits = splits_data.get('splits', [])
+                            
+                            # Mark availability based on whether splits were found
+                            result.has_splits_available = len(result.splits) > 0
                             
                             if result.splits:
                                 logger.info(f"[{idx}/{len(attempts)}] Found {len(result.splits)} split(s)" + 
@@ -146,7 +186,7 @@ class SwimRankingsScraper(BaseScraper):
     
     async def _fetch_splits(self, result_id: str, retry_count: int = 0) -> Dict:
         """
-        Fetch race splits for a single result using async Playwright.
+        Fetch race splits for a single result using configured fetcher.
         
         Args:
             result_id: SwimRankings result ID
@@ -155,27 +195,11 @@ class SwimRankingsScraper(BaseScraper):
         Returns:
             Dictionary with 'reaction_time' and 'splits' keys
         """
-        from playwright.async_api import async_playwright, TimeoutError
-        import random
-        
         url = f"{self.base_url}/index.php?page=resultDetail&id={result_id}"
         
         try:
             logger.debug(f"Fetching splits page for result_id={result_id}")
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context(
-                    viewport={'width': 1920, 'height': 1080},
-                    user_agent=self.get_random_user_agent()
-                )
-                page = await context.new_page()
-                await page.goto(url, wait_until="networkidle", timeout=30000)
-                
-                # Small random delay to simulate human reading
-                await asyncio.sleep(random.uniform(0.1, 0.3))
-                
-                html = await page.content()
-                await browser.close()
+            html = await self.fetcher.fetch(url)
             
             soup = BeautifulSoup(html, 'html.parser')
             splits_data = self.parser.parse_result_splits(soup)
@@ -186,7 +210,7 @@ class SwimRankingsScraper(BaseScraper):
             
             return splits_data
             
-        except (TimeoutError, Exception) as e:
+        except Exception as e:
             logger.warning(f"Error fetching splits (attempt {retry_count + 1}/{self.MAX_RETRIES}): {e}")
             
             if retry_count < self.MAX_RETRIES:

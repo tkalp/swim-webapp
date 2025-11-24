@@ -11,6 +11,7 @@ import random
 import asyncio
 import os
 from app.utils import logger, log_error
+from app.utils.curl_fetcher import CurlFetcher
 
 
 class SwimRankingsScraper:
@@ -18,17 +19,28 @@ class SwimRankingsScraper:
     
     BASE_URL = "https://www.swimrankings.net"
     
-    def __init__(self):
-        """Initialize scraper with optional proxy configuration"""
+    def __init__(self, use_curl: bool = True):
+        """
+        Initialize scraper with optional proxy configuration
+        
+        Args:
+            use_curl: Use CurlFetcher for faster requests (default: True)
+        """
+        self.use_curl = use_curl
+        self.curl_fetcher = CurlFetcher() if use_curl else None
+        
+        # Legacy httpx config (fallback)
         self.use_proxy = os.getenv("USE_OXYLABS_PROXY", "false").lower() == "true"
         self.proxy_username = os.getenv("OXYLABS_USERNAME")
         self.proxy_password = os.getenv("OXYLABS_PASSWORD")
         self.proxy_country = os.getenv("OXYLABS_COUNTRY", "US")
         
-        logger.info(f"Proxy config - USE_OXYLABS_PROXY: {self.use_proxy}")
-        logger.info(f"Proxy config - Username present: {bool(self.proxy_username)}")
-        logger.info(f"Proxy config - Password present: {bool(self.proxy_password)}")
-        logger.info(f"Proxy config - Country: {self.proxy_country}")
+        logger.info(f"SwimRankingsScraper initialized with {'curl' if use_curl else 'httpx'} fetcher")
+        if not use_curl:
+            logger.info(f"Proxy config - USE_OXYLABS_PROXY: {self.use_proxy}")
+            logger.info(f"Proxy config - Username present: {bool(self.proxy_username)}")
+            logger.info(f"Proxy config - Password present: {bool(self.proxy_password)}")
+            logger.info(f"Proxy config - Country: {self.proxy_country}")
         
     def _get_proxy_url(self) -> Optional[str]:
         """Build Oxylabs proxy URL if credentials are configured"""
@@ -43,7 +55,7 @@ class SwimRankingsScraper:
     
     async def search_swimmer(self, firstname: str, lastname: str) -> List[Dict]:
         """
-        Search for swimmers on SwimRankings using httpx with realistic patterns
+        Search for swimmers on SwimRankings
         
         Args:
             firstname: Swimmer's first name
@@ -54,7 +66,8 @@ class SwimRankingsScraper:
         """
         logger.info(f"Searching SwimRankings for: {firstname} {lastname}")
         
-        search_url = f"{self.BASE_URL}/index.php"
+        # Build search URL with parameters
+        from urllib.parse import urlencode
         params = {
             'internalRequest': 'athleteFind',
             'athlete_clubId': '-1',  # Worldwide
@@ -62,8 +75,41 @@ class SwimRankingsScraper:
             'athlete_lastname': lastname,
             'athlete_firstname': firstname,
         }
+        search_url = f"{self.BASE_URL}/index.php?{urlencode(params)}"
         
-        # More realistic headers with varied user agents
+        try:
+            # Use curl fetcher for faster requests
+            if self.use_curl and self.curl_fetcher:
+                try:
+                    # Small delay to appear human-like
+                    await asyncio.sleep(random.uniform(0.3, 1.0))
+                    
+                    html_text = await self.curl_fetcher.fetch(search_url)
+                    logger.info(f"Curl fetch successful, HTML length: {len(html_text)} chars")
+                    
+                except Exception as curl_error:
+                    logger.warning(f"Curl fetch failed, falling back to httpx: {curl_error}")
+                    # Fall back to httpx
+                    html_text = await self._fetch_with_httpx(search_url, params)
+            else:
+                # Use httpx directly
+                html_text = await self._fetch_with_httpx(search_url, params)
+            
+            # Parse results
+            soup = BeautifulSoup(html_text, 'html.parser')  # Use faster html.parser
+            results = self._parse_search_results(soup)
+            
+            logger.info(f"Found {len(results)} swimmer(s) on SwimRankings")
+            return results
+            
+        except Exception as e:
+            log_error(e, context="swimrankings_search", firstname=firstname, lastname=lastname)
+            return []
+    
+    async def _fetch_with_httpx(self, search_url: str, params: Dict) -> str:
+        """Fallback fetch method using httpx"""
+        logger.info("Using httpx fallback for fetch")
+        
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -79,71 +125,27 @@ class SwimRankingsScraper:
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0',
             'Referer': self.BASE_URL,
         }
         
-        try:
-            # Add random delay to appear more human-like (0.5-2 seconds)
-            await asyncio.sleep(random.uniform(0.5, 2.0))
+        # Add random delay
+        await asyncio.sleep(random.uniform(0.5, 2.0))
+        
+        proxy_url = self._get_proxy_url()
+        
+        async with httpx.AsyncClient(
+            timeout=30.0, 
+            follow_redirects=True,
+            proxy=proxy_url
+        ) as client:
+            response = await client.get(search_url, headers=headers)
             
-            # Configure proxy if enabled
-            proxy_url = self._get_proxy_url()
+            if response.status_code == 503:
+                logger.error("Received 503 - SwimRankings is blocking the request")
+                return ""
             
-            # httpx automatically handles basic auth from URL (user:pass@host:port)
-            async with httpx.AsyncClient(
-                timeout=30.0, 
-                follow_redirects=True,
-                proxy=proxy_url  # None if no proxy, or full URL with embedded credentials
-            ) as client:
-                # First, visit the homepage to get cookies
-                logger.info("Visiting homepage to establish session...")
-                await client.get(self.BASE_URL, headers=headers)
-                
-                # Small delay before search
-                await asyncio.sleep(random.uniform(0.3, 1.0))
-                
-                logger.info(f"Making search request with params: {params}")
-                response = await client.get(search_url, params=params, headers=headers)
-                logger.info(f"Response status: {response.status_code}")
-                logger.info(f"Response headers: {dict(response.headers)}")
-                
-                if response.status_code == 503:
-                    logger.error("Received 503 - SwimRankings is blocking the request")
-                    return []
-                
-                response.raise_for_status()
-                
-                # Manually handle brotli decompression if needed
-                html_text = response.text
-                if response.headers.get('content-encoding') == 'br' and len(html_text) < 1000:
-                    # Response might not be properly decompressed
-                    try:
-                        logger.info("Attempting manual brotli decompression...")
-                        decompressed = brotli.decompress(response.content)
-                        html_text = decompressed.decode('utf-8')
-                        logger.info(f"Successfully decompressed brotli content")
-                    except Exception as decomp_err:
-                        logger.error(f"Brotli decompression failed: {decomp_err}")
-                        # Fall back to original text
-                        pass
-                
-                logger.info(f"Decoded text length: {len(html_text)} chars")
-                logger.info(f"First 500 chars: {html_text[:500]}")
-                
-                soup = BeautifulSoup(html_text, 'lxml')
-                results = self._parse_search_results(soup)
-                
-                logger.info(f"Found {len(results)} swimmer(s) on SwimRankings")
-                return results
-            
-        except Exception as e:
-            log_error(e, context="swimrankings_search", firstname=firstname, lastname=lastname)
-            return []
+            response.raise_for_status()
+            return response.text
     
     def _parse_search_results(self, soup: BeautifulSoup) -> List[Dict]:
         """Parse SwimRankings search results"""
@@ -226,6 +228,24 @@ class SwimRankingsScraper:
         
         profile_url = f"{self.BASE_URL}/index.php?page=athleteDetail&athleteId={athlete_id}"
         
+        try:
+            # Use curl fetcher if available
+            if self.use_curl and self.curl_fetcher:
+                html = await self.curl_fetcher.fetch(profile_url)
+                soup = BeautifulSoup(html, 'html.parser')
+                results = self._parse_athlete_best_times(soup)
+                logger.info(f"Found {len(results)} best times for athlete {athlete_id} (via curl)")
+                return results
+            
+            # Fallback to httpx
+            return await self._fetch_best_times_with_httpx(athlete_id, profile_url)
+                
+        except Exception as e:
+            log_error(e, context="get_athlete_best_times", athlete_id=athlete_id)
+            return []
+    
+    async def _fetch_best_times_with_httpx(self, athlete_id: str, profile_url: str) -> List[Dict]:
+        """Fallback method using httpx for fetching best times"""
         # Realistic headers
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -242,29 +262,24 @@ class SwimRankingsScraper:
             'Referer': self.BASE_URL,
         }
         
-        try:
-            # Add delay to be respectful
-            await asyncio.sleep(random.uniform(0.5, 2.0))
+        # Add delay to be respectful
+        await asyncio.sleep(random.uniform(0.5, 2.0))
+        
+        proxy_url = self._get_proxy_url()
+        
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            proxy=proxy_url
+        ) as client:
+            response = await client.get(profile_url, headers=headers)
+            response.raise_for_status()
             
-            proxy_url = self._get_proxy_url()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            results = self._parse_athlete_best_times(soup)
             
-            async with httpx.AsyncClient(
-                timeout=30.0,
-                follow_redirects=True,
-                proxy=proxy_url
-            ) as client:
-                response = await client.get(profile_url, headers=headers)
-                response.raise_for_status()
-                
-                soup = BeautifulSoup(response.text, 'lxml')
-                results = self._parse_athlete_best_times(soup)
-                
-                logger.info(f"Found {len(results)} best times for athlete {athlete_id}")
-                return results
-                
-        except Exception as e:
-            log_error(e, context="get_athlete_best_times", athlete_id=athlete_id)
-            return []
+            logger.info(f"Found {len(results)} best times for athlete {athlete_id} (via httpx)")
+            return results
     
     def _parse_athlete_best_times(self, soup: BeautifulSoup) -> List[Dict]:
         """Parse best times from athlete profile page"""

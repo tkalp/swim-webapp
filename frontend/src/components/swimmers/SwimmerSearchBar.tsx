@@ -159,7 +159,7 @@ export function SwimmerSearchBar() {
           {!isSearching && results.length === 0 && query.length >= 2 && !error && (
             <div className="px-4 py-8 text-center text-sm text-text-muted">
               <p>Type a swimmer's name to search</p>
-              <p className="text-xs mt-1">e.g., "Teddy Kalp"</p>
+              <p className="text-xs mt-1">e.g., "Michael Phelps"</p>
             </div>
           )}
         </div>

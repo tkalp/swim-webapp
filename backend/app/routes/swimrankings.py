@@ -4,6 +4,8 @@ SwimRankings.net API routes
 
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
+import time
+from functools import lru_cache
 
 from app.infrastructure.database import get_supabase_client
 from app.models.swimrankings import (
@@ -19,6 +21,32 @@ from app.utils.fina_calculator import calculate_fina_points, time_string_to_seco
 
 
 router = APIRouter(prefix="/swimrankings", tags=["swimrankings"])
+
+# Simple in-memory cache for search results (expires every 15 minutes)
+# Format: {(firstname, lastname): (timestamp, results)}
+_search_cache = {}
+CACHE_TTL_SECONDS = 900  # 15 minutes
+
+
+def get_cached_search(firstname: str, lastname: str) -> List[dict] | None:
+    """Get cached search results if not expired"""
+    cache_key = (firstname.lower().strip(), lastname.lower().strip())
+    if cache_key in _search_cache:
+        timestamp, results = _search_cache[cache_key]
+        if time.time() - timestamp < CACHE_TTL_SECONDS:
+            logger.info(f"Cache hit for {firstname} {lastname}")
+            return results
+        else:
+            # Expired, remove from cache
+            del _search_cache[cache_key]
+    return None
+
+
+def cache_search_results(firstname: str, lastname: str, results: List[dict]):
+    """Cache search results"""
+    cache_key = (firstname.lower().strip(), lastname.lower().strip())
+    _search_cache[cache_key] = (time.time(), results)
+    logger.debug(f"Cached results for {firstname} {lastname}")
 
 
 @router.get("/search", response_model=List[SwimRankingsSearchResult])
@@ -36,11 +64,37 @@ async def search_swimmers(
     Returns:
         List of matching swimmers
     """
+    start_time = time.time()
     logger.info(f"API search request: {firstname} {lastname}")
     
     try:
-        scraper = SwimRankingsScraper()
+        # Check cache first
+        cached_results = get_cached_search(firstname, lastname)
+        if cached_results is not None:
+            # Convert cached results to Pydantic models
+            swimmers = []
+            for result in cached_results:
+                swimmers.append(SwimRankingsSearchResult(
+                    athlete_id=result['athlete_id'],
+                    name=result['name'],
+                    birth_year=result.get('birth_year'),
+                    gender=result.get('gender'),
+                    nation=result.get('nation'),
+                    club=result.get('club'),
+                    last_result=result.get('last_result', ''),
+                    url=result['url']
+                ))
+            
+            elapsed = (time.time() - start_time) * 1000
+            logger.info(f"Returning {len(swimmers)} cached results in {elapsed:.2f}ms")
+            return swimmers
+        
+        # Perform search with curl-optimized scraper
+        scraper = SwimRankingsScraper(use_curl=True)
         results = await scraper.search_swimmer(firstname, lastname)
+        
+        # Cache results
+        cache_search_results(firstname, lastname, results)
         
         # Convert to Pydantic models
         swimmers = []
@@ -56,11 +110,13 @@ async def search_swimmers(
                 url=result['url']
             ))
         
-        logger.info(f"Returning {len(swimmers)} search results")
+        elapsed = (time.time() - start_time) * 1000
+        logger.info(f"Returning {len(swimmers)} search results in {elapsed:.2f}ms")
         return swimmers
         
     except Exception as e:
-        log_error(e, context="search_swimmers", firstname=firstname, lastname=lastname)
+        elapsed = (time.time() - start_time) * 1000
+        log_error(e, context="search_swimmers", firstname=firstname, lastname=lastname, elapsed_ms=elapsed)
         raise HTTPException(status_code=500, detail="Failed to search SwimRankings")
 
 

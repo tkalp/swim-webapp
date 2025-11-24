@@ -40,6 +40,7 @@ class ResultWithSplits:
     attempt: AttemptData
     reaction_time: Optional[float] = None
     splits: List[RaceSplit] = field(default_factory=list)
+    has_splits_available: Optional[bool] = None  # None=unknown, True=has splits, False=unavailable
 
 
 @dataclass
@@ -59,6 +60,7 @@ class WorkoutResult:
     reaction_time: Optional[float] = None
     activity: str = 'swim'
     equipment: str = 'none'
+    has_splits_available: Optional[bool] = None  # None=unknown, True=has splits, False=unavailable
 
 
 @dataclass
