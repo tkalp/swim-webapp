@@ -139,16 +139,16 @@ export default function ExternalSwimmerPage() {
   const strokeData: Record<string, ExternalSwimmerBestTime[]> = finaData?.by_stroke || {};
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background-primary via-background-secondary/30 to-background-primary">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-linear-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-border/40">
+      <div className="relative overflow-hidden bg-linear-to-r from-cyan-500/10 via-blue-500/10 to-cyan-500/10 border-b border-slate-800/60">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgxNDgsIDE2MywgMTg0LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Back Button */}
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary mb-6 transition-all duration-200 hover:gap-3 group"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-cyan-400 mb-6 transition-all duration-200 hover:gap-3 group"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm font-medium">Back to Home</span>
@@ -158,14 +158,14 @@ export default function ExternalSwimmerPage() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="inline-flex items-center gap-3 mb-3">
-                <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                   <Award className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-linear-to-r from-text-primary to-primary bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold bg-linear-to-r from-cyan-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                     {swimmer.name}
                   </h1>
-                  <div className="flex flex-wrap gap-4 mt-2 text-text-secondary">
+                  <div className="flex flex-wrap gap-4 mt-2 text-slate-400">
                     {swimmer.birth_year && (
                       <span className="flex items-center gap-1.5 text-sm">
                         <Calendar size={14} />
@@ -192,7 +192,7 @@ export default function ExternalSwimmerPage() {
             {/* Add to Squad Button */}
             <button
               onClick={() => setShowAddToSquad(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-primary to-accent text-white rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 transition-all duration-200 font-medium"
             >
               <UserPlus size={18} />
               Add to Squad
@@ -215,7 +215,7 @@ export default function ExternalSwimmerPage() {
             <div className="flex items-center gap-3">
               {syncStatus.sync_status === 'pending' || syncStatus.sync_status === 'in_progress' ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin flex-shrink-0 text-cyan-400" />
+                  <Loader2 className="w-5 h-5 animate-spin shrink-0 text-cyan-400" />
                   <div className="flex-1">
                     <p className="font-semibold">
                       {syncStatus.sync_status === 'pending' ? 'Preparing to import data...' : 'Importing swimmer data...'}
@@ -254,13 +254,13 @@ export default function ExternalSwimmerPage() {
         )}
 
         {/* Course Selector */}
-        <div className="inline-flex gap-1 p-1 bg-background-elevated rounded-xl border border-border/60 mb-8 shadow-md">
+        <div className="inline-flex gap-1 p-1 bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 mb-8 shadow-md">
           <button
             onClick={() => setCourse('LCM')}
             className={`px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
               course === 'LCM'
-                ? 'bg-linear-to-r from-primary to-accent text-white shadow-md'
-                : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary/60'
+                ? 'bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
             }`}
           >
             Long Course (50m)
@@ -269,8 +269,8 @@ export default function ExternalSwimmerPage() {
             onClick={() => setCourse('SCM')}
             className={`px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
               course === 'SCM'
-                ? 'bg-linear-to-r from-primary to-accent text-white shadow-md'
-                : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary/60'
+                ? 'bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
             }`}
           >
             Short Course (25m)
@@ -280,14 +280,14 @@ export default function ExternalSwimmerPage() {
         {/* Loading State */}
         {isLoading && (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-800 font-medium">{error}</p>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center backdrop-blur-xl">
+            <p className="text-red-400 font-medium">{error}</p>
           </div>
         )}
 
@@ -295,8 +295,8 @@ export default function ExternalSwimmerPage() {
         {!isLoading && !error && finaData && (
           <>
             {finaData.all_results.length === 0 ? (
-              <div className="bg-background-elevated rounded-2xl border border-border/60 p-12 text-center">
-                <p className="text-text-muted text-lg">
+              <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-12 text-center">
+                <p className="text-slate-400 text-lg">
                   No times found for {course} course
                 </p>
               </div>
@@ -312,27 +312,27 @@ export default function ExternalSwimmerPage() {
                         key={stroke}
                         className={`group relative overflow-hidden rounded-2xl border p-6 text-center transition-all duration-300 ${
                           hasPoints 
-                            ? 'bg-linear-to-br from-primary/5 via-accent/5 to-primary/5 border-primary/20 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 cursor-pointer' 
-                            : 'bg-background-elevated/50 border-border/30'
+                            ? 'bg-slate-900/90 backdrop-blur-xl border-cyan-500/20 hover:border-cyan-500/40 hover:shadow-xl hover:shadow-cyan-500/10 cursor-pointer' 
+                            : 'bg-slate-900/50 border-slate-800/30'
                         }`}
                       >
-                        <div className="text-[10px] text-text-secondary mb-3 font-bold uppercase tracking-widest">
+                        <div className="text-[10px] text-slate-400 mb-3 font-bold uppercase tracking-widest">
                           {stroke === 'Individual Medley' ? 'IM' : stroke}
                         </div>
                         <div className={`text-5xl font-black tracking-tight mb-1 transition-transform duration-300 ${
                           hasPoints 
-                            ? 'bg-linear-to-br from-primary via-accent to-primary bg-clip-text text-transparent group-hover:scale-110' 
-                            : 'text-text-muted/30'
+                            ? 'bg-linear-to-br from-cyan-500 via-blue-500 to-purple-500 bg-clip-text text-transparent group-hover:scale-110' 
+                            : 'text-slate-500/30'
                         }`}>
                           {hasPoints ? maxPoints : '—'}
                         </div>
                         {hasPoints && (
-                          <div className="text-[10px] text-text-muted font-semibold uppercase tracking-wide">FINA Points</div>
+                          <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">FINA Points</div>
                         )}
                         {hasPoints && (
                           <>
-                            <div className="absolute inset-0 bg-linear-to-br from-primary/0 via-primary/5 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-500"></div>
+                            <div className="absolute inset-0 bg-linear-to-br from-cyan-500/0 via-cyan-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-cyan-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-500"></div>
                           </>
                         )}
                       </div>
@@ -341,10 +341,10 @@ export default function ExternalSwimmerPage() {
                 </div>
 
                 {/* Top 5 Best Results */}
-                <div className="bg-background-elevated rounded-2xl border border-border/60 p-6 shadow-lg">
+                <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-lg">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="h-1 w-16 bg-linear-to-r from-primary to-accent rounded-full"></div>
-                    <h2 className="text-2xl font-bold text-text-primary">
+                    <div className="h-1 w-16 bg-linear-to-r from-cyan-500 to-blue-500 rounded-full"></div>
+                    <h2 className="text-2xl font-bold text-slate-100">
                       Top Performances
                     </h2>
                   </div>
@@ -352,30 +352,30 @@ export default function ExternalSwimmerPage() {
                     {topResults.map((result, idx) => (
                       <div
                         key={idx}
-                        className="group relative flex items-center justify-between p-5 bg-linear-to-r from-background-secondary/40 to-transparent rounded-xl hover:from-primary/10 hover:to-accent/5 border border-transparent hover:border-primary/20 transition-all duration-300 hover:shadow-md"
+                        className="group relative flex items-center justify-between p-5 bg-slate-800/30 rounded-xl hover:bg-slate-800/50 border border-slate-700/40 hover:border-cyan-500/30 transition-all duration-300 hover:shadow-md hover:shadow-cyan-500/10"
                       >
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-primary to-accent rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-cyan-500 to-blue-500 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-text-primary group-hover:text-primary transition-colors">
+                            <span className="text-lg font-bold text-slate-100 group-hover:text-cyan-400 transition-colors">
                               {result.distance}m {result.stroke}
                             </span>
-                            <span className="text-lg font-semibold text-primary">
+                            <span className="text-lg font-semibold text-cyan-400">
                               {result.time_formatted}
                             </span>
                           </div>
-                          <div className="text-sm text-text-secondary mt-1.5 font-medium">
+                          <div className="text-sm text-slate-400 mt-1.5 font-medium">
                             {result.meet_name}
                           </div>
-                          <div className="text-xs text-text-muted mt-1">
+                          <div className="text-xs text-slate-500 mt-1">
                             {result.city} • {result.date}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                          <div className="text-4xl font-black bg-linear-to-br from-primary via-accent to-primary bg-clip-text text-transparent">
+                          <div className="text-4xl font-black bg-linear-to-br from-cyan-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                             {result.fina_points}
                           </div>
-                          <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest">FINA Points</div>
+                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">FINA Points</div>
                         </div>
                       </div>
                     ))}
@@ -406,18 +406,18 @@ export default function ExternalSwimmerPage() {
                     return (
                       <div
                         key={stroke}
-                        className="bg-background-elevated rounded-2xl border border-border/60 p-6 shadow-lg hover:shadow-xl transition-shadow"
+                        className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-lg hover:shadow-xl hover:shadow-cyan-500/5 transition-all"
                       >
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="h-1 w-12 bg-linear-to-r from-primary to-accent rounded-full"></div>
-                          <h3 className="text-xl font-bold text-text-primary">
+                          <div className="h-1 w-12 bg-linear-to-r from-cyan-500 to-blue-500 rounded-full"></div>
+                          <h3 className="text-xl font-bold text-slate-100">
                             {stroke}
                           </h3>
                         </div>
                         <div className="space-y-4">
                           {sortedEvents.map(([distance, eventTimes]) => (
                             <div key={distance}>
-                              <div className="text-sm font-semibold text-text-secondary mb-2 uppercase tracking-wide">
+                              <div className="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wide">
                                 {distance}m
                               </div>
                               <div className="space-y-2">
@@ -426,21 +426,21 @@ export default function ExternalSwimmerPage() {
                                   .map((time: ExternalSwimmerBestTime, idx: number) => (
                                     <div
                                       key={idx}
-                                      className="flex items-center justify-between p-4 bg-background-secondary/30 rounded-xl hover:bg-background-secondary/50 border border-transparent hover:border-primary/20 transition-all"
+                                      className="flex items-center justify-between p-4 bg-slate-800/30 rounded-xl hover:bg-slate-800/50 border border-slate-700/40 hover:border-cyan-500/30 transition-all"
                                     >
                                       <div className="flex-1">
-                                        <div className="font-semibold text-text-primary">
+                                        <div className="font-semibold text-slate-100">
                                           {time.time_formatted}
                                         </div>
-                                        <div className="text-sm text-text-secondary mt-1">
+                                        <div className="text-sm text-slate-400 mt-1">
                                           {time.meet_name} • {time.date}
                                         </div>
                                       </div>
                                       <div className="text-right">
-                                        <div className="text-2xl font-black bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
+                                        <div className="text-2xl font-black bg-linear-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
                                           {time.fina_points}
                                         </div>
-                                        <div className="text-[9px] text-text-muted font-bold uppercase tracking-widest">FINA</div>
+                                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">FINA</div>
                                       </div>
                                     </div>
                                   ))}

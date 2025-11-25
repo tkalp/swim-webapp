@@ -47,105 +47,110 @@ export const AttendanceRankingsTable: React.FC<AttendanceRankingsTableProps> = (
 
   if (sortedSwimmers.length === 0) {
     return (
-      <div className="bg-background-elevated border border-border rounded-lg overflow-hidden shadow-md">
-        <div className="p-6 border-b border-border">
-          <h3 className="text-xl font-semibold text-text-primary">Attendance Rankings</h3>
-          <p className="text-sm text-text-secondary mt-1">Ranked by attendance rate</p>
+      <div className="relative bg-gradient-to-br from-background-elevated via-background-secondary/20 to-background-elevated rounded-2xl border-2 border-border/40 overflow-hidden shadow-xl">
+        <div className="p-6 border-b-2 border-border/40 bg-gradient-to-r from-background-secondary/50 to-background-secondary/30">
+          <h3 className="text-xl font-bold text-transparent bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text">Attendance Rankings</h3>
+          <p className="text-sm text-text-secondary mt-1 font-medium">Ranked by attendance rate</p>
         </div>
-        <div className="p-8 text-center">
-          <p className="text-text-secondary">No attendance data available for the selected period.</p>
+        <div className="p-12 text-center">
+          <p className="text-text-secondary font-medium">No attendance data available for the selected period.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-background-elevated border border-border rounded-lg overflow-hidden shadow-md">
-      <div className="p-6 border-b border-border">
-        <h3 className="text-xl font-semibold text-text-primary">Attendance Rankings</h3>
-        <p className="text-sm text-text-secondary mt-1">Ranked by attendance rate</p>
-      </div>
+    <div className="relative bg-gradient-to-br from-background-elevated via-background-secondary/20 to-background-elevated rounded-2xl border-2 border-border/40 overflow-hidden shadow-2xl">
+      {/* Animated glow */}
+      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-gradient-to-br from-emerald-500/10 via-green-500/10 to-emerald-500/10 rounded-full blur-3xl"></div>
+      
+      <div className="relative">
+        <div className="p-6 border-b-2 border-border/40 bg-gradient-to-r from-background-secondary/50 to-background-secondary/30">
+          <h3 className="text-xl font-bold text-transparent bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text">Attendance Rankings</h3>
+          <p className="text-sm text-text-secondary mt-1 font-medium">Ranked by attendance rate</p>
+        </div>
 
-      <div className="divide-y divide-border/40">
-        {sortedSwimmers.map((swimmer, index) => (
-          <div
-            key={swimmer.swimmer_id}
-            className="px-6 py-4 hover:bg-background-secondary/30 transition-colors duration-150"
-          >
-            <div className="flex items-center gap-4">
-              {/* Rank Avatar */}
-              <div className="shrink-0">
-                <div className={getRankAvatarStyle(index).containerClass}>
-                  <span className={getRankAvatarStyle(index).textClass}>
-                    {index + 1}
-                  </span>
-                </div>
-              </div>
-
-              {/* Swimmer Info & Stats */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline justify-between mb-2">
-                  <h4 className="text-lg font-bold text-text-primary truncate">
-                    {swimmer.swimmer_name}
-                  </h4>
-                  <div className="flex items-center gap-3 ml-4">
-                    <span className="text-sm text-text-muted">
-                      {swimmer.total_sessions} sessions
-                    </span>
-                    <span className={`text-2xl font-bold ${getPercentageColor(swimmer.present_percentage)}`}>
-                      {swimmer.present_percentage.toFixed(1)}%
+        <div className="divide-y divide-border/30">
+          {sortedSwimmers.map((swimmer, index) => (
+            <div
+              key={swimmer.swimmer_id}
+              className="px-6 py-5 hover:bg-gradient-to-r hover:from-background-secondary/40 hover:to-background-secondary/20 transition-all duration-300"
+            >
+              <div className="flex items-center gap-4">
+                {/* Rank Avatar */}
+                <div className="shrink-0">
+                  <div className={getRankAvatarStyle(index).containerClass}>
+                    <span className={getRankAvatarStyle(index).textClass}>
+                      {index + 1}
                     </span>
                   </div>
                 </div>
 
-                {/* Attendance Progress Bar */}
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-xs text-text-muted mb-1.5">
-                      <span>Attendance Rate</span>
-                      <span>{swimmer.present} / {swimmer.total_sessions} present</span>
-                    </div>
-                    <div className="h-2.5 bg-background-secondary rounded-full overflow-hidden">
-                      <div
-                        className={`h-full bg-linear-to-r ${getProgressBarColor(swimmer.present_percentage)} rounded-full transition-all duration-500`}
-                        style={{ width: `${swimmer.present_percentage}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Breakdown Stats */}
-                  <div className="flex gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                      <span className="text-text-muted">Present:</span>
-                      <span className="font-semibold text-text-primary">
-                        {swimmer.present} <span className="text-text-muted">({swimmer.present_percentage.toFixed(0)}%)</span>
+                {/* Swimmer Info & Stats */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-3 gap-2">
+                    <h4 className="text-lg font-bold text-text-primary truncate">
+                      {swimmer.swimmer_name}
+                    </h4>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-text-muted font-medium">
+                        {swimmer.total_sessions} sessions
+                      </span>
+                      <span className={`text-2xl sm:text-3xl font-bold ${getPercentageColor(swimmer.present_percentage)}`}>
+                        {swimmer.present_percentage.toFixed(1)}%
                       </span>
                     </div>
-                    {swimmer.late > 0 && (
+                  </div>
+
+                  {/* Attendance Progress Bar */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-xs text-text-muted mb-2 font-medium">
+                        <span>Attendance Rate</span>
+                        <span>{swimmer.present} / {swimmer.total_sessions} present</span>
+                      </div>
+                      <div className="h-3 bg-background-secondary/80 rounded-full overflow-hidden shadow-inner">
+                        <div
+                          className={`h-full bg-linear-to-r ${getProgressBarColor(swimmer.present_percentage)} rounded-full transition-all duration-700 shadow-lg`}
+                          style={{ width: `${swimmer.present_percentage}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Breakdown Stats */}
+                    <div className="flex flex-wrap gap-4 sm:gap-6 text-sm">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                        <span className="text-text-muted">Late:</span>
-                        <span className="font-semibold text-text-primary">
-                          {swimmer.late} <span className="text-text-muted">({swimmer.late_percentage.toFixed(0)}%)</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-sm shadow-green-400/50"></div>
+                        <span className="text-text-muted font-medium">Present:</span>
+                        <span className="font-bold text-text-primary">
+                          {swimmer.present} <span className="text-text-muted font-normal">({swimmer.present_percentage.toFixed(0)}%)</span>
                         </span>
                       </div>
-                    )}
-                    {swimmer.absent > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                        <span className="text-text-muted">Absent:</span>
-                        <span className="font-semibold text-text-primary">
-                          {swimmer.absent} <span className="text-text-muted">({swimmer.absent_percentage.toFixed(0)}%)</span>
-                        </span>
-                      </div>
-                    )}
+                      {swimmer.late > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-sm shadow-yellow-400/50"></div>
+                          <span className="text-text-muted font-medium">Late:</span>
+                          <span className="font-bold text-text-primary">
+                            {swimmer.late} <span className="text-text-muted font-normal">({swimmer.late_percentage.toFixed(0)}%)</span>
+                          </span>
+                        </div>
+                      )}
+                      {swimmer.absent > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 shadow-sm shadow-red-400/50"></div>
+                          <span className="text-text-muted font-medium">Absent:</span>
+                          <span className="font-bold text-text-primary">
+                            {swimmer.absent} <span className="text-text-muted font-normal">({swimmer.absent_percentage.toFixed(0)}%)</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

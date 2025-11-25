@@ -209,7 +209,7 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
       {/* Header */}
       <SquadPageHeader
         title="Workout Library"
@@ -228,17 +228,17 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
       />
 
       {/* Search and Filter Bar */}
-      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl mb-6">
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 backdrop-blur-sm shadow-lg mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search workouts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-background-tertiary/50 border border-border/40 rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-text-primary placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
             />
           </div>
 
@@ -253,10 +253,10 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
               <button
                 key={sort.key}
                 onClick={() => setSortBy(sort.key)}
-                className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
+                className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
                   sortBy === sort.key
-                    ? "bg-linear-to-r from-primary to-accent text-white shadow-lg shadow-primary/40"
-                    : "bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-md border border-border/40"
+                    ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30"
+                    : "bg-slate-900/50 border border-slate-600 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-cyan-500/30"
                 }`}
               >
                 {sort.label}
@@ -299,8 +299,10 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
           {filteredWorkouts.map((workout) => (
             <div
               key={workout.id}
-              className="group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:border-primary/40 transition-all duration-300 flex flex-col"
+              className="group relative overflow-hidden bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 backdrop-blur-sm shadow-lg hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 flex flex-col"
             >
+              {/* Subtle glow on hover */}
+              <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               {/* Header */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
@@ -436,17 +438,20 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
 
       {/* Empty State */}
       {!loading && filteredWorkouts.length === 0 && !searchQuery && (
-        <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-12 text-center shadow-xl">
-          <div className="w-20 h-20 mx-auto mb-6 bg-linear-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-            <FileText className="w-10 h-10 text-primary" />
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-12 text-center shadow-lg">
+          <div className="relative group mb-6">
+            <div className="absolute inset-0 bg-linear-to-r from-cyan-500/20 to-blue-500/20 rounded-3xl blur-2xl" />
+            <div className="relative w-20 h-20 mx-auto bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl flex items-center justify-center">
+              <FileText className="w-10 h-10 text-cyan-400" />
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-text-primary mb-2">No Workouts Yet</h3>
-          <p className="text-text-secondary mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-transparent bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text mb-2">No Workouts Yet</h3>
+          <p className="text-slate-400 mb-6 max-w-md mx-auto text-sm">
             Start building your workout library by creating your first workout. You can create workouts without assigning them to sessions.
           </p>
           <button
             onClick={handleCreateWorkout}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold hover:scale-105 transition-all duration-200 shadow-lg"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/30 transition-all duration-200"
           >
             <Plus size={20} />
             Create Your First Workout

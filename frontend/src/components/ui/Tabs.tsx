@@ -7,7 +7,7 @@ type TabsProps<T extends string> = {
 
 export function Tabs<T extends string>({ active, onChange, items, labelize }: TabsProps<T>) {
   return (
-    <div className="inline-flex items-center gap-1 p-1 bg-background-elevated/80 backdrop-blur-sm rounded-xl border border-border/60 shadow-lg">
+    <div className="inline-flex items-center gap-1 p-1 bg-slate-900/95 backdrop-blur-xl rounded-xl border border-slate-800/60 shadow-lg">
       {items.map(t => {
         const isActive = active === t
         const label = labelize ? labelize(t) : t[0].toUpperCase() + t.slice(1)
@@ -17,15 +17,15 @@ export function Tabs<T extends string>({ active, onChange, items, labelize }: Ta
             key={t}
             onClick={() => onChange(t)}
             className={`
-              relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200
+              relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300
               ${isActive 
-                ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 scale-[1.02]' 
-                : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary/50'
+                ? 'bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white shadow-lg shadow-cyan-500/30 scale-[1.02]' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }
             `}
           >
             {isActive && (
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg blur-xl -z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-lg blur-xl -z-10"></div>
             )}
             {label}
           </button>

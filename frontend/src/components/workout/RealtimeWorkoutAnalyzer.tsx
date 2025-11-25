@@ -70,17 +70,17 @@ const ACTIVITY_COLORS = {
 export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', onAnalysisUpdate, onEditMetric }: RealtimeWorkoutAnalyzerProps) {
   const [analysis, setAnalysis] = useState<WorkoutAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Collapse by default on mobile (screens < 768px)
-  const [isCollapsed, setIsCollapsed] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  // Collapse by default on mobile (screens < 640px for phones)
+  const [isCollapsed, setIsCollapsed] = useState(typeof window !== 'undefined' && window.innerWidth < 640);
 
   // Debounced text state to reduce jitter
   const [debouncedText, setDebouncedText] = useState(workoutText);
 
-  // Debounce workout text changes
+  // Debounce workout text changes - longer delay to reduce jitter
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedText(workoutText);
-    }, 800); // Reduced debounce time for better responsiveness
+    }, 1200); // Increased debounce to reduce jitter and API calls
 
     return () => clearTimeout(timeoutId);
   }, [workoutText]);
@@ -294,11 +294,11 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
   if (!workoutText.trim()) {
     return (
-      <div className={`${className} bg-background-card rounded-lg md:rounded-xl border border-border overflow-hidden`}>
+      <div className={`${className} bg-slate-900/90 backdrop-blur-xl rounded-lg md:rounded-xl border border-slate-800/60 shadow-xl overflow-hidden`}>
         <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-3 md:px-4 py-3 md:py-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-              <BarChart3 size={16} className="text-primary" />
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
+              <BarChart3 size={16} className="text-cyan-400" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
@@ -317,11 +317,11 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
   if (error) {
     return (
-      <div className={`${className} bg-background-card rounded-lg md:rounded-xl border border-border overflow-hidden`}>
+      <div className={`${className} bg-slate-900/90 backdrop-blur-xl rounded-lg md:rounded-xl border border-slate-800/60 shadow-xl overflow-hidden`}>
         <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-3 md:px-4 py-3 md:py-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-              <BarChart3 size={16} className="text-primary" />
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
+              <BarChart3 size={16} className="text-cyan-400" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
@@ -341,87 +341,87 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
   if (!analysis) return null;
 
   return (
-    <div className={`${className} bg-background-card rounded-lg md:rounded-xl border border-border overflow-hidden`}>
+    <div className={`${className} bg-slate-900/90 backdrop-blur-xl rounded-lg md:rounded-xl border border-slate-800/60 shadow-xl overflow-hidden`}>
       {/* Collapsible Header */}
       <div 
-        className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-3 md:px-4 py-3 md:py-3.5 cursor-pointer hover:from-slate-800/50 hover:to-slate-900/50 transition-colors"
+        className="bg-linear-to-br from-slate-800/40 to-slate-900/40 border-b border-slate-700/50 px-2.5 py-2.5 sm:px-3 sm:py-3 md:px-4 md:py-3.5 cursor-pointer hover:from-slate-800/50 hover:to-slate-900/50 transition-colors touch-manipulation active:scale-[0.99]"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-            <BarChart3 size={16} className="text-primary" />
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
+            <BarChart3 size={14} className="text-cyan-400 sm:w-4 sm:h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
+            <h2 className="text-xs sm:text-sm md:text-base font-bold text-slate-100 tracking-tight">Workout Analysis</h2>
             {analysis.classification && (
-              <p className="text-[10px] md:text-xs text-slate-400 font-medium mt-0.5">
+              <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5 truncate">
                 {analysis.classification} • {Math.round(animatedMetrics.totalMeters)}m • {formatTime(animatedMetrics.estimatedDuration)}
               </p>
             )}
           </div>
           <div className="shrink-0 text-slate-400">
-            {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+            {isCollapsed ? <ChevronDown size={16} className="sm:w-[18px] sm:h-[18px]" /> : <ChevronUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
           </div>
         </div>
       </div>
 
       {!isCollapsed && (
-        <div className="p-3 md:p-4 space-y-3 md:space-y-4">
+        <div className="p-2.5 sm:p-3 md:p-4 space-y-2.5 sm:space-y-3 md:space-y-4">
           {/* Key Metrics Cards - Clickable to Edit - Responsive Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-2.5">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5">
             <div 
-              className="bg-slate-800/50 rounded-lg p-2.5 md:p-3 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative min-h-20 md:min-h-0"
+              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 lg:p-4 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
               onClick={() => onEditMetric?.('distance', Math.round(animatedMetrics.totalMeters))}
               title="Click to edit distance"
             >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Waves className="text-primary" size={13} />
-                <span className="text-xs font-medium text-primary">Distance</span>
-                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2">
+                <Waves className="text-primary" size={12} />
+                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-primary truncate">Distance</span>
+                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
               </div>
-              <p className="text-base md:text-lg font-bold text-slate-100">{Math.round(animatedMetrics.totalMeters)}m</p>
-              <p className="text-xs text-slate-400">{Math.round(animatedMetrics.totalSets)} sets</p>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-100 tabular-nums truncate">{Math.round(animatedMetrics.totalMeters)}m</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">{Math.round(animatedMetrics.totalSets)} sets</p>
             </div>
             
             <div 
-              className="bg-slate-800/50 rounded-lg p-2.5 md:p-3 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative min-h-20 md:min-h-0"
+              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 lg:p-4 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
               onClick={() => onEditMetric?.('duration', Math.round(animatedMetrics.estimatedDuration))}
               title="Click to edit duration"
             >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Clock className="text-green-500" size={13} />
-                <span className="text-xs font-medium text-green-400">Duration</span>
-                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2">
+                <Clock className="text-green-500" size={12} />
+                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-green-400 truncate">Duration</span>
+                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
               </div>
-              <p className="text-base md:text-lg font-bold text-slate-100">{formatTime(animatedMetrics.estimatedDuration)}</p>
-              <p className="text-xs text-slate-400">{formatTime(animatedMetrics.swimTime)} swim</p>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-100 tabular-nums truncate">{formatTime(animatedMetrics.estimatedDuration)}</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">{formatTime(animatedMetrics.swimTime)} swim</p>
             </div>
 
             <div 
-              className="bg-slate-800/50 rounded-lg p-2.5 md:p-3 transform transition-all duration-300 hover:scale-105 cursor-pointer hover:bg-slate-800/70 group relative min-h-20 md:min-h-0"
+              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 lg:p-4 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
               onClick={() => onEditMetric?.('calories', Math.round(animatedMetrics.calories))}
               title="Click to edit calories"
             >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Flame className="text-orange-500" size={13} />
-                <span className="text-xs font-medium text-orange-400">Calories</span>
-                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2">
+                <Flame className="text-orange-500" size={12} />
+                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-orange-400 truncate">Calories</span>
+                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
               </div>
-              <p className="text-base md:text-lg font-bold text-slate-100">{Math.round(animatedMetrics.calories)}</p>
-              <p className="text-xs text-slate-400">estimated</p>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-100 tabular-nums truncate">{Math.round(animatedMetrics.calories)}</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">estimated</p>
             </div>
           </div>
 
           {/* Stroke Distribution - Enhanced with Gradients */}
           {strokeChartData.length > 0 && (
-            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-3 md:p-4 border border-slate-700/50">
-              <h3 className="text-xs md:text-sm font-semibold text-slate-200 mb-3 md:mb-4 flex items-center gap-2">
-                <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                  <Waves size={12} className="text-cyan-400 md:w-3.5 md:h-3.5" />
+            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-2.5 sm:p-3 md:p-4 border border-slate-700/50">
+              <h3 className="text-xs sm:text-sm font-semibold text-slate-200 mb-2.5 sm:mb-3 md:mb-4 flex items-center gap-1.5 sm:gap-2">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                  <Waves size={10} className="text-cyan-400 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
                 </div>
                 Stroke Distribution
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-2.5 md:space-y-3">
                 {strokeChartData.map((item, index) => {
                   const animatedPercentage = animatedStrokeValues[`stroke_${item.label.toLowerCase()}`] || item.percentage;
                   return (
@@ -462,39 +462,41 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
           {/* Activity Distribution - Enhanced with Gradients */}
           {activityChartData.length > 0 && (
-            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-3 md:p-4 border border-slate-700/50">
-              <h3 className="text-xs md:text-sm font-semibold text-slate-200 mb-3 md:mb-4 flex items-center gap-2">
-                <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                  <Activity size={12} className="text-purple-400 md:w-3.5 md:h-3.5" />
+            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-2.5 sm:p-3 md:p-4 border border-slate-700/50">
+              <h3 className="text-xs sm:text-sm font-semibold text-slate-200 mb-2.5 sm:mb-3 md:mb-4 flex items-center gap-1.5 sm:gap-2">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                  <Activity size={10} className="text-purple-400 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
                 </div>
                 Activity Breakdown
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-2.5 md:space-y-3">
                 {activityChartData.map((item, index) => {
                   const animatedPercentage = animatedActivityValues[`activity_${item.label.toLowerCase()}`] || item.percentage;
                   return (
                     <div key={`${item.label}-${index}`} className="group">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="flex items-center justify-between mb-1 sm:mb-1.5">
+                        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 min-w-0 flex-1">
                           <div
-                            className="w-3.5 h-3.5 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
+                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
                             style={{ 
                               background: item.colors.bg,
                               boxShadow: `0 0 8px ${item.colors.glow}`
                             }}
                           />
-                          <span className="text-sm font-medium text-slate-200 truncate">{item.label}</span>
+                          <span className="text-xs sm:text-sm font-medium text-slate-200 truncate">{item.label}</span>
                         </div>
-                        <span className="text-sm font-semibold text-slate-100 ml-3 tabular-nums">
+                        <span className="text-xs sm:text-sm font-semibold text-slate-100 ml-2 sm:ml-3 tabular-nums">
                           {animatedPercentage.toFixed(1)}%
                         </span>
                       </div>
-                      <div className="h-2.5 bg-slate-700/50 rounded-full overflow-hidden relative">
+                      <div className="h-2 sm:h-2.5 bg-slate-700/50 rounded-full overflow-hidden relative">
                         <div
-                          className="h-full rounded-full transition-all duration-700 ease-out relative"
+                          className="h-full rounded-full transition-all duration-700 ease-out relative will-change-transform"
                           style={{
                             background: item.colors.bg,
-                            width: `${Math.min(100, Math.max(0, animatedPercentage))}%`,
+                            transform: `scaleX(${Math.min(1, Math.max(0, animatedPercentage / 100))})`,
+                            transformOrigin: 'left',
+                            width: '100%',
                             boxShadow: `0 0 12px ${item.colors.glow}`
                           }}
                         >

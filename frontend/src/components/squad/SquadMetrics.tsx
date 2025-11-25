@@ -13,7 +13,7 @@ import {
 import DistancePerWeekChart from '@/components/charts/WeeklyDistanceChart';
 import BreakdownChart from '@/components/charts/BreakdownChart';
 import DateInput from '@/components/ui/DateInput';
-import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
+import { SquadTabHeader } from '@/components/squad/SquadTabHeader';
 import { Waves, Zap, Calendar, TrendingUp, Users, Check, Activity } from "lucide-react";
 
 export type RangeKey =
@@ -151,53 +151,17 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
   const rangeSubtitle = formatRangeSubtitle(from, to);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Hero Header Section */}
-      <SquadPageHeader
-        title="Squad Analytics"
-        subtitle="Performance insights and training metrics for your squad"
-        actions={
-          !loading && att ? (
-            <>
-              <div className="px-4 py-2.5 bg-success/10 border border-success/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="text-xs text-success/80 font-medium mb-0.5">Attendance Rate</div>
-                <div className="text-xl font-bold text-success">
-                  {att.present + att.late + att.absent > 0 
-                    ? Math.round((att.present / (att.present + att.late + att.absent)) * 100)
-                    : 0}%
-                </div>
-              </div>
-              <div className="px-4 py-2.5 bg-warning/10 border border-warning/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="text-xs text-warning/80 font-medium mb-0.5">Total Distance</div>
-                <div className="text-xl font-bold text-warning">
-                  {totalMeters.toLocaleString()}m
-                </div>
-              </div>
-              <div className="px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="text-xs text-primary/80 font-medium mb-0.5">Total Sessions</div>
-                <div className="text-xl font-bold text-primary">
-                  {sessionCount.toLocaleString()}
-                </div>
-              </div>
-            </>
-          ) : undefined
-        }
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
+      {/* Page Header */}
+      <SquadTabHeader
+        title="Squad Metrics"
+        subtitle="Overview of squad performance and activity"
       />
-
-      {/* Date Range Selector - Redesigned */}
-      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 relative z-50 mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-linear-to-br from-accent to-primary rounded-xl flex items-center justify-center shadow-lg shadow-accent/25">
-            <Calendar className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-text-primary">Time Period</h3>
-            <p className="text-xs text-text-secondary">Filter your squad data by date range</p>
-          </div>
-        </div>
-        
-        {/* Quick Preset Buttons */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+      {/* Date Range Selector */}
+      <div className="mb-6">
+        {/* Compact Date Range Selector */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Quick Presets */}
           {[
             { key: "this_week" as const, label: "This Week" },
             { key: "last_week" as const, label: "Last Week" },
@@ -207,10 +171,10 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
           ].map(({ key, label }) => (
             <button
               key={key}
-              className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 ${
+              className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 ${
                 rangeKey === key
-                  ? "bg-linear-to-r from-primary to-accent text-white shadow-md"
-                  : "bg-background-tertiary/60 text-text-secondary hover:bg-background-secondary hover:text-text-primary border border-border/40"
+                  ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 scale-105"
+                  : "bg-slate-800/60 text-slate-400 hover:bg-slate-700/50 hover:text-slate-100 hover:scale-105 border border-slate-700/40"
               }`}
               onClick={() => onQuick(key)}
             >
@@ -218,30 +182,103 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
             </button>
           ))}
           
-          {/* Inline Custom Date Range */}
-          <div className="flex items-center gap-2 ml-2">
+          {/* Divider */}
+          <div className="h-8 w-px bg-slate-700/40"></div>
+          
+          {/* Custom Date Range */}
+          <div className="flex items-center gap-2">
             <DateInput
               label=""
               value={from ? from.slice(0, 10) : ""}
               onChange={(value) => setFrom(value ? new Date(value).toISOString() : undefined)}
-              placeholder="From"
+              placeholder="Start"
             />
-            <span className="text-text-secondary text-xs">to</span>
+            <span className="text-slate-500 font-medium text-sm">→</span>
             <DateInput
               label=""
               value={to ? to.slice(0, 10) : ""}
               onChange={(value) => setTo(value ? new Date(value + "T23:59:59").toISOString() : undefined)}
-              placeholder="To"
+              placeholder="End"
             />
             <button
-              className="px-3 py-1.5 bg-accent text-white font-medium text-xs rounded-lg hover:bg-accent/90 transition-all"
+              className="px-2 py-1.5 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-semibold text-xs rounded-lg hover:shadow-lg hover:shadow-cyan-500/30 transition-all shrink-0"
               onClick={onApplyCustom}
             >
-              <Check className="w-3.5 h-3.5" />
+              <Check className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Vibrant Hero Stats Cards */}
+      {!loading && att && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Attendance Rate Card */}
+          <div className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-emerald-500/10 to-green-500/10 border-2 border-emerald-500/20 p-6 hover:border-emerald-500/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
+                  <Check className="w-6 h-6 text-emerald-400" />
+                </div>
+                <div className="text-xs font-bold text-emerald-400/60 uppercase tracking-wider">Success</div>
+              </div>
+              <div className="text-sm text-emerald-300/80 font-medium mb-1">Attendance Rate</div>
+              <div className="text-4xl font-black bg-linear-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
+                {att.present + att.late + att.absent > 0 
+                  ? Math.round((att.present / (att.present + att.late + att.absent)) * 100)
+                  : 0}%
+              </div>
+              <div className="mt-3 h-1.5 bg-slate-800/50 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-linear-to-r from-emerald-500 to-green-500 rounded-full transition-all duration-1000"
+                  style={{ width: `${att.present + att.late + att.absent > 0 ? Math.round((att.present / (att.present + att.late + att.absent)) * 100) : 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Total Distance Card */}
+          <div className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 p-6 hover:border-cyan-500/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-cyan-500/20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 group-hover:scale-110 transition-transform duration-300">
+                  <Waves className="w-6 h-6 text-cyan-400" />
+                </div>
+                <div className="text-xs font-bold text-cyan-400/60 uppercase tracking-wider">Distance</div>
+              </div>
+              <div className="text-sm text-cyan-300/80 font-medium mb-1">Total Meters</div>
+              <div className="text-4xl font-black bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                {(totalMeters / 1000).toFixed(1)}K
+              </div>
+              <div className="mt-2 text-xs text-cyan-300/60">
+                {totalMeters.toLocaleString()} meters
+              </div>
+            </div>
+          </div>
+
+          {/* Total Sessions Card */}
+          <div className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/20 p-6 hover:border-purple-500/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 group-hover:scale-110 transition-transform duration-300">
+                  <Activity className="w-6 h-6 text-purple-400" />
+                </div>
+                <div className="text-xs font-bold text-purple-400/60 uppercase tracking-wider">Sessions</div>
+              </div>
+              <div className="text-sm text-purple-300/80 font-medium mb-1">Training Sessions</div>
+              <div className="text-4xl font-black bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                {sessionCount}
+              </div>
+              <div className="mt-2 text-xs text-purple-300/60">
+                Total completed
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {err && (
@@ -264,33 +301,36 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
       {loading && (
         <div className="flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap gap-4 sm:gap-5">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex-1 md:w-[calc(50%-10px)] xl:w-auto bg-background-elevated rounded-xl border border-border/60 p-5 sm:p-6 shadow-lg animate-pulse">
+            <div key={i} className="flex-1 md:w-[calc(50%-10px)] xl:w-auto bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-5 sm:p-6 shadow-lg animate-pulse">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-background-tertiary rounded-lg"></div>
+                <div className="w-8 h-8 bg-slate-800/60 rounded-lg"></div>
                 <div className="flex-1">
-                  <div className="h-4 bg-background-tertiary rounded-lg mb-2 w-24"></div>
+                  <div className="h-4 bg-slate-800/60 rounded-lg mb-2 w-24"></div>
                 </div>
               </div>
-              <div className="h-56 sm:h-64 bg-background-tertiary rounded-lg"></div>
+              <div className="h-56 sm:h-64 bg-slate-800/60 rounded-lg"></div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Charts Section */}
+      {/* Charts Section - Enhanced with vibrant gradients */}
       {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
           {/* Weekly Distance Chart */}
-          <div className="w-full group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300 relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="w-full group relative overflow-hidden rounded-2xl bg-linear-to-br from-cyan-500/5 via-slate-900/80 to-blue-500/5 border-2 border-cyan-500/20 p-6 backdrop-blur-sm hover:shadow-2xl hover:shadow-cyan-500/10 hover:border-cyan-500/40 transition-all duration-300 hover:scale-[1.02]">
+            {/* Animated glow effect */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all duration-500" />
+            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500 delay-100" />
+            
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-linear-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <TrendingUp className="w-6 h-6 text-primary" />
+                <div className="p-3 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-text-primary">Weekly Distance</h3>
-                  <p className="text-sm text-text-secondary">Training volume over time</p>
+                  <h3 className="text-lg font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Weekly Distance</h3>
+                  <p className="text-xs text-slate-400">Training volume over time</p>
                 </div>
               </div>
               <DistancePerWeekChart
@@ -302,16 +342,19 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
           </div>
 
           {/* Stroke Distribution */}
-          <div className="w-full group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-accent/40 transition-all duration-300 relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="w-full group relative overflow-hidden rounded-2xl bg-linear-to-br from-purple-500/5 via-slate-900/80 to-pink-500/5 border-2 border-purple-500/20 p-6 backdrop-blur-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-500/40 transition-all duration-300 hover:scale-[1.02]">
+            {/* Animated glow effect */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500" />
+            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl group-hover:bg-pink-500/20 transition-all duration-500 delay-100" />
+            
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-linear-to-br from-accent/20 to-accent/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Waves className="w-6 h-6 text-accent" />
+                <div className="p-3 rounded-xl bg-linear-to-br from-purple-500/20 to-pink-500/10 border border-purple-500/30 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Waves className="w-6 h-6 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-text-primary">Stroke Distribution</h3>
-                  <p className="text-sm text-text-secondary">By stroke type</p>
+                  <h3 className="text-lg font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Stroke Distribution</h3>
+                  <p className="text-xs text-slate-400">By stroke type</p>
                 </div>
               </div>
               <BreakdownChart
@@ -328,16 +371,19 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
           </div>
 
           {/* Activity Mix */}
-          <div className="w-full group bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-8 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-warning/40 transition-all duration-300 relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="w-full group relative overflow-hidden rounded-2xl bg-linear-to-br from-orange-500/5 via-slate-900/80 to-amber-500/5 border-2 border-orange-500/20 p-6 backdrop-blur-sm hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-500/40 transition-all duration-300 hover:scale-[1.02]">
+            {/* Animated glow effect */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-500" />
+            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all duration-500 delay-100" />
+            
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-linear-to-br from-warning/20 to-warning/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Zap className="w-6 h-6 text-warning" />
+                <div className="p-3 rounded-xl bg-linear-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="w-6 h-6 text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.3)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-text-primary">Activity Mix</h3>
-                  <p className="text-sm text-text-secondary">Training intensity breakdown</p>
+                  <h3 className="text-lg font-bold bg-linear-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Activity Mix</h3>
+                  <p className="text-xs text-slate-400">Training intensity breakdown</p>
                 </div>
               </div>
               <BreakdownChart
@@ -373,3 +419,4 @@ function formatRangeSubtitle(from?: string, to?: string) {
   if (t) return `Until ${fmt(t)}`;
   return "";
 }
+

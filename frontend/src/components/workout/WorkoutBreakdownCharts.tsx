@@ -91,16 +91,16 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-slate-800/98 backdrop-blur-sm border border-border-light rounded-lg px-4 py-3 shadow-xl">
+        <div className="bg-slate-800/98 backdrop-blur-sm border border-slate-700/50 rounded-lg px-4 py-3 shadow-xl">
           <div className="text-xs font-bold text-primary uppercase tracking-wider mb-2">{data.name}</div>
           <div className="flex flex-col gap-1">
             <div className="flex justify-between gap-6 text-xs">
-              <span className="text-text-secondary font-medium">Distance:</span>
-              <span className="text-text-primary font-bold">{data.value.toLocaleString()}m</span>
+              <span className="text-slate-400 font-medium">Distance:</span>
+              <span className="text-slate-100 font-bold">{data.value.toLocaleString()}m</span>
             </div>
             <div className="flex justify-between gap-6 text-xs">
-              <span className="text-text-secondary font-medium">Percentage:</span>
-              <span className="text-text-primary font-bold">{data.percentage}%</span>
+              <span className="text-slate-400 font-medium">Percentage:</span>
+              <span className="text-slate-100 font-bold">{data.percentage}%</span>
             </div>
           </div>
         </div>
@@ -117,15 +117,15 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
     <div className="space-y-6">
         {/* Stroke Breakdown */}
         {strokeData.length > 0 && (
-          <div className="bg-background-card border border-border rounded-xl p-6 transition-all hover:border-border-light hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary/50 to-accent/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 transition-all hover:border-slate-700/50 hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-cyan-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-4 mb-6">
               <div className="w-11 h-11 rounded-lg bg-linear-to-br from-cyan-500/10 to-blue-500/10 flex items-center justify-center text-primary shrink-0">
                 <Droplets size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-text-primary mb-1">Distance by Stroke</h3>
-                <p className="text-sm text-text-secondary font-medium">{strokeTotal.toLocaleString()}m total</p>
+                <h3 className="text-lg font-bold text-slate-100 mb-1">Distance by Stroke</h3>
+                <p className="text-sm text-slate-400 font-medium">{strokeTotal.toLocaleString()}m total</p>
               </div>
             </div>
             
@@ -174,7 +174,7 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
 
             <div className="mt-4 space-y-2">
               {strokeData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-background-tertiary/50 hover:bg-background-tertiary transition-colors group">
+                <div key={item.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-800/60 transition-colors group">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-3 h-3 rounded-full shadow-lg group-hover:scale-110 transition-transform" 
@@ -183,11 +183,11 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
                         boxShadow: `0 0 0 3px ${item.color}30`
                       }}
                     />
-                    <span className="text-sm font-medium text-text-primary">{item.name}</span>
+                    <span className="text-sm font-medium text-slate-100">{item.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-text-secondary bg-background-secondary px-2 py-1 rounded">{item.percentage}%</span>
-                    <span className="text-sm font-bold text-text-primary min-w-[60px] text-right">{item.value.toLocaleString()}m</span>
+                    <span className="text-xs font-semibold text-slate-400 bg-slate-800/50 px-2 py-1 rounded">{item.percentage}%</span>
+                    <span className="text-sm font-bold text-slate-100 min-w-[60px] text-right">{item.value.toLocaleString()}m</span>
                   </div>
                 </div>
               ))}
@@ -197,15 +197,15 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
 
         {/* Activity Breakdown */}
         {activityData.length > 0 && (
-          <div className="bg-background-card border border-border rounded-xl p-6 transition-all hover:border-border-light hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary/50 to-accent/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 transition-all hover:border-slate-700/50 hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-cyan-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-4 mb-6">
               <div className="w-11 h-11 rounded-lg bg-linear-to-br from-emerald-500/10 to-teal-500/10 flex items-center justify-center text-success shrink-0">
                 <Activity size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-text-primary mb-1">Distance by Activity</h3>
-                <p className="text-sm text-text-secondary font-medium">{activityTotal.toLocaleString()}m total</p>
+                <h3 className="text-lg font-bold text-slate-100 mb-1">Distance by Activity</h3>
+                <p className="text-sm text-slate-400 font-medium">{activityTotal.toLocaleString()}m total</p>
               </div>
             </div>
             
@@ -254,7 +254,7 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
 
             <div className="mt-4 space-y-2">
               {activityData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-background-tertiary/50 hover:bg-background-tertiary transition-colors group">
+                <div key={item.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-800/60 transition-colors group">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-3 h-3 rounded-full shadow-lg group-hover:scale-110 transition-transform" 
@@ -263,11 +263,11 @@ export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownCha
                         boxShadow: `0 0 0 3px ${item.color}30`
                       }}
                     />
-                    <span className="text-sm font-medium text-text-primary">{item.name}</span>
+                    <span className="text-sm font-medium text-slate-100">{item.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-text-secondary bg-background-secondary px-2 py-1 rounded">{item.percentage}%</span>
-                    <span className="text-sm font-bold text-text-primary min-w-[60px] text-right">{item.value.toLocaleString()}m</span>
+                    <span className="text-xs font-semibold text-slate-400 bg-slate-800/50 px-2 py-1 rounded">{item.percentage}%</span>
+                    <span className="text-sm font-bold text-slate-100 min-w-[60px] text-right">{item.value.toLocaleString()}m</span>
                   </div>
                 </div>
               ))}

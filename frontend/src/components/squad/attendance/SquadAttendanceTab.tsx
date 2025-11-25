@@ -69,18 +69,23 @@ const SquadAttendanceTab: React.FC<SquadAttendanceTabProps> = ({ squadId }) => {
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <SquadPageHeader
-        title="Attendance Metrics"
-        subtitle="Track attendance rates and commitment across the squad"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-transparent bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text">Attendance Metrics</h1>
+          <p className="text-text-secondary text-sm mt-1 font-medium">Track attendance rates and commitment across the squad</p>
+        </div>
+        
+        <div className="flex items-center gap-3 bg-background-elevated/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-border/40 shadow-lg">
+          <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Period:</span>
+          <AttendanceHeader
+            startDate={dateRange.start}
+            endDate={dateRange.end}
+            onDateChange={handleDateChange}
+          />
+        </div>
+      </div>
       
       <div className="space-y-6">
-        <AttendanceHeader
-          startDate={dateRange.start}
-          endDate={dateRange.end}
-          onDateChange={handleDateChange}
-        />
-
         <AttendanceStats stats={data.stats} />
 
         <AttendanceRankingsTable swimmers={data.swimmers} />

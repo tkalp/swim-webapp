@@ -237,22 +237,22 @@ export default function WorkoutsLibrary() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-linear-to-r from-cyan-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                 Workout Library
               </h1>
-              <p className="text-text-secondary mt-1">
+              <p className="text-slate-400 mt-1">
                 {totalCount} workout{totalCount !== 1 ? "s" : ""} in your library
               </p>
             </div>
             <button
               onClick={handleCreateWorkout}
-              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+              className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-200"
             >
               <Plus size={18} />
               Create Workout
@@ -261,19 +261,19 @@ export default function WorkoutsLibrary() {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl mb-6">
+        <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 sm:p-8 shadow-xl mb-6">
           <div className="flex flex-col gap-4">
             {/* Search and Sort Row */}
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Search workouts..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-background-tertiary/50 border border-border/40 rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/40 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
                 />
               </div>
 
@@ -290,8 +290,8 @@ export default function WorkoutsLibrary() {
                     onClick={() => setSortBy(sort.key)}
                     className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
                       sortBy === sort.key
-                        ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/40"
-                        : "bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-md border border-border/40"
+                        ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/40"
+                        : "bg-slate-800/80 text-slate-400 hover:bg-slate-700/80 hover:text-slate-200 hover:shadow-md border border-slate-700/40"
                     }`}
                   >
                     {sort.label}
@@ -303,7 +303,7 @@ export default function WorkoutsLibrary() {
             {/* Tag Filter Row */}
             {allTags.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-text-muted text-sm font-medium">
+                <div className="flex items-center gap-1.5 text-slate-400 text-sm font-medium">
                   <TagIcon size={16} />
                   <span>Filter by tag:</span>
                 </div>
@@ -311,8 +311,8 @@ export default function WorkoutsLibrary() {
                   onClick={() => setSelectedTagId(null)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     selectedTagId === null
-                      ? "bg-primary/20 text-primary border border-primary/40"
-                      : "bg-background-tertiary/50 text-text-muted hover:bg-background-secondary border border-border/40"
+                      ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
+                      : "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 border border-slate-700/40"
                   }`}
                 >
                   All
@@ -352,14 +352,14 @@ export default function WorkoutsLibrary() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="bg-background-elevated rounded-xl border border-border/60 p-4 animate-pulse"
+                className="bg-slate-900/50 backdrop-blur-sm rounded-xl border border-slate-800/60 p-4 animate-pulse"
               >
-                <div className="h-6 bg-background-tertiary rounded-lg w-3/4 mb-4"></div>
-                <div className="h-4 bg-background-tertiary rounded-lg w-full mb-2"></div>
-                <div className="h-4 bg-background-tertiary rounded-lg w-2/3 mb-4"></div>
+                <div className="h-6 bg-slate-800/50 rounded-lg w-3/4 mb-4"></div>
+                <div className="h-4 bg-slate-800/50 rounded-lg w-full mb-2"></div>
+                <div className="h-4 bg-slate-800/50 rounded-lg w-2/3 mb-4"></div>
                 <div className="flex gap-2">
-                  <div className="h-8 bg-background-tertiary rounded-lg flex-1"></div>
-                  <div className="h-8 bg-background-tertiary rounded-lg flex-1"></div>
+                  <div className="h-8 bg-slate-800/50 rounded-lg flex-1"></div>
+                  <div className="h-8 bg-slate-800/50 rounded-lg flex-1"></div>
                 </div>
               </div>
             ))}
@@ -372,15 +372,15 @@ export default function WorkoutsLibrary() {
             {filteredWorkouts.map((workout) => (
               <div
                 key={workout.id}
-                className="group bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:border-primary/40 transition-all duration-300 flex flex-col"
+                className="group bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-4 shadow-lg hover:shadow-2xl hover:border-cyan-500/40 transition-all duration-300 flex flex-col"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <h3 className="text-base font-bold text-text-primary mb-0.5 line-clamp-1">
+                    <h3 className="text-base font-bold text-slate-100 mb-0.5 line-clamp-1">
                       {workout.name}
                     </h3>
-                    <p className="text-xs text-text-muted">Created {formatDate(workout.created_at)}</p>
+                    <p className="text-xs text-slate-500">Created {formatDate(workout.created_at)}</p>
                   </div>
                   <div
                     className={`px-2 py-0.5 rounded-lg text-xs font-semibold border ${getEffortLevelBg(
@@ -401,7 +401,7 @@ export default function WorkoutsLibrary() {
                 )}
 
                 {/* Description Preview */}
-                <p className="text-xs text-text-secondary mb-2 line-clamp-2">
+                <p className="text-xs text-slate-400 mb-2 line-clamp-2">
                   {workout.description || workout.raw_description.slice(0, 100) + (workout.raw_description.length > 100 ? '...' : '')}
                 </p>
 
@@ -413,26 +413,26 @@ export default function WorkoutsLibrary() {
                 )}
 
                 {/* Stats */}
-                <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-border/40 px-1">
+                <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-800/40 px-1">
                   <div className="flex items-center gap-1">
-                    <Activity size={12} className="text-primary" />
-                    <span className="text-xs font-semibold text-text-primary">{workout.total_meters}m</span>
+                    <Activity size={12} className="text-cyan-400" />
+                    <span className="text-xs font-semibold text-slate-100">{workout.total_meters}m</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Clock size={12} className="text-accent" />
-                    <span className="text-xs font-semibold text-text-primary">
+                    <Clock size={12} className="text-blue-400" />
+                    <span className="text-xs font-semibold text-slate-100">
                       {workout.estimated_time_minutes}min
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Flame size={12} className="text-warning" />
-                    <span className="text-xs font-semibold text-text-primary">{workout.estimated_calories}</span>
+                    <Flame size={12} className="text-orange-400" />
+                    <span className="text-xs font-semibold text-slate-100">{workout.estimated_calories}</span>
                   </div>
                 </div>
 
                 {/* Usage Info */}
                 <div className="flex items-center gap-4 mb-2 text-xs">
-                  <div className="flex items-center gap-1.5 text-text-muted">
+                  <div className="flex items-center gap-1.5 text-slate-400">
                     <Users size={14} />
                     <span>
                       Used {workout.usage_count || 0} time{workout.usage_count !== 1 ? "s" : ""}
@@ -444,28 +444,28 @@ export default function WorkoutsLibrary() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleViewWorkout(workout.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg font-semibold text-xs hover:scale-105 transition-all duration-200 shadow-md"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold text-xs hover:scale-105 transition-all duration-200 shadow-md"
                   >
                     <Eye size={14} />
                     View
                   </button>
                   <button
                     onClick={() => handleEditWorkout(workout.id)}
-                    className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
+                    className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/40 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 rounded-lg transition-all duration-200"
                     title="Edit workout"
                   >
                     <Edit size={14} />
                   </button>
                   <button
                     onClick={() => handleDuplicateWorkout(workout.id)}
-                    className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-accent hover:bg-accent/10 hover:border-accent/50 rounded-lg transition-all duration-200"
+                    className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/40 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/50 rounded-lg transition-all duration-200"
                     title="Duplicate workout"
                   >
                     <Copy size={14} />
                   </button>
                   <button
                     onClick={() => handleDeleteWorkout(workout.id, workout.name)}
-                    className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-danger hover:bg-danger/10 hover:border-danger/50 rounded-lg transition-all duration-200"
+                    className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/40 text-slate-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/50 rounded-lg transition-all duration-200"
                     title="Delete workout"
                   >
                     <Trash2 size={14} />
@@ -481,20 +481,20 @@ export default function WorkoutsLibrary() {
           <div ref={observerTarget} className="mt-6 min-h-[100px]">
             {loadingMore && (
               <div className="flex justify-center items-center py-8">
-                <div className="flex items-center gap-3 text-text-muted">
-                  <div className="w-5 h-5 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex items-center gap-3 text-slate-400">
+                  <div className="w-5 h-5 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm font-medium">Loading more workouts...</span>
                 </div>
               </div>
             )}
             {!loadingMore && !hasMore && workouts.length > PAGE_SIZE && (
               <div className="text-center py-6">
-                <p className="text-sm text-text-muted">You've reached the end of your workout library</p>
+                <p className="text-sm text-slate-500">You've reached the end of your workout library</p>
               </div>
             )}
             {!loadingMore && hasMore && (searchQuery || selectedTagId) && (
               <div className="text-center py-6">
-                <p className="text-sm text-text-muted mb-3">Filtering is active. Load all workouts to see complete results.</p>
+                <p className="text-sm text-slate-400 mb-3">Filtering is active. Load all workouts to see complete results.</p>
                 <button
                   onClick={() => {
                     // Load all remaining workouts
@@ -507,7 +507,7 @@ export default function WorkoutsLibrary() {
                     };
                     loadAll();
                   }}
-                  className="px-4 py-2 bg-primary/10 text-primary border border-primary/30 rounded-lg hover:bg-primary/20 transition-all text-sm font-medium"
+                  className="px-4 py-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-all text-sm font-medium"
                 >
                   Load All Workouts
                 </button>
@@ -515,7 +515,7 @@ export default function WorkoutsLibrary() {
             )}
             {!loadingMore && hasMore && !searchQuery && !selectedTagId && (
               <div className="text-center py-6">
-                <p className="text-xs text-text-muted">Scroll down to load more...</p>
+                <p className="text-xs text-slate-500">Scroll down to load more...</p>
               </div>
             )}
           </div>
@@ -523,17 +523,17 @@ export default function WorkoutsLibrary() {
 
         {/* Empty State */}
         {!loading && filteredWorkouts.length === 0 && !searchQuery && (
-          <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-12 text-center shadow-xl">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-              <Dumbbell className="w-10 h-10 text-primary" />
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-12 text-center shadow-xl">
+            <div className="w-20 h-20 mx-auto mb-6 bg-linear-to-br from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center">
+              <Dumbbell className="w-10 h-10 text-cyan-400" />
             </div>
-            <h3 className="text-xl font-bold text-text-primary mb-2">No Workouts Yet</h3>
-            <p className="text-text-secondary mb-6 max-w-md mx-auto">
+            <h3 className="text-xl font-bold text-slate-100 mb-2">No Workouts Yet</h3>
+            <p className="text-slate-400 mb-6 max-w-md mx-auto">
               Start building your workout library by creating your first workout.
             </p>
             <button
               onClick={handleCreateWorkout}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold hover:scale-105 transition-all duration-200 shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-200 shadow-lg"
             >
               <Plus size={20} />
               Create Your First Workout
@@ -543,10 +543,10 @@ export default function WorkoutsLibrary() {
 
         {/* No Results State */}
         {!loading && filteredWorkouts.length === 0 && searchQuery && (
-          <div className="bg-background-elevated rounded-2xl border border-border/60 p-12 text-center">
-            <Search className="w-16 h-16 text-text-muted mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold text-text-primary mb-2">No Results Found</h3>
-            <p className="text-text-secondary">No workouts match your search query "{searchQuery}"</p>
+          <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/60 p-12 text-center">
+            <Search className="w-16 h-16 text-slate-500 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold text-slate-100 mb-2">No Results Found</h3>
+            <p className="text-slate-400">No workouts match your search query "{searchQuery}"</p>
           </div>
         )}
       </div>

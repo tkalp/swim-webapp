@@ -1,32 +1,53 @@
 @import "tailwindcss";
 
+/**
+ * Aquilus Design System
+ * 
+ * This file contains ONLY Tailwind CSS v4 theme definitions.
+ * All component styles should use Tailwind utility classes directly.
+ * 
+ * See DESIGN_SYSTEM.md for complete guidelines.
+ */
+
 @theme {
-  /* Primary Colors */
+  /* ============================================
+     PRIMARY COLORS
+     ============================================ */
   --color-primary: #3197a7;
   --color-primary-dark: #265d74;
   --color-primary-light: #38bdf8;
 
-  /* Accent Colors */
+  /* ============================================
+     ACCENT COLORS (Vibrant Theme)
+     ============================================ */
   --color-accent: #22d3ee;
   --color-accent-purple: #8b5cf6;
 
-  /* Background Colors */
+  /* ============================================
+     BACKGROUND COLORS
+     ============================================ */
   --color-background-primary: #191c29;
   --color-background-secondary: #111827;
   --color-background-tertiary: #1e2936;
   --color-background-elevated: #1e293b;
   --color-background-card: rgba(30, 41, 59, 0.9);
 
-  /* Border Colors */
+  /* ============================================
+     BORDER COLORS
+     ============================================ */
   --color-border: #2d3a48;
   --color-border-light: #3d4a58;
 
-  /* Text Colors */
+  /* ============================================
+     TEXT COLORS
+     ============================================ */
   --color-text-primary: #f8fafc;
   --color-text-secondary: #cbd5e1;
   --color-text-muted: #9ca3af;
 
-  /* Status Colors */
+  /* ============================================
+     STATUS COLORS
+     ============================================ */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
@@ -38,7 +59,7 @@
   }
 
   body {
-    @apply bg-background-primary text-[#F8FAFC] min-h-screen;
+    @apply bg-background-primary text-text-primary min-h-screen;
     margin: 0;
     min-width: 320px;
   }
@@ -47,21 +68,9 @@
     @apply min-h-screen;
   }
 
-  h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-  }
-
-  a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
-  }
-
-  a:hover {
-    color: #535bf2;
-  }
-
+  /* ============================================
+     GLOBAL ANIMATIONS
+     ============================================ */
   @keyframes shimmer {
     0% {
       background-position: 300% 0;
@@ -92,59 +101,115 @@
       transform: translateY(0);
     }
   }
+
+  /* ============================================
+     SCROLLBAR STYLING
+     ============================================ */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-800;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-cyan-500;
+  }
 }
 
-:root {
-  --primary: #3197a7;
-  --primary-dark: #265d74;
-  --primary-light: #38bdf8;
-  --accent: #8b5cf6;
-  --accent-cyan: #22d3ee;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-
-  --bg-primary: #191c29;
-  --bg-secondary: #111827;
-  --bg-tertiary: #1f2937;
-  --bg-elevated: #1e293b;
-
-  --border: #374151;
-  --border-light: #475569;
-
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #9ca3af;
-
-  --gradient-primary: linear-gradient(
-    135deg,
-    #265d74 0%,
-    #3197a7 50%,
-    #22d3ee 100%
-  );
-  --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #22d3ee 100%);
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.2);
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-
-  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* For existing components */
-  --card-bg: #1e293b;
-  --dark-bg: #111827;
-  --text: #f8fafc;
-  --muted: #9ca3af;
-  --grad: linear-gradient(135deg, #265d74 0%, #3197a7 50%, #22d3ee 100%);
-  --act-swim: #22d3ee;
-  --act-kick: #ef4444;
-  --act-pull: #10b981;
+/* ============================================
+   REACT DAY PICKER STYLING
+   ============================================ */
+.rdp-custom {
+  --rdp-cell-size: 36px;
+  --rdp-accent-color: var(--color-primary);
+  --rdp-background-color: var(--color-background-tertiary);
+  margin: 0;
 }
+
+.rdp-custom .rdp-months {
+  justify-content: center;
+}
+
+.rdp-custom .rdp-month {
+  color: var(--color-text-primary);
+}
+
+.rdp-custom .rdp-caption {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.rdp-custom .rdp-caption_label {
+  @apply text-sm font-bold text-text-primary;
+}
+
+.rdp-custom .rdp-nav {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.rdp-custom .rdp-nav_button {
+  @apply w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 cursor-pointer flex items-center justify-center transition-all duration-200;
+}
+
+.rdp-custom .rdp-nav_button:hover {
+  @apply bg-slate-700 border-cyan-500 text-slate-200;
+}
+
+.rdp-custom .rdp-head_cell {
+  @apply text-xs font-semibold text-slate-500 uppercase;
+  padding: 4px 0;
+}
+
+.rdp-custom .rdp-cell {
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  padding: 0;
+}
+
+.rdp-custom .rdp-day {
+  @apply w-full h-full rounded-lg text-sm font-medium text-text-primary border border-transparent bg-transparent cursor-pointer transition-all duration-200;
+}
+
+.rdp-custom .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  @apply bg-slate-800 border-slate-600;
+}
+
+.rdp-custom .rdp-day_today:not(.rdp-day_selected) {
+  @apply border-cyan-500 text-cyan-400 font-bold bg-transparent;
+}
+
+.rdp-custom .rdp-day_selected {
+  @apply bg-linear-to-br from-cyan-500 via-blue-500 to-purple-500 text-white font-bold border-none;
+}
+
+.rdp-custom .rdp-day_selected:hover {
+  filter: brightness(1.1);
+}
+
+.rdp-custom .rdp-day_outside {
+  @apply text-slate-600 opacity-50;
+}
+
+.rdp-custom .rdp-day_disabled {
+  @apply text-slate-700 opacity-30 cursor-not-allowed;
+}
+
 
 /* React DayPicker Custom Styles */
 .rdp-custom {

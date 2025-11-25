@@ -101,10 +101,10 @@ export default function WorkoutViewPage() {
 
   if (loading || workoutLoading) {
     return (
-      <div className="min-h-screen bg-background-primary flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-text-secondary">Loading workout...</p>
+          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-400">Loading workout...</p>
         </div>
       </div>
     );
@@ -112,14 +112,14 @@ export default function WorkoutViewPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background-primary flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-danger/10 border border-danger/30 rounded-xl p-6 text-center">
-          <Activity size={48} className="text-danger mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-text-primary mb-2">Error Loading Workout</h3>
-          <p className="text-text-secondary mb-4">{error}</p>
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
+          <Activity size={48} className="text-red-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-slate-100 mb-2">Error Loading Workout</h3>
+          <p className="text-slate-400 mb-4">{error}</p>
           <button 
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
           >
             <ArrowLeft size={16} />
             Go Back
@@ -131,16 +131,16 @@ export default function WorkoutViewPage() {
 
   if (!workout) {
     return (
-      <div className="min-h-screen bg-background-primary flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-background-card rounded-full flex items-center justify-center mx-auto mb-4">
-            <Activity size={40} className="text-text-secondary" />
+          <div className="w-20 h-20 bg-slate-900/90 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4">
+            <Activity size={40} className="text-slate-400" />
           </div>
-          <h3 className="text-xl font-semibold text-text-primary mb-2">Workout not found</h3>
-          <p className="text-text-secondary mb-6">The workout you're looking for doesn't exist or has been deleted.</p>
+          <h3 className="text-xl font-semibold text-slate-100 mb-2">Workout not found</h3>
+          <p className="text-slate-400 mb-6">The workout you're looking for doesn't exist or has been deleted.</p>
           <button 
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
           >
             <ArrowLeft size={16} />
             Go Back
@@ -151,29 +151,29 @@ export default function WorkoutViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Modern Header */}
-      <div className="bg-background-elevated/80 backdrop-blur-xl border-b border-border/60 sticky top-0 z-50">
+      <div className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/60 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-start justify-between gap-6">
             {/* Left: Back button and title section */}
             <div className="flex-1 min-w-0">
               <button 
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors mb-3 group"
+                className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors mb-3 group"
               >
                 <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
                 <span className="text-sm font-medium">Back to Workouts</span>
               </button>
               
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center shrink-0">
-                  <Activity size={24} className="text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                  <Activity size={24} className="text-cyan-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold text-text-primary mb-2">{workout.name}</h1>
+                  <h1 className="text-2xl font-bold text-slate-100 mb-2">{workout.name}</h1>
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="flex items-center gap-1.5 text-sm text-text-secondary">
+                    <span className="flex items-center gap-1.5 text-sm text-slate-400">
                       <Calendar size={14} />
                       {new Date(workout.createdAt).toLocaleDateString('en-US', { 
                         month: 'long', 
@@ -182,7 +182,7 @@ export default function WorkoutViewPage() {
                       })}
                     </span>
                     {workout.jsonDescription?.estimate?.difficulty && (
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500/10 text-cyan-400 rounded-lg text-sm font-medium">
                         <TrendingUp size={14} />
                         {workout.jsonDescription.estimate.difficulty}
                       </span>
@@ -214,7 +214,7 @@ export default function WorkoutViewPage() {
             <div className="flex items-center gap-2 shrink-0">
               <button 
                 onClick={handleEdit}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background-tertiary hover:bg-primary/10 border border-border hover:border-primary/30 text-text-secondary hover:text-primary transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/50 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-400 hover:text-cyan-400 transition-all"
                 title="Edit workout"
               >
                 <Edit size={16} />
@@ -222,7 +222,7 @@ export default function WorkoutViewPage() {
               </button>
               <button 
                 onClick={handleDownload}
-                className="p-2 rounded-xl bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary transition-all"
+                className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-all"
                 title="Download"
               >
                 <Download size={18} />
@@ -231,8 +231,8 @@ export default function WorkoutViewPage() {
                 onClick={handleCopy}
                 className={`p-2 rounded-xl transition-all ${
                   copied 
-                    ? 'bg-success/20 text-success' 
-                    : 'bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary'
+                    ? 'bg-green-500/20 text-green-400' 
+                    : 'bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-slate-200'
                 }`}
                 title={copied ? "Copied!" : "Copy to clipboard"}
               >
@@ -240,7 +240,7 @@ export default function WorkoutViewPage() {
               </button>
               <button 
                 onClick={handleDelete}
-                className="p-2 rounded-xl bg-danger/10 hover:bg-danger/20 text-danger transition-all"
+                className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
                 title="Delete workout"
               >
                 <Trash2 size={18} />
@@ -254,75 +254,75 @@ export default function WorkoutViewPage() {
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group">
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group">
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Activity size={20} className="text-cyan-400" />
               </div>
-              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Distance</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Distance</span>
             </div>
-            <p className="text-3xl font-bold text-text-primary mb-1">
+            <p className="text-3xl font-bold text-slate-100 mb-1">
               {workout.totalMeters.toLocaleString()}
             </p>
-            <p className="text-xs text-text-secondary">meters</p>
+            <p className="text-xs text-slate-400">meters</p>
           </div>
 
-          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-green-500/30 hover:shadow-lg hover:shadow-green-500/10 transition-all group">
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-green-500/30 hover:shadow-lg hover:shadow-green-500/10 transition-all group">
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Timer size={20} className="text-green-400" />
               </div>
-              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Duration</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Duration</span>
             </div>
-            <p className="text-3xl font-bold text-text-primary mb-1">
+            <p className="text-3xl font-bold text-slate-100 mb-1">
               {workout.estimatedTimeMinutes}
             </p>
-            <p className="text-xs text-text-secondary">minutes</p>
+            <p className="text-xs text-slate-400">minutes</p>
           </div>
 
-          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/10 transition-all group">
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/10 transition-all group">
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Flame size={20} className="text-orange-400" />
               </div>
-              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Calories</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Calories</span>
             </div>
-            <p className="text-3xl font-bold text-text-primary mb-1">
+            <p className="text-3xl font-bold text-slate-100 mb-1">
               {workout.estimatedCalories.toLocaleString()}
             </p>
-            <p className="text-xs text-text-secondary">kcal</p>
+            <p className="text-xs text-slate-400">kcal</p>
           </div>
 
-          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-5 border border-border/60 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all group">
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all group">
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Zap size={20} className="text-purple-400" />
               </div>
-              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Effort</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Effort</span>
             </div>
-            <p className="text-3xl font-bold text-text-primary mb-1">
+            <p className="text-3xl font-bold text-slate-100 mb-1">
               {workout.effortLevel}/10
             </p>
-            <p className="text-xs text-text-secondary">intensity</p>
+            <p className="text-xs text-slate-400">intensity</p>
           </div>
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Workout Description */}
-          <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-6 border border-border/60 shadow-xl">
-            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border/40">
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-800/60 shadow-xl">
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-800/40">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
                 <FileText size={20} className="text-blue-400" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-text-primary">Workout Plan</h2>
-                <p className="text-xs text-text-secondary">Complete training session details</p>
+                <h2 className="text-lg font-bold text-slate-100">Workout Plan</h2>
+                <p className="text-xs text-slate-400">Complete training session details</p>
               </div>
             </div>
-            <div className="bg-background-tertiary/30 rounded-xl p-5 border border-border/30 max-h-[600px] overflow-y-auto">
+            <div className="bg-slate-800/30 rounded-xl p-5 border border-slate-700/30 max-h-[600px] overflow-y-auto">
               <div className="prose prose-sm max-w-none">
-                <div className="text-base leading-loose whitespace-pre-wrap text-text-primary">
+                <div className="text-base leading-loose whitespace-pre-wrap text-slate-100">
                   {workout.rawDescription}
                 </div>
               </div>
@@ -331,14 +331,14 @@ export default function WorkoutViewPage() {
 
           {/* Workout Analysis */}
           {workout.jsonDescription?.estimate && (
-            <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm rounded-2xl p-6 border border-border/60 shadow-xl">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border/40">
+            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-800/60 shadow-xl">
+              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-800/40">
                 <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
                   <BarChart3 size={20} className="text-indigo-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-text-primary">Workout Analysis</h2>
-                  <p className="text-xs text-text-secondary">Breakdown by stroke and activity</p>
+                  <h2 className="text-lg font-bold text-slate-100">Workout Analysis</h2>
+                  <p className="text-xs text-slate-400">Breakdown by stroke and activity</p>
                 </div>
               </div>
               <div className="max-h-[600px] overflow-y-auto">

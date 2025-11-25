@@ -25,17 +25,17 @@ export default function Avatar({
       <div className={`
         ${sizeClasses[size]}
         rounded-xl 
-        bg-gradient-to-br from-primary/30 via-primary/40 to-accent/30 
+        bg-linear-to-br from-cyan-500/30 via-blue-500/40 to-purple-500/30 
         flex items-center justify-center 
-        font-bold text-primary 
-        border-2 border-primary/40 
+        font-bold text-cyan-400 
+        border-2 border-cyan-500/40 
         shadow-lg 
-        group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-primary/20
+        group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-cyan-500/20
         transition-all duration-300
       `}>
         {initials}
       </div>
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 rounded-xl bg-linear-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default function SwimmerProfileCard({ swimmer }: SwimmerProfileCardProps)
   const age = swimmer.date_of_birth ? calculateAge(swimmer.date_of_birth) : null;
 
   return (
-    <div className="bg-gradient-to-br from-background-elevated/90 to-background-secondary/70 backdrop-blur-md border border-border rounded-xl p-5 shadow-xl hover:shadow-2xl hover:border-primary/30 transition-all duration-300">
+    <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-5 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:border-cyan-500/30 transition-all duration-300">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <Avatar 
           firstName={swimmer.first_name} 
@@ -41,7 +41,7 @@ export default function SwimmerProfileCard({ swimmer }: SwimmerProfileCardProps)
         />
 
         <div className="flex-1 text-center sm:text-left">
-          <h1 className="text-xl sm:text-2xl font-bold mb-3 bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent drop-shadow-sm">
+          <h1 className="text-xl sm:text-2xl font-bold mb-3 bg-linear-to-r from-cyan-500 via-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
             {fullName}
           </h1>
           

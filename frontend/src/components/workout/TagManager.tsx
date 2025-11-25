@@ -66,7 +66,7 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-semibold text-text-primary">
+      <label className="block text-sm font-semibold text-slate-100">
         Tags
       </label>
 
@@ -91,7 +91,7 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
 
       {/* Tag Selector */}
       {loading ? (
-        <div className="text-sm text-text-secondary">Loading tags...</div>
+        <div className="text-sm text-slate-400">Loading tags...</div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {allTags
@@ -117,7 +117,7 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
             <button
               onClick={() => setIsCreating(true)}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-2 border-dashed border-text-tertiary text-text-tertiary hover:border-primary hover:text-primary transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-2 border-dashed border-slate-600 text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-all"
             >
               <Plus size={14} />
               New Tag
@@ -128,9 +128,9 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
 
       {/* Create Tag Form */}
       {isCreating && (
-        <div className="bg-background-elevated border border-border/60 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
+            <label className="block text-xs font-medium text-slate-400 mb-1">
               Tag Name
             </label>
             <input
@@ -138,7 +138,7 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
               placeholder="e.g., Sprint, Endurance, Recovery..."
-              className="w-full px-3 py-2 bg-background-secondary border border-border rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full px-3 py-2 bg-slate-800/60 border border-slate-700/40 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
               maxLength={50}
               autoFocus
               onKeyDown={(e) => {
@@ -150,13 +150,13 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
                 }
               }}
             />
-            <div className="text-xs text-text-tertiary mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               {newTagName.length}/50 characters
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-2">
+            <label className="block text-xs font-medium text-slate-400 mb-2">
               Color
             </label>
             <div className="flex flex-wrap gap-2">
@@ -167,8 +167,8 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
                   onClick={() => setSelectedColor(color)}
                   className={`w-10 h-10 rounded-full border-2 transition-all ${
                     selectedColor.hex === color.hex
-                      ? 'border-white scale-110 shadow-lg ring-2 ring-offset-2 ring-offset-background-elevated ring-white/50'
-                      : 'border-border/40 hover:scale-105'
+                      ? 'border-white scale-110 shadow-lg ring-2 ring-offset-2 ring-offset-slate-900 ring-white/50'
+                      : 'border-slate-700/40 hover:scale-105'
                   }`}
                   style={{ backgroundColor: color.hex }}
                   title={color.name}
@@ -182,7 +182,7 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
               onClick={handleCreateTag}
               type="button"
               disabled={!newTagName.trim()}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-r from-primary to-accent text-white rounded-lg font-medium hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-medium hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Check size={16} />
               Create
@@ -194,7 +194,7 @@ export function TagManager({ coachId, selectedTags, onTagsChange }: TagManagerPr
                 setError('');
               }}
               type="button"
-              className="px-4 py-2 bg-background-tertiary text-text-secondary rounded-lg font-medium hover:bg-background-secondary transition-all"
+              className="px-4 py-2 bg-slate-800/50 text-slate-400 rounded-lg font-medium hover:bg-slate-700/50 hover:text-slate-100 transition-all"
             >
               Cancel
             </button>

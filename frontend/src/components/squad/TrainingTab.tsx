@@ -1,9 +1,25 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Calendar, List, CalendarDays } from 'lucide-react';
-import WeeklyScheduleView from '@/components/squad/WeeklyScheduleView';
-import SessionsList from '@/components/squad/SessionsList';
-import CalendarMonth from '@/components/squad/CalenderMonth';
 import type { TrainingSubTab } from '@/hooks/useSquadData';
+
+// Lazy load sub-tab components
+const WeeklyScheduleView = lazy(() => import('@/components/squad/WeeklyScheduleView'));
+const SessionsList = lazy(() => import('@/components/squad/SessionsList'));
+const CalendarMonth = lazy(() => import('@/components/squad/CalenderMonth'));
+
+// Loading skeleton component
+function TabSkeleton() {
+  return (
+    <div className="p-6 space-y-6 animate-pulse">
+      <div className="h-8 bg-slate-800/50 rounded w-1/4" />
+      <div className="space-y-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-24 bg-slate-800/50 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 
 interface TrainingTabProps {
@@ -31,10 +47,10 @@ export function TrainingTab({ squadId, schedules, sessions, events, canManageSes
   const [activeSubTab, setActiveSubTab] = useState<TrainingSubTab>('sessions');
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Sub-tab navigation */}
-      <div className="shrink-0 bg-background-elevated/80 backdrop-blur-md border-b border-border/60 px-6 py-4 shadow-sm">
-        <div className="flex gap-3 flex-wrap">
+    <div className="flex flex-col h-full bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Compact Sub-tab navigation */}
+      <div className="shrink-0 px-6 py-3 border-b border-cyan-500/10 bg-slate-900/50 backdrop-blur-xl">
+        <div className="flex gap-2 flex-wrap">
           {SUB_TABS.map(({ key, icon: Icon, label }) => {
             const isActive = activeSubTab === key;
             return (
@@ -42,19 +58,36 @@ export function TrainingTab({ squadId, schedules, sessions, events, canManageSes
                 key={key}
                 onClick={() => setActiveSubTab(key)}
                 className={`
-                  relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200
+                  relative group overflow-hidden rounded-lg transition-all duration-200 px-3 py-2
                   ${isActive 
-                    ? 'bg-linear-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 scale-105' 
-                    : 'text-text-secondary hover:text-text-primary hover:bg-primary/10 hover:scale-[1.02] border border-border/40 hover:border-primary/30'
+                    ? 'bg-linear-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30 scale-105' 
+                    : 'bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/30 hover:scale-[1.02]'
                   }
-                  group
                 `}
               >
-                <Icon size={18} className={`transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`} strokeWidth={2.5} />
-                <span>{label}</span>
-                {isActive && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-white rounded-full" />
-                )}
+                {/* Content */}
+                <div className="relative z-10 flex items-center gap-2">
+                  <Icon 
+                    size={16} 
+                    className={`
+                      transition-all duration-200
+                      ${isActive 
+                        ? 'text-white' 
+                        : 'text-slate-400 group-hover:text-cyan-400'
+                      }
+                    `}
+                    strokeWidth={2.5}
+                  />
+                  <span className={`
+                    font-semibold text-xs transition-colors duration-200
+                    ${isActive 
+                      ? 'text-white' 
+                      : 'text-slate-400 group-hover:text-slate-200'
+                    }
+                  `}>
+                    {label}
+                  </span>
+                </div>
               </button>
             );
           })}
@@ -62,31 +95,33 @@ export function TrainingTab({ squadId, schedules, sessions, events, canManageSes
       </div>
 
       {/* Sub-tab content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeSubTab === 'schedule' && (
-          <WeeklyScheduleView 
-            squadId={squadId} 
-            schedules={schedules} 
-            canManage={canManageSchedules}
-            onUpdate={() => {}} 
-          />
-        )}
-        {activeSubTab === 'sessions' && (
-          <SessionsList 
-            sessions={sessions} 
-            squadId={squadId} 
-            schedules={schedules}
-            canManage={canManageSessions}
-            canManageAttendance={canManageAttendance}
-            onRefresh={onRefresh}
-          />
-        )}
-        {activeSubTab === 'calendar' && (
-          <CalendarMonth 
-            events={events}
-            canManage={canManageSessions}
-          />
-        )}
+      <div className="flex-1 overflow-y-auto bg-linear-to-b from-transparent via-slate-900/30 to-transparent">
+        <Suspense fallback={<TabSkeleton />}>
+          {activeSubTab === 'schedule' && (
+            <WeeklyScheduleView 
+              squadId={squadId} 
+              schedules={schedules} 
+              canManage={canManageSchedules}
+              onUpdate={() => {}} 
+            />
+          )}
+          {activeSubTab === 'sessions' && (
+            <SessionsList 
+              sessions={sessions} 
+              squadId={squadId} 
+              schedules={schedules}
+              canManage={canManageSessions}
+              canManageAttendance={canManageAttendance}
+              onRefresh={onRefresh}
+            />
+          )}
+          {activeSubTab === 'calendar' && (
+            <CalendarMonth 
+              events={events}
+              canManage={canManageSessions}
+            />
+          )}
+        </Suspense>
       </div>
     </div>
   );

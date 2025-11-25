@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { UserPlus, Shield, Trash2, Mail, Check, X, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCoachApi } from '@/hooks/api/useCoachApi';
+import { SquadTabHeader } from '@/components/squad/SquadTabHeader';
 import {
   getSquadCoaches,
   updateCoachPermissions,
@@ -144,21 +145,21 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-text-primary">Squad Coaches</h3>
-          <p className="text-sm text-text-muted mt-1">{coaches.length} coach{coaches.length !== 1 ? 'es' : ''} with access</p>
-        </div>
-        {canManage && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
-          >
-            <UserPlus size={16} />
-            Add Coach
-          </button>
-        )}
-      </div>
+      <SquadTabHeader
+        title="Squad Coaches"
+        subtitle={`${coaches.length} coach${coaches.length !== 1 ? 'es' : ''} with access`}
+        actions={
+          canManage ? (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
+            >
+              <UserPlus size={16} />
+              Add Coach
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Error */}
       {error && (
@@ -259,23 +260,25 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
         {coaches.map((membership) => (
           <div
             key={membership.id}
-            className="bg-background-elevated rounded-xl border border-border p-4"
+            className="group relative overflow-hidden bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-200"
           >
-            <div className="flex items-start justify-between mb-3">
+            {/* Subtle glow on hover */}
+            <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                <div className="w-12 h-12 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold shadow-lg">
                   {membership.coach?.first_name?.[0]}{membership.coach?.last_name?.[0]}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-text-primary">
+                    <h4 className="text-sm font-bold text-text-primary">
                       {membership.coach ? `${membership.coach.first_name} ${membership.coach.last_name}` : `Coach ${membership.coach_id.substring(0, 8)}`}
                     </h4>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getRoleBadge(membership.role)}`}>
+                    <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getRoleBadge(membership.role)}`}>
                       {membership.role}
                     </span>
                   </div>
-                  <p className="text-xs text-text-muted">ID: {membership.coach_id.substring(0, 8)}</p>
+                  <p className="text-xs text-slate-400">ID: {membership.coach_id.substring(0, 8)}</p>
                 </div>
               </div>
 

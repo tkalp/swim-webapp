@@ -1,5 +1,6 @@
 // components/WorkoutFormHeader.tsx
-import { ArrowLeft, Save, FileText, Check, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, FileText, CheckCircle } from "lucide-react";
+import { Button } from '@/components/ui';
 
 type WorkoutFormHeaderProps = {
   isEditMode: boolean;
@@ -17,51 +18,44 @@ export function WorkoutFormHeader({
   onCancel 
 }: WorkoutFormHeaderProps) {
   return (
-    <div className="shrink-0 bg-background-elevated border-b border-border">
-      <div className="max-w-[1800px] mx-auto px-3 py-2 md:px-4 md:py-3 flex items-center justify-between gap-2 md:gap-4">
-        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-          <button 
-            className="flex items-center gap-1.5 md:gap-2 text-text-secondary hover:text-text-primary transition-colors shrink-0"
+    <div className="shrink-0 bg-slate-900/50 backdrop-blur-sm border-b-2 border-cyan-500/20">
+      <div className="max-w-[1800px] mx-auto px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 min-w-0 flex-1">
+          <Button 
+            variant="ghost"
+            size="sm"
+            icon={<ArrowLeft size={16} className="sm:w-[18px] sm:h-[18px]" />}
             onClick={onCancel}
+            className="touch-manipulation px-2 sm:px-3"
           >
-            <ArrowLeft size={16} className="md:w-[18px] md:h-[18px]" />
-            <span className="text-xs md:text-sm">Cancel</span>
-          </button>
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-              <FileText size={14} className="text-primary md:w-[18px] md:h-[18px]" />
+            <span className="hidden sm:inline">Cancel</span>
+          </Button>
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
+              <FileText size={14} className="text-cyan-400 sm:w-4 sm:h-4 md:w-5 md:h-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm md:text-lg font-semibold text-text-primary truncate">
+              <h1 className="text-sm sm:text-base md:text-xl font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent truncate">
                 {isEditMode ? "Edit Workout" : "Create Workout"}
               </h1>
             </div>
           </div>
         </div>
 
-        <button
+        <Button
           type="submit"
           form="workout-form"
-          className="px-3 py-1.5 md:px-4 md:py-2 bg-linear-to-r from-primary-dark via-primary to-accent text-white rounded-lg text-sm md:text-base font-medium hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all flex items-center gap-1.5 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shrink-0"
-          disabled={!isValid || loading}
+          variant="primary"
+          size="md"
+          icon={success ? <CheckCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Save size={16} className="sm:w-[18px] sm:h-[18px]" />}
+          loading={loading}
+          loadingText={isEditMode ? 'Updating...' : 'Saving...'}
+          disabled={!isValid}
+          className="touch-manipulation min-w-[80px] sm:min-w-[90px] px-3 sm:px-4 text-sm"
         >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>{isEditMode ? 'Updating...' : 'Saving...'}</span>
-            </>
-          ) : success ? (
-            <>
-              <CheckCircle size={18} />
-              <span>{isEditMode ? 'Updated!' : 'Saved!'}</span>
-            </>
-          ) : (
-            <>
-              <Save size={18} />
-              <span>{isEditMode ? 'Update' : 'Save'}</span>
-            </>
-          )}
-        </button>
+          <span className="hidden sm:inline">{success ? (isEditMode ? 'Updated!' : 'Saved!') : (isEditMode ? 'Update' : 'Save')}</span>
+          <span className="sm:hidden">{success ? '✓' : (isEditMode ? 'Update' : 'Save')}</span>
+        </Button>
       </div>
     </div>
   );

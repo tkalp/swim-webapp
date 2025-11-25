@@ -65,7 +65,7 @@ export default function WorkoutFormPage() {
   }
 
   return (
-    <div className="h-screen bg-background-primary flex flex-col overflow-hidden">
+    <div className="h-screen bg-background-primary flex flex-col">
       {/* Header */}
       <WorkoutFormHeader
         isEditMode={isEditMode}
@@ -78,79 +78,80 @@ export default function WorkoutFormPage() {
       {/* Error Alert */}
       <ErrorAlert error={error} onDismiss={() => setError("")} />
 
-      {/* Form - Split Screen Layout */}
-      <form id="workout-form" className="flex-1 flex overflow-hidden min-h-0" onSubmit={handleSubmit}>
-        <div className="flex-1 flex gap-4 p-4 max-w-[1800px] mx-auto w-full overflow-hidden">
-          
-          {/* Left Panel - Workout Details */}
-          <div className="flex-1 flex flex-col gap-3 min-w-0 overflow-y-auto pr-2">
-            <WorkoutNameInput
-              value={formData.name}
-              onChange={(value) => setFormData({ ...formData, name: value })}
-              autoFocus
-            />
+      {/* Form - Simple column on mobile, split on desktop */}
+      <div className="flex-1 overflow-y-auto">
+        <form id="workout-form" onSubmit={handleSubmit} className="h-full">
+          <div className="h-full max-w-[1800px] mx-auto p-3 sm:p-4 lg:p-5">
+            <div className="h-full flex flex-col lg:flex-row gap-4">
+              
+              {/* Left Column - Workout Details */}
+              <div className="flex flex-col gap-4 lg:flex-1 lg:overflow-y-auto lg:pr-4">
+                <WorkoutNameInput
+                  value={formData.name}
+                  onChange={(value) => setFormData({ ...formData, name: value })}
+                  autoFocus
+                />
 
-            {/* Brief Description */}
-            <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
-              <label className="block text-sm font-semibold text-text-primary mb-2">
-                Brief Description
-                <span className="text-text-muted font-normal ml-2">(Optional, 500 char max)</span>
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value.length <= 500) {
-                    setFormData({ ...formData, description: value });
-                  }
-                }}
-                placeholder="Add a brief summary of this workout..."
-                className="w-full px-3 py-2 bg-background-tertiary/50 border border-border/40 rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all resize-none"
-                rows={3}
-              />
-              <div className="text-xs text-text-muted mt-1 text-right">
-                {formData.description.length}/500
-              </div>
-            </div>
+                {/* Brief Description */}
+                <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
+                  <label className="block text-sm font-semibold text-text-primary mb-2">
+                    Brief Description
+                    <span className="text-text-muted font-normal ml-2">(Optional, 500 char max)</span>
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 500) {
+                        setFormData({ ...formData, description: value });
+                      }
+                    }}
+                    placeholder="Add a brief summary of this workout..."
+                    className="w-full px-3 py-2 bg-background-tertiary/50 border border-border/40 rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all resize-none"
+                    rows={3}
+                  />
+                  <div className="text-xs text-text-muted mt-1 text-right">
+                    {formData.description.length}/500
+                  </div>
+                </div>
 
-            {/* Tags */}
-            {user?.id && (
-              <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
-                <TagManager
-                  coachId={user.id}
-                  selectedTags={formData.selectedTags}
-                  onTagsChange={(tags) => setFormData({ ...formData, selectedTags: tags })}
+                {/* Tags */}
+                {user?.id && (
+                  <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
+                    <TagManager
+                      coachId={user.id}
+                      selectedTags={formData.selectedTags}
+                      onTagsChange={(tags) => setFormData({ ...formData, selectedTags: tags })}
+                    />
+                  </div>
+                )}
+
+                <WorkoutDescriptionTextarea
+                  value={formData.rawDescription}
+                  onChange={(value) => setFormData({ ...formData, rawDescription: value })}
                 />
               </div>
-            )}
 
-            <WorkoutDescriptionTextarea
-              value={formData.rawDescription}
-              onChange={(value) => setFormData({ ...formData, rawDescription: value })}
-            />
-          </div>
-
-          {/* Right Panel - Analysis & Metrics - Collapsible on mobile, side panel on desktop */}
-          <div className="w-full md:w-[360px] lg:w-[400px] xl:w-[480px] flex flex-col gap-2 md:gap-3 overflow-y-auto md:pl-2 max-h-[400px] md:max-h-none">
-            <div className="flex-1 min-h-0">
-              <RealtimeWorkoutAnalyzer 
-                workoutText={formData.rawDescription}
-                className="h-full"
-                onAnalysisUpdate={handleAnalysisUpdate}
-                onEditMetric={(metric, currentValue) => {
-                  setEditingMetric({ type: metric, value: currentValue });
-                }}
-              />
+              {/* Right Column - Analysis & Metrics */}
+              <div className="flex flex-col gap-4 lg:w-[420px] xl:w-[480px] lg:overflow-y-auto lg:pl-4">
+                <RealtimeWorkoutAnalyzer 
+                  workoutText={formData.rawDescription}
+                  onAnalysisUpdate={handleAnalysisUpdate}
+                  onEditMetric={(metric, currentValue) => {
+                    setEditingMetric({ type: metric, value: currentValue });
+                  }}
+                />
+                
+                <EffortLevelSlider
+                  value={formData.effortLevel}
+                  onChange={(value) => setFormData({ ...formData, effortLevel: value })}
+                />
+              </div>
+              
             </div>
-            
-            {/* Effort Level - Below Analysis */}
-            <EffortLevelSlider
-              value={formData.effortLevel}
-              onChange={(value) => setFormData({ ...formData, effortLevel: value })}
-            />
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
 
       {/* Edit Metric Modal */}
       <EditMetricModal

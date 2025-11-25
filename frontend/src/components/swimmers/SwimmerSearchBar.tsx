@@ -86,7 +86,7 @@ export function SwimmerSearchBar() {
       <div className="relative">
         <Search
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
         />
         <input
           ref={inputRef}
@@ -95,21 +95,21 @@ export function SwimmerSearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           placeholder="Search any swimmer..."
-          className="w-48 lg:w-64 pl-9 pr-3 py-2 bg-background-secondary/60 border border-border/40 rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 focus:bg-background-elevated transition-all duration-200"
+          className="w-48 lg:w-64 pl-9 pr-3 py-2 bg-slate-800/60 border border-slate-700/40 rounded-lg text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 focus:bg-slate-900/90 transition-all duration-200"
         />
         {isSearching && (
           <Loader2
             size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-primary animate-spin"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400 animate-spin"
           />
         )}
       </div>
 
       {/* Results Dropdown */}
       {isOpen && (query.length >= 2 || results.length > 0) && (
-        <div className="absolute top-full mt-2 w-80 bg-background-elevated border border-border/60 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full mt-2 w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-xl shadow-cyan-500/5 z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
           {error && (
-            <div className="px-4 py-3 text-sm text-text-muted text-center">
+            <div className="px-4 py-3 text-sm text-slate-400 text-center">
               {error}
             </div>
           )}
@@ -120,22 +120,22 @@ export function SwimmerSearchBar() {
                 <button
                   key={swimmer.athlete_id}
                   onClick={() => handleSelectSwimmer(swimmer)}
-                  className="w-full px-4 py-3 text-left hover:bg-background-secondary/80 transition-colors"
+                  className="w-full px-4 py-3 text-left hover:bg-slate-800/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-text-secondary shrink-0" />
-                        <span className="font-medium text-text-primary truncate">
+                        <User className="h-4 w-4 text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-100 truncate">
                           {swimmer.name}
                         </span>
                         {swimmer.birth_year && (
-                          <span className="text-sm text-text-muted shrink-0">
+                          <span className="text-sm text-slate-500 shrink-0">
                             ({swimmer.birth_year})
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-text-muted">
+                      <div className="mt-1 flex items-center gap-3 text-xs text-slate-400">
                         {swimmer.club && (
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -157,7 +157,7 @@ export function SwimmerSearchBar() {
           )}
 
           {!isSearching && results.length === 0 && query.length >= 2 && !error && (
-            <div className="px-4 py-8 text-center text-sm text-text-muted">
+            <div className="px-4 py-8 text-center text-sm text-slate-400">
               <p>Type a swimmer's name to search</p>
               <p className="text-xs mt-1">e.g., "Michael Phelps"</p>
             </div>

@@ -20,16 +20,16 @@ function NavLink({ to, icon: Icon, children }: NavLinkProps) {
   return (
     <Link
       to={to}
-      className={`relative flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 group ${
+      className={`relative flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all duration-200 group ${
         isActive
-          ? "bg-linear-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 scale-105"
-          : "text-text-secondary hover:text-text-primary hover:bg-primary/10 hover:scale-[1.02] border border-transparent hover:border-primary/20"
+          ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
       }`}
     >
-      <Icon size={18} className={`transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`} strokeWidth={2.5} />
-      <span className="hidden md:inline">{children}</span>
+      <Icon size={18} className={`transition-all duration-200 ${isActive ? 'text-cyan-400' : 'group-hover:text-cyan-400'}`} strokeWidth={2} />
+      <span className="hidden lg:inline">{children}</span>
       {isActive && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-white rounded-full shadow-lg" />
+        <div className="absolute inset-0 bg-linear-to-r from-cyan-500/5 to-blue-500/5 rounded-lg -z-10" />
       )}
     </Link>
   );
@@ -65,27 +65,27 @@ function QuickCreateMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-primary to-accent text-white rounded-xl font-bold text-sm hover:scale-105 transition-all duration-200 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
+        className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold text-sm hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-200"
         title="Quick Create"
       >
         <Plus size={18} strokeWidth={2.5} />
-        <span className="hidden lg:inline">New</span>
+        <span className="hidden sm:inline">Create</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-background-elevated border border-border/60 rounded-xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-56 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
           <button
             onClick={() => handleAction("/workouts/create")}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-text-primary hover:bg-background-secondary/80 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors rounded-lg mx-1"
           >
-            <Dumbbell size={16} className="text-primary" />
+            <Dumbbell size={16} className="text-cyan-400" />
             <span className="text-sm font-medium">New Workout</span>
           </button>
           <button
             onClick={() => handleAction("/squads/new")}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-text-primary hover:bg-background-secondary/80 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors rounded-lg mx-1"
           >
-            <Users size={16} className="text-primary" />
+            <Users size={16} className="text-cyan-400" />
             <span className="text-sm font-medium">New Squad</span>
           </button>
         </div>
@@ -124,28 +124,28 @@ function ProfileMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-10 h-10 rounded-full bg-linear-to-r from-primary-dark via-primary to-accent flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-primary/30 hover:scale-110 hover:shadow-xl hover:shadow-primary/40 transition-all duration-200 ring-2 ring-primary/20"
+        className="w-9 h-9 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-sm hover:bg-linear-to-br hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-500/50 transition-all duration-200"
         title={userName}
       >
         {userInitial}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-background-elevated border border-border/60 rounded-xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="px-4 py-3 border-b border-border/40">
-            <p className="text-sm font-semibold text-text-primary truncate">{userName}</p>
-            <p className="text-xs text-text-secondary truncate">{user?.email}</p>
+        <div className="absolute right-0 mt-2 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="px-4 py-3 border-b border-slate-700/50">
+            <p className="text-sm font-semibold text-slate-200 truncate">{userName}</p>
+            <p className="text-xs text-slate-400 truncate">{user?.email}</p>
           </div>
           
-          <div className="py-2">
+          <div className="py-1">
             <button
               onClick={() => {
                 navigate("/");
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-text-primary hover:bg-background-secondary/80 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors rounded-lg mx-1"
             >
-              <Home size={16} className="text-primary" />
+              <Home size={16} className="text-cyan-400" />
               <span className="text-sm font-medium">Home</span>
             </button>
             
@@ -155,21 +155,21 @@ function ProfileMenu() {
                   navigate("/admin/sync");
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-text-primary hover:bg-background-secondary/80 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-orange-500/10 hover:text-orange-400 transition-colors rounded-lg mx-1"
               >
-                <Shield size={16} className="text-orange-500" />
+                <Shield size={16} className="text-orange-400" />
                 <span className="text-sm font-medium">Admin Sync</span>
               </button>
             )}
             
-            <div className="my-2 border-t border-border/40"></div>
+            <div className="my-1 mx-3 border-t border-slate-700/50"></div>
             
             <button
               onClick={() => {
                 signOut();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-danger hover:bg-danger/10 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-lg mx-1"
             >
               <LogOut size={16} />
               <span className="text-sm font-medium">Sign Out</span>
@@ -187,22 +187,22 @@ interface GlobalNavProps {
 
 export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
   return (
-    <header className="sticky top-0 z-100 bg-background-elevated/95 backdrop-blur-xl border-b border-border/60 shadow-xl">
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-100 bg-slate-950/80 backdrop-blur-2xl border-b border-slate-800/50 shadow-2xl">
+      <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-3 hover:scale-105 transition-transform duration-200 group"
+            className="flex items-center gap-2 sm:gap-3 hover:opacity-90 transition-opacity duration-200 group"
           >
-            <img src={logo} alt="Aquilus" className="h-12 w-auto object-contain" />
-            <span className="text-xl font-bold bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent drop-shadow-sm">
+            <img src={logo} alt="Aquilus" className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="text-lg sm:text-xl font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
               aquilus
             </span>
           </Link>
 
           {/* Main Navigation */}
-          <nav className="hidden md:flex items-center gap-3">
+          <nav className="hidden md:flex items-center gap-1">
             <NavLink to="/squads" icon={Users}>
               Squads
             </NavLink>
@@ -218,7 +218,7 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Swimmer Search */}
             <SwimmerSearchBar />
             <NotificationBell />
@@ -228,7 +228,7 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="md:hidden flex items-center gap-3 pb-3 overflow-x-auto">
+        <nav className="md:hidden flex items-center gap-1 pb-2 overflow-x-auto scrollbar-none">
           <NavLink to="/squads" icon={Users}>
             Squads
           </NavLink>

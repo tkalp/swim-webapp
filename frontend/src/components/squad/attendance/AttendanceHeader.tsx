@@ -13,20 +13,18 @@ export const AttendanceHeader: React.FC<AttendanceHeaderProps> = ({
   onDateChange,
 }) => {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <DateInput
-          value={startDate}
-          onChange={(value) => onDateChange('start', value)}
-          placeholder="Start date"
-        />
-        <span className="text-text-secondary">to</span>
-        <DateInput
-          value={endDate}
-          onChange={(value) => onDateChange('end', value)}
-          placeholder="End date"
-        />
-      </div>
+    <div className="flex items-center gap-2">
+      <DateInput
+        value={startDate}
+        onChange={(value) => onDateChange('start', value)}
+        placeholder="Start date"
+      />
+      <span className="text-text-tertiary font-medium text-sm">→</span>
+      <DateInput
+        value={endDate}
+        onChange={(value) => onDateChange('end', value)}
+        placeholder="End date"
+      />
     </div>
   );
 };

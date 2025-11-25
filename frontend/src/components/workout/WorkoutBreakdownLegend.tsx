@@ -35,16 +35,16 @@ const ACTIVITY_LABELS: Record<string, string> = {
 
 export default function WorkoutBreakdownLegend() {
   return (
-    <div className="bg-background-elevated border border-border rounded-xl p-4">
+    <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <Info size={16} className="text-primary" />
-        <h4 className="text-sm font-semibold text-text-primary">Workout Breakdown Legend</h4>
+        <h4 className="text-sm font-semibold text-slate-100">Workout Breakdown Legend</h4>
       </div>
       
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Strokes Legend */}
         <div className="flex-1">
-          <h5 className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">Strokes</h5>
+          <h5 className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">Strokes</h5>
           <div className="flex flex-wrap gap-3">
             {Object.entries(STROKE_COLORS).map(([key, color]) => (
               <div key={key} className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export default function WorkoutBreakdownLegend() {
                   className="w-3 h-3 rounded-sm"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-xs text-text-secondary">
+                <span className="text-xs text-slate-400">
                   {STROKE_LABELS[key]}
                 </span>
               </div>
@@ -62,7 +62,7 @@ export default function WorkoutBreakdownLegend() {
 
         {/* Activities Legend */}
         <div className="flex-1">
-          <h5 className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">Activities</h5>
+          <h5 className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">Activities</h5>
           <div className="flex flex-wrap gap-3">
             {Object.entries(ACTIVITY_COLORS).map(([key, color]) => (
               <div key={key} className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export default function WorkoutBreakdownLegend() {
                   className="w-3 h-3 rounded-sm"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-xs text-text-secondary">
+                <span className="text-xs text-slate-400">
                   {ACTIVITY_LABELS[key]}
                 </span>
               </div>
@@ -79,7 +79,7 @@ export default function WorkoutBreakdownLegend() {
         </div>
       </div>
       
-      <p className="text-xs text-text-muted mt-3">
+      <p className="text-xs text-slate-500 mt-3">
         Charts show the breakdown of workout composition by meters for sessions with workout data.
       </p>
     </div>

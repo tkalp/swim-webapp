@@ -56,9 +56,9 @@ export default function SquadFormModal({ isOpen, onClose, onSubmit }: Props) {
       title="Create New Squad"
       size="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">
+          <label className="block text-sm font-semibold text-slate-300 mb-2">
             Squad Name *
           </label>
           <input
@@ -66,52 +66,66 @@ export default function SquadFormModal({ isOpen, onClose, onSubmit }: Props) {
             required
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
             placeholder="Enter squad name"
             autoFocus
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">
+          <label className="block text-sm font-semibold text-slate-300 mb-2">
             Description
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all resize-none"
             placeholder="Enter squad description (optional)"
             rows={3}
           />
         </div>
 
-        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-          <h4 className="text-sm font-medium text-text-primary mb-2">
+        <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
+          <h4 className="text-sm font-semibold text-cyan-400 mb-2">
             What you can do with your squad:
           </h4>
-          <ul className="text-xs text-text-secondary space-y-1">
-            <li>• Add and manage swimmers</li>
-            <li>• Track practice sessions</li>
-            <li>• Monitor performance metrics</li>
-            <li>• Schedule meets and events</li>
+          <ul className="text-xs text-slate-400 space-y-1.5">
+            <li className="flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-cyan-400" />
+              <span>Add and manage swimmers</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-cyan-400" />
+              <span>Track practice sessions</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-cyan-400" />
+              <span>Monitor performance metrics</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-cyan-400" />
+              <span>Schedule meets and events</span>
+            </li>
           </ul>
         </div>
 
         {/* Form Actions */}
-        <div className="flex items-center gap-3 pt-4">
+        <div className="flex items-center gap-3 pt-2">
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 px-4 py-2 bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary rounded-lg font-medium transition-all duration-200"
+            className="flex-1 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600/50 text-slate-400 hover:text-white rounded-xl font-semibold transition-all duration-200 hover:scale-[1.02]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading || !formData.name.trim()}
-            className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+            className="group relative flex-1 px-4 py-3 text-white rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100 disabled:cursor-not-allowed overflow-hidden"
           >
-            {loading ? 'Creating...' : 'Create Squad'}
+            <div className="absolute inset-0 bg-linear-to-r from-cyan-500 via-blue-500 to-purple-500" />
+            <div className="absolute inset-0 bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="relative">{loading ? 'Creating...' : 'Create Squad'}</span>
           </button>
         </div>
       </form>

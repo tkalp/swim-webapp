@@ -4,13 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Users, Loader2 } from "lucide-react";
 import { getSquadById } from '@/services/squadService';
 import { updateSquad } from '@/services/squadService';
-import {
-  FormCard,
-  FormField,
-  TextInput,
-  TextArea,
-  FormActions,
-} from '@/components/form';
+import { Input, Textarea, Button } from '@/components/ui';
 
 export default function EditSquadPage() {
   const { squadId } = useParams<{ squadId: string }>();
@@ -122,70 +116,63 @@ export default function EditSquadPage() {
 
       {/* Main Content */}
       <main className="max-w-[800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <FormCard title={`Edit: ${name || "Squad"}`}>
-          <form onSubmit={handleSave}>
-            <FormField label="Squad Name" required>
-              <TextInput
-                value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setName(e.target.value)
-                }
-                placeholder="E.g. Junior Sharks"
-                disabled={saving}
-                required
-              />
-            </FormField>
+        <div className="bg-slate-900/50 border-2 border-cyan-500/20 rounded-2xl p-6 shadow-xl">
+          <h2 className="text-xl font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-6">
+            Edit: {name || "Squad"}
+          </h2>
+          
+          <form onSubmit={handleSave} className="space-y-6">
+            <Input
+              label="Squad Name"
+              value={name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setName(e.target.value)
+              }
+              placeholder="E.g. Junior Sharks"
+              disabled={saving}
+              required
+            />
 
-            <FormField
+            <Textarea
               label="Description"
+              value={description}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setDescription(e.target.value)
+              }
+              placeholder="Short description for your squad"
+              rows={4}
+              disabled={saving}
               hint="Optional - Add a short description for your squad"
-            >
-              <TextArea
-                value={description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                  setDescription(e.target.value)
-                }
-                placeholder="Short description for your squad"
-                rows={4}
-                disabled={saving}
-              />
-            </FormField>
+            />
 
             {error && (
-              <div className="bg-background-elevated border border-danger rounded-xl p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1">
-                    <strong className="block text-danger text-sm font-semibold mb-1">
-                      Error
-                    </strong>
-                    <p className="m-0 text-text-secondary text-sm leading-relaxed">
-                      {error}
-                    </p>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border-2 border-red-500/30 rounded-xl text-red-400">
+                <span>{error}</span>
               </div>
             )}
 
-            <FormActions>
-              <button
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="submit"
+                variant="primary"
+                loading={saving}
+                loadingText="Saving..."
+                icon={<Users size={20} />}
+              >
+                Save Changes
+              </Button>
+              
+              <Button
                 type="button"
-                className="flex-1 sm:flex-none px-6 py-2.5 bg-background-tertiary text-text-secondary border border-border rounded-lg font-medium text-sm cursor-pointer transition-all hover:bg-[var(--color-background-secondary)] hover:border-[var(--color-border-light)] hover:text-[var(--color-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="secondary"
                 onClick={() => navigate(-1)}
                 disabled={saving}
               >
                 Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex-1 sm:flex-2 px-6 py-2.5 bg-linear-to-r from-primary-dark via-primary to-accent border-none rounded-lg text-white font-semibold text-sm cursor-pointer transition-all shadow-[0_4px_12px_rgba(49,151,167,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(49,151,167,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                disabled={saving}
-              >
-                {saving && <Loader2 size={16} className="animate-spin" />}
-                {saving ? "Saving…" : "Save Changes"}
-              </button>
-            </FormActions>
+              </Button>
+            </div>
           </form>
-        </FormCard>
+        </div>
 
         {/* Info Card */}
         <div className="mt-6 bg-linear-to-br from-[rgba(49,151,167,0.04)] to-[rgba(139,92,246,0.02)] border border-border rounded-xl p-4">

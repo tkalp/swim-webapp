@@ -171,14 +171,14 @@ export default function SwimmerPage() {
   // Show loading screen until swimmer data is loaded
   if (loading || !swimmer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full animate-pulse">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-500/10 rounded-full animate-pulse">
+            <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-text-primary">Loading Swimmer Data</h2>
-            <p className="text-sm text-text-secondary">Please wait...</p>
+            <h2 className="text-xl font-semibold text-slate-100">Loading Swimmer Data</h2>
+            <p className="text-sm text-slate-400">Please wait...</p>
           </div>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function SwimmerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       <PageHeader
         title={
           swimmer ? (
@@ -194,8 +194,8 @@ export default function SwimmerPage() {
               <span>{swimmer.first_name} {swimmer.last_name}</span>
               <div className="flex items-center gap-2">
                 {swimmer.date_of_birth && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 rounded-md border border-primary/20">
-                    <span className="text-xs font-medium text-primary">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500/10 rounded-md border border-cyan-500/20">
+                    <span className="text-xs font-medium text-cyan-400">
                       {(() => {
                         const today = new Date();
                         const birthDate = new Date(swimmer.date_of_birth);
@@ -209,8 +209,8 @@ export default function SwimmerPage() {
                     </span>
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-accent/10 rounded-md border border-accent/20">
-                  <span className="text-xs font-medium text-accent">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 rounded-md border border-blue-500/20">
+                  <span className="text-xs font-medium text-blue-400">
                     {swimmer.sex === "Female" ? "Female" : "Male"}
                   </span>
                 </div>
@@ -257,12 +257,12 @@ export default function SwimmerPage() {
         )}
         
         {err && (
-          <div className="fixed top-20 right-4 sm:right-6 bg-background-elevated border border-danger rounded-xl p-3 shadow-lg flex items-start gap-2 max-w-[90vw] sm:max-w-md z-[1000] animate-in slide-in-from-right duration-300">
+          <div className="fixed top-20 right-4 sm:right-6 bg-slate-900/95 backdrop-blur-xl border border-red-500/50 rounded-xl p-3 shadow-lg flex items-start gap-2 max-w-[90vw] sm:max-w-md z-1000 animate-in slide-in-from-right duration-300">
             <div className="flex-1">
-              <strong className="block text-danger text-sm font-semibold mb-1">
+              <strong className="block text-red-400 text-sm font-semibold mb-1">
                 Error
               </strong>
-              <p className="m-0 text-text-secondary text-xs leading-relaxed break-words">
+              <p className="m-0 text-slate-400 text-xs leading-relaxed wrap-break-word">
                 {err}
               </p>
             </div>
@@ -286,23 +286,23 @@ export default function SwimmerPage() {
                 {/* Loading skeleton for stats */}
                 <div className="flex flex-wrap gap-3">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex-1 min-w-[150px] p-4 bg-background-elevated rounded-xl border border-border/60 animate-pulse">
-                      <div className="h-3 bg-background-tertiary rounded mb-2"></div>
-                      <div className="h-6 bg-background-tertiary rounded mb-2"></div>
-                      <div className="h-2 w-2/3 bg-background-tertiary rounded"></div>
+                    <div key={i} className="flex-1 min-w-[150px] p-4 bg-slate-900/50 backdrop-blur-sm rounded-xl border border-slate-800/60 animate-pulse">
+                      <div className="h-3 bg-slate-800/50 rounded mb-2"></div>
+                      <div className="h-6 bg-slate-800/50 rounded mb-2"></div>
+                      <div className="h-2 w-2/3 bg-slate-800/50 rounded"></div>
                     </div>
                   ))}
                 </div>
                 
                 {/* Loading skeleton for charts */}
                 <div className="flex flex-col lg:flex-row gap-3">
-                  <div className="flex-1 p-4 bg-background-elevated rounded-xl border border-border/60 animate-pulse">
-                    <div className="h-5 bg-background-tertiary rounded mb-3"></div>
-                    <div className="h-48 bg-background-tertiary rounded"></div>
+                  <div className="flex-1 p-4 bg-slate-900/50 backdrop-blur-sm rounded-xl border border-slate-800/60 animate-pulse">
+                    <div className="h-5 bg-slate-800/50 rounded mb-3"></div>
+                    <div className="h-48 bg-slate-800/50 rounded"></div>
                   </div>
-                  <div className="flex-1 p-4 bg-background-elevated rounded-xl border border-border/60 animate-pulse">
-                    <div className="h-5 bg-background-tertiary rounded mb-3"></div>
-                    <div className="h-48 bg-background-tertiary rounded"></div>
+                  <div className="flex-1 p-4 bg-slate-900/50 backdrop-blur-sm rounded-xl border border-slate-800/60 animate-pulse">
+                    <div className="h-5 bg-slate-800/50 rounded mb-3"></div>
+                    <div className="h-48 bg-slate-800/50 rounded"></div>
                   </div>
                 </div>
               </div>
@@ -319,13 +319,13 @@ export default function SwimmerPage() {
                 />
 
                 <div className="flex flex-col xl:flex-row gap-3">
-                  <div className="flex-1 bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex-1 bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-4 shadow-lg hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300">
                     <AttendanceChart
                       data={attendanceData}
                       subtitle={rangeSubtitle}
                     />
                   </div>
-                  <div className="flex-1 bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex-1 bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-4 shadow-lg hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
                     <SessionsPerWeekChart data={sessions} bestWeek={bestWeek} />
                   </div>
                 </div>

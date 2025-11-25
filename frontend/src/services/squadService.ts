@@ -1,5 +1,7 @@
 // services/squadService.ts
 import { supabase } from '@/lib/supabase'
+import { API_BASE_URL } from '@/lib/api'
+import { authenticatedFetch } from '@/lib/apiClient'
 
 export type Squad = {
   id: string
@@ -223,12 +225,12 @@ export async function getSquadsCountForCoach(coachId: string): Promise<number> {
 export async function getSquadSwimmers(squadId: string) {
   const { data, error } = await supabase
     .from('swimmers')
-    .select('id, first_name, last_name, date_of_birth, sex, created_at')
+    .select('*')
     .eq('squad_id', squadId)
     .order('last_name', { ascending: true })
   
   if (error) throw error
-  return data ?? []
+  return data || []
 }
 
 /**

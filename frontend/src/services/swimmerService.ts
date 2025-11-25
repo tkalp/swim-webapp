@@ -24,6 +24,11 @@ export type Swimmer = {
   sex?: 'Male' | 'Female' | 'Other' | null
   squad_id?: string | null
   created_at?: string
+  // Enhanced stats (optional - only from enhanced endpoint)
+  last_activity?: string | null
+  recent_pr_count?: number
+  attendance_rate?: number
+  has_external_tracking?: boolean
 }
 
 export type CreateSwimmerData = Omit<Swimmer, 'id' | 'created_at'>

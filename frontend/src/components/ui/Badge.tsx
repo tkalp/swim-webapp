@@ -8,9 +8,9 @@ type BadgeProps = {
 };
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: 'bg-background-tertiary border-border/60 text-text-primary',
-  primary: 'bg-gradient-to-r from-primary/30 to-accent/30 border-primary/50 text-primary font-semibold',
-  accent: 'bg-gradient-to-r from-accent/30 to-primary/30 border-accent/50 text-accent font-semibold',
+  default: 'bg-slate-800/50 border-slate-700/60 text-slate-200',
+  primary: 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500/50 text-cyan-400 font-semibold',
+  accent: 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-purple-500/50 text-purple-400 font-semibold',
 };
 
 export default function Badge({ 

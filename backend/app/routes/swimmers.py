@@ -18,7 +18,7 @@ from app.domain.exceptions import (
 from app.utils import logger, log_error
 from app.utils.fina_calculator import calculate_fina_points, get_supported_events
 from app.domain.value_objects.time import interval_to_seconds
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/swimmers", tags=["swimmers"])
 
@@ -83,12 +83,72 @@ def handle_service_error(e: Exception) -> HTTPException:
 @router.get("/")
 async def list_swimmers(
     request: Request,
+    squad_id: Optional[str] = Query(None),
+    include_stats: bool = Query(False),
     user_id: str = Depends(get_current_user_id)
 ) -> List[Dict[str, Any]]:
-    """Get all swimmers for the authenticated user."""
+    """Get all swimmers for the authenticated user. Set include_stats=true for enhanced data."""
     try:
         swimmer_service = SwimmerService()
-        swimmers = swimmer_service.get_swimmers_for_user(user_id)
+        
+        # Filter by squad if provided
+        if squad_id:
+            supabase = get_supabase_client()
+            swimmers_result = supabase.table('swimmers').select(
+                'id, first_name, last_name, date_of_birth, sex, created_at, squad_id'
+            ).eq('squad_id', squad_id).execute()
+            swimmers = swimmers_result.data or []
+        else:
+            swimmers = swimmer_service.get_swimmers_for_user(user_id)
+        
+        if include_stats and swimmers:
+            supabase = get_supabase_client()
+            thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
+            
+            # Get swimmer IDs
+            swimmer_ids = [s['id'] for s in swimmers]
+            
+            # Batch get last activities - use IN clause for efficiency
+            last_activities_result = supabase.table('workout_result').select(
+                'swimmer_id, created_at'
+            ).in_('swimmer_id', swimmer_ids).order('created_at', desc=True).execute()
+            
+            # Get most recent for each swimmer
+            last_activities = {}
+            for row in (last_activities_result.data or []):
+                sid = row['swimmer_id']
+                if sid not in last_activities:
+                    last_activities[sid] = row['created_at']
+            
+            # Batch get attendance
+            attendance_result = supabase.table('training_attendance').select(
+                'swimmer_id, status'
+            ).in_('swimmer_id', swimmer_ids).gte('created_at', thirty_days_ago).execute()
+            
+            attendance_rates = {}
+            for sid in swimmer_ids:
+                swimmer_attendance = [a for a in (attendance_result.data or []) if a['swimmer_id'] == sid]
+                if swimmer_attendance:
+                    total = len(swimmer_attendance)
+                    present = sum(1 for a in swimmer_attendance if a.get('status') and a['status'].lower() == 'present')
+                    attendance_rates[sid] = round((present / total * 100), 1) if total > 0 else 0
+                else:
+                    attendance_rates[sid] = 0
+            
+            # Check for external tracking
+            external_links_result = supabase.table('swimmer_external_links').select(
+                'swimmer_id'
+            ).in_('swimmer_id', swimmer_ids).execute()
+            has_tracking = {row['swimmer_id'] for row in (external_links_result.data or [])}
+            
+            # Enhance each swimmer
+            for swimmer in swimmers:
+                sid = swimmer['id']
+                swimmer['last_activity'] = last_activities.get(sid)
+                swimmer['recent_pr_count'] = 0  # PRs require complex RPC calculation, disabled for now
+                swimmer['attendance_rate'] = attendance_rates.get(sid, 0)
+                swimmer['has_external_tracking'] = sid in has_tracking
+        
         return swimmers
     except Exception as e:
         raise handle_service_error(e)
@@ -108,6 +168,53 @@ async def get_swimmer(
             user_id=user_id,
             include_external_link=include_external_link
         )
+        return swimmer
+    except Exception as e:
+        raise handle_service_error(e)
+
+
+@router.get("/{swimmer_id}/enhanced")
+async def get_swimmer_enhanced(
+    swimmer_id: int,
+    user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
+    """Get swimmer with enhanced stats (last activity, recent PRs, attendance, etc)."""
+    try:
+        swimmer_service = SwimmerService()
+        supabase = get_supabase_client()
+        
+        # Get base swimmer data
+        swimmer = swimmer_service.get_swimmer(swimmer_id, user_id=user_id, include_external_link=True)
+        
+        # Get last activity (most recent workout result)
+        last_activity_result = supabase.table('workout_result').select(
+            'created_at'
+        ).eq('swimmer_id', swimmer_id).order('created_at', desc=True).limit(1).execute()
+        
+        last_activity = last_activity_result.data[0]['created_at'] if last_activity_result.data else None
+        
+        # Get attendance rate (last 30 days)
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
+        attendance_result = supabase.table('training_attendance').select(
+            'status'
+        ).eq('swimmer_id', swimmer_id).gte('created_at', thirty_days_ago).execute()
+        
+        if attendance_result.data:
+            total_sessions = len(attendance_result.data)
+            present_sessions = sum(1 for a in attendance_result.data if a.get('status') and a['status'].lower() == 'present')
+            attendance_rate = (present_sessions / total_sessions * 100) if total_sessions > 0 else 0
+        else:
+            attendance_rate = 0
+        
+        # Check if has external tracking
+        has_external_tracking = swimmer.get('external_link') is not None
+        
+        # Add enhanced fields
+        swimmer['last_activity'] = last_activity
+        swimmer['recent_pr_count'] = 0  # PRs require complex RPC calculation, disabled for now
+        swimmer['attendance_rate'] = round(attendance_rate, 1)
+        swimmer['has_external_tracking'] = has_external_tracking
+        
         return swimmer
     except Exception as e:
         raise handle_service_error(e)

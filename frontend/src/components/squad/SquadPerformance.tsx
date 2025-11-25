@@ -119,23 +119,25 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
-        {/* Date range picker */}
-        <div className="flex items-center justify-between">
+        {/* Header with date range picker */}
+        <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-2xl font-bold text-text-primary">Performance Analytics</h2>
             <p className="text-sm text-text-secondary mt-1">Track improvement trends across your squad</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-background-elevated/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-border/40">
             <DateInput
+              label=""
               value={dateRange.start}
               onChange={(value) => handleDateChange('start', value)}
-              placeholder="Start date"
+              placeholder="Start"
             />
-            <span className="text-text-secondary">to</span>
+            <span className="text-text-tertiary font-medium text-sm">→</span>
             <DateInput
+              label=""
               value={dateRange.end}
               onChange={(value) => handleDateChange('end', value)}
-              placeholder="End date"
+              placeholder="End"
             />
           </div>
         </div>

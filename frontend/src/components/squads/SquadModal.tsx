@@ -79,9 +79,9 @@ export default function SquadModal({ isOpen, mode, squad, onClose, onSubmit }: P
     >
       {mode === 'edit' ? (
         /* Edit Form */
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-sm font-semibold text-slate-300 mb-2">
               Squad Name *
             </label>
             <input
@@ -89,84 +89,90 @@ export default function SquadModal({ isOpen, mode, squad, onClose, onSubmit }: P
               required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
               placeholder="Enter squad name"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-sm font-semibold text-slate-300 mb-2">
               Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all resize-none"
               placeholder="Enter squad description (optional)"
               rows={3}
             />
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center gap-3 pt-4">
+          <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2 bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary rounded-lg font-medium transition-all duration-200"
+              className="flex-1 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600/50 text-slate-400 hover:text-white rounded-xl font-semibold transition-all duration-200 hover:scale-[1.02]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.name.trim()}
-              className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+              className="group relative flex-1 px-4 py-3 text-white rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100 disabled:cursor-not-allowed overflow-hidden disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              <div className="absolute inset-0 bg-linear-to-r from-cyan-500 via-blue-500 to-purple-500" />
+              <div className="absolute inset-0 bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="relative">{loading ? 'Saving...' : 'Save Changes'}</span>
             </button>
           </div>
         </form>
       ) : (
         /* Delete Confirmation */
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-4 bg-danger/10 border border-danger/20 rounded-lg">
-            <AlertTriangle size={20} className="text-danger shrink-0" />
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div className="w-10 h-10 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
+              <AlertTriangle size={20} className="text-red-400" strokeWidth={2.5} />
+            </div>
             <div>
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-sm font-semibold text-white">
                 This action cannot be undone
               </p>
-              <p className="text-xs text-text-secondary mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 All swimmers and data associated with this squad will be removed.
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-slate-400">
               You are about to delete:
             </p>
-            <div className="p-3 bg-background-tertiary rounded-lg border border-border">
-              <p className="font-medium text-text-primary">{squad.name || 'Untitled Squad'}</p>
+            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+              <p className="font-semibold text-white">{squad.name || 'Untitled Squad'}</p>
               {squad.description && (
-                <p className="text-sm text-text-secondary mt-1">{squad.description}</p>
+                <p className="text-sm text-slate-400 mt-1">{squad.description}</p>
               )}
             </div>
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center gap-3 pt-4">
+          <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2 bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary rounded-lg font-medium transition-all duration-200"
+              className="flex-1 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600/50 text-slate-400 hover:text-white rounded-xl font-semibold transition-all duration-200 hover:scale-[1.02]"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-danger hover:bg-danger/90 disabled:bg-danger/50 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+              className="group relative flex-1 px-4 py-3 text-white rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100 disabled:cursor-not-allowed overflow-hidden disabled:opacity-50"
             >
-              {loading ? 'Deleting...' : 'Delete Squad'}
+              <div className="absolute inset-0 bg-linear-to-r from-red-500 to-red-600" />
+              <div className="absolute inset-0 bg-linear-to-r from-red-400 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="relative">{loading ? 'Deleting...' : 'Delete Squad'}</span>
             </button>
           </div>
         </div>

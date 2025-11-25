@@ -1,8 +1,9 @@
 // components/squad/SwimmersGrid.tsx
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronRight, User, Plus, Edit2, Trash2 } from 'lucide-react'
+import { Search, User, Plus, Edit2, Trash2 } from 'lucide-react'
 import SwimmerModal from '@/components/squad/SwimmerModal'
+import { SquadTabHeader } from '@/components/squad/SquadTabHeader'
 import type { Swimmer, CreateSwimmerData, UpdateSwimmerData } from '@/services/swimmerService'
 
 type Props = {
@@ -81,19 +82,22 @@ export default function SwimmersGrid({ swimmers, squadId, canManage, onAddSwimme
 
   if (!swimmers.length) {
     return (
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
         <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-6">
-            <User size={40} />
+          <div className="relative group mb-6">
+            <div className="absolute inset-0 bg-linear-to-r from-cyan-500/20 to-blue-500/20 rounded-3xl blur-2xl" />
+            <div className="relative w-20 h-20 rounded-2xl bg-slate-800/50 border-2 border-slate-700/50 flex items-center justify-center">
+              <User size={40} className="text-slate-400" />
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-text-primary mb-2">No Swimmers Yet</h3>
-          <p className="text-text-secondary mb-8 max-w-md text-center">
+          <h3 className="text-2xl font-bold text-transparent bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text mb-3">No Swimmers Yet</h3>
+          <p className="text-slate-400 mb-8 max-w-md text-center text-sm">
             Get started by adding your first swimmer to this squad.
           </p>
           {canManage && (
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
+              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 hover:shadow-lg hover:shadow-cyan-500/30 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105"
             >
               <Plus size={18} />
               Add First Swimmer
@@ -114,28 +118,45 @@ export default function SwimmersGrid({ swimmers, squadId, canManage, onAddSwimme
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Toolbar */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 mb-8 shadow-lg">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
+      {/* Page Header */}
+      <SquadTabHeader
+        title="Team Members"
+        subtitle={`${items.length} swimmer${items.length === 1 ? '' : 's'} in this squad`}
+        actions={
+          canManage ? (
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-semibold transition-colors whitespace-nowrap"
+            >
+              <Plus size={18} />
+              Add Swimmer
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* Search and Sort Toolbar */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search Bar */}
           <div className="flex-1">
             <div className="relative">
-              <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-muted" />
+              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
               <input
-                className="w-full pl-11 pr-4 py-3 bg-background-tertiary/80 border border-border/50 rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all hover:border-border"
-                placeholder="Search by name..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-600 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-colors"
+                placeholder="Search swimmers by name..."
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
           </div>
           
-          {/* Sort and Add */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-3">
             <select
               id="sortBy"
-              className="px-4 py-3 bg-background-tertiary/80 border border-border/50 rounded-xl text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all hover:border-border cursor-pointer"
+              className="px-4 py-2.5 bg-slate-900/50 border border-slate-600 rounded-lg text-slate-100 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-colors cursor-pointer"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >
@@ -143,107 +164,94 @@ export default function SwimmersGrid({ swimmers, squadId, canManage, onAddSwimme
               <option value="first">Sort by First name</option>
               <option value="dob">Sort by Age</option>
             </select>
-            
-            {canManage && (
-              <button
-                onClick={handleOpenAddModal}
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 whitespace-nowrap"
-              >
-                <Plus size={18} />
-                Add Swimmer
-              </button>
-            )}
           </div>
         </div>
         
-        {/* Results Count */}
+        {/* Search Results Count */}
         {q && (
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <p className="text-sm text-text-secondary">
-              Found <span className="font-semibold text-primary">{items.length}</span> swimmer{items.length === 1 ? '' : 's'}
+          <div className="mt-4 pt-4 border-t border-slate-700">
+            <p className="text-sm text-slate-400">
+              Found <span className="font-semibold text-cyan-400">{items.length}</span> swimmer{items.length === 1 ? '' : 's'}
             </p>
           </div>
         )}
       </div>
 
       {/* Swimmers List */}
-      <div className="flex flex-col gap-4">
-        {items.map((s, index) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {items.map((s, index) => {
           const initials = getInitials(s.first_name, s.last_name)
           const age = s.date_of_birth ? calcAge(s.date_of_birth) : null
 
           return (
             <div 
               key={s.id} 
-              className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-5 sm:p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-in fade-in slide-in-from-bottom"
-              style={{ animationDelay: `${index * 50}ms` }}
+              onClick={() => navigate(`/swimmers/${s.id}`)}
+              className="group relative overflow-hidden bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-200 cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/swimmers/${s.id}`)
+                }
+              }}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                {/* Avatar and Info */}
-                <div className="flex items-center gap-5 flex-1 min-w-0">
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-linear-to-br from-primary/30 via-primary/40 to-accent/30 rounded-xl flex items-center justify-center text-primary font-bold text-xl border-2 border-primary/40 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                      {initials}
-                    </div>
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-text-primary text-lg mb-2 truncate">
-                      {formatName(s.first_name, s.last_name)}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      {age !== null && (
-                        <span className="inline-flex items-center px-2.5 py-1 bg-gradient-to-r from-primary/30 to-accent/30 border border-primary/50 text-primary text-xs font-semibold rounded-lg">
-                          Age {age}
-                        </span>
-                      )}
-                      {s.sex && (
-                        <span className="inline-flex items-center px-2.5 py-1 bg-background-tertiary border border-border/60 text-text-primary text-xs font-medium rounded-lg">
-                          {s.sex}
-                        </span>
-                      )}
-                      {s.date_of_birth && (
-                        <span className="text-xs text-text-muted">
-                          Born {new Date(s.date_of_birth).toLocaleDateString(undefined, { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                          })}
-                        </span>
-                      )}
-                    </div>
+              {/* Subtle glow on hover */}
+              <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <div className="relative flex items-start gap-3">
+                {/* Avatar */}
+                <div className="shrink-0">
+                  <div className="w-14 h-14 bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center text-cyan-300 font-bold text-sm shadow-lg">
+                    {initials}
                   </div>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button
-                    onClick={() => navigate(`/swimmers/${s.id}`)}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-linear-to-r from-primary to-accent text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
-                    title="View swimmer details"
-                  >
-                    Open
-                    <ChevronRight size={16} />
-                  </button>
-                  {canManage && (
-                    <>
-                      <button
-                        onClick={() => handleOpenEditModal(s)}
-                        className="p-3 bg-background-tertiary border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent rounded-lg transition-all duration-200 hover:scale-105"
-                        title="Edit swimmer"
+                
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-bold text-slate-100 text-base truncate group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-cyan-400 group-hover:to-blue-400 group-hover:bg-clip-text transition-all duration-200">
+                      {formatName(s.first_name, s.last_name)}
+                    </h3>
+                    
+                    {/* Action Buttons */}
+                    {canManage && (
+                      <div 
+                        className="flex items-center gap-1 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(s)}
-                        className="p-3 bg-background-tertiary border border-border/50 hover:border-danger/50 hover:bg-danger/10 text-text-muted hover:text-danger rounded-lg transition-all duration-200 hover:scale-105"
-                        title="Delete swimmer"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </>
-                  )}
+                        <button
+                          onClick={() => handleOpenEditModal(s)}
+                          className="p-2 hover:bg-slate-700 text-slate-400 hover:text-cyan-400 rounded transition-colors"
+                          title="Edit swimmer"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(s)}
+                          className="p-2 hover:bg-slate-700 text-slate-400 hover:text-red-400 rounded transition-colors"
+                          title="Delete swimmer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {age !== null && (
+                      <span className="inline-flex items-center px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded font-medium">
+                        Age {age}
+                      </span>
+                    )}
+                    {s.sex && (
+                      <>
+                        <span className="text-slate-500">·</span>
+                        <span className="text-slate-400">{s.sex}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -254,12 +262,12 @@ export default function SwimmersGrid({ swimmers, squadId, canManage, onAddSwimme
       {/* No Results */}
       {q && items.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 px-4">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary mb-6">
-            <Search size={40} />
+          <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-6">
+            <Search size={40} className="text-slate-400" />
           </div>
-          <h3 className="text-xl font-bold text-text-primary mb-2">No Results Found</h3>
-          <p className="text-text-secondary max-w-md text-center">
-            No swimmers match your search for "<span className="font-semibold text-primary">{q}</span>"
+          <h3 className="text-2xl font-bold text-slate-100 mb-3">No Results Found</h3>
+          <p className="text-slate-400 max-w-md text-center">
+            No swimmers match your search for "<span className="font-semibold text-cyan-400">{q}</span>"
           </p>
         </div>
       )}

@@ -100,13 +100,19 @@ async def get_squad_performance(
         for s in swimmers_response.data:
             swimmer_lookup[s['id']] = f"{s['first_name']} {s['last_name']}"
         
+        logger.debug("Processing results...")
         # Process results
         for result in results_response.data:
             swimmer_id = result['swimmer_id']
             
+            # Skip results with missing critical data
+            if not result.get('stroke') or not result.get('activity') or not result.get('distance'):
+                logger.debug(f"Skipping result with missing data: {result.get('id')}")
+                continue
+            
             # Build event key - include result_units (SCM/LCM) to separate short course from long course
             result_units = result.get('result_units', 'SCM') or 'SCM'
-            event_key = f"{result['distance']}{result['units'][0].upper()}_{result['stroke']}_{result['activity']}_{result_units}"
+            event_key = f"{result['distance']}M_{result['stroke']}_{result['activity']}_{result_units}"
             if result['equipment'] and result['equipment'] != 'none':
                 event_key += f"_{result['equipment']}"
             

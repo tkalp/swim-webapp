@@ -332,7 +332,7 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
         </div>
 
         {/* Quick Preset Buttons */}
-        <div className="flex flex-wrap gap-2.5 mb-5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {[
             { key: "week" as const, label: "This Week" },
             { key: "nextweek" as const, label: "Next Week" },
@@ -353,30 +353,30 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
               {label}
             </button>
           ))}
-        </div>
-
-        {/* Custom Date Range */}
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4 p-5 bg-background-tertiary/50 rounded-xl border border-border/40">
-          <div className="flex-1 min-w-[150px]">
+          
+          {/* Divider */}
+          <div className="h-8 w-px bg-border/40"></div>
+          
+          {/* Custom Date Range */}
+          <div className="flex items-center gap-2">
             <DateInput
-              label="From Date"
+              label=""
               value={customStart}
               onChange={(value) => {
                 setCustomStart(value);
                 setDateRange("custom");
               }}
-              placeholder="Select start date"
+              placeholder="Start"
             />
-          </div>
-          <div className="flex-1 min-w-[150px]">
+            <span className="text-text-tertiary font-medium text-sm">→</span>
             <DateInput
-              label="To Date"
+              label=""
               value={customEnd}
               onChange={(value) => {
                 setCustomEnd(value);
                 setDateRange("custom");
               }}
-              placeholder="Select end date"
+              placeholder="End"
             />
           </div>
         </div>
