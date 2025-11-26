@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { Copyright } from '@/components/ui';
 import logo from '@/assets/logo.png';
 
 export default function ResetPassword() {
@@ -116,6 +117,9 @@ export default function ResetPassword() {
               </p>
             </div>
           </div>
+
+          {/* Copyright */}
+          <Copyright />
         </div>
       </main>
     );
@@ -256,6 +260,9 @@ export default function ResetPassword() {
             <Link to="/login" className="text-primary hover:text-accent transition-colors">Back to Login</Link>
           </p>
         </div>
+
+        {/* Copyright */}
+        <Copyright />
       </div>
     </main>
   );

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { Copyright } from '@/components/ui';
 import logo from '@/assets/logo.png';
 
 export default function ForgotPassword() {
@@ -142,6 +143,9 @@ export default function ForgotPassword() {
             Didn't receive the email? Check your spam folder
           </p>
         </div>
+
+        {/* Copyright */}
+        <Copyright />
       </div>
     </main>
   );
