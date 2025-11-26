@@ -111,33 +111,33 @@ const AdminSyncPage: React.FC = () => {
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'completed': return 'text-success';
-      case 'failed': return 'text-danger';
-      case 'cancelled': return 'text-text-muted';
-      case 'in_progress': return 'text-primary';
-      case 'pending': return 'text-warning';
-      default: return 'text-text-muted';
+      case 'completed': return 'text-green-400';
+      case 'failed': return 'text-red-400';
+      case 'cancelled': return 'text-slate-500';
+      case 'in_progress': return 'text-cyan-400';
+      case 'pending': return 'text-orange-400';
+      default: return 'text-slate-500';
     }
   };
 
   const getStatusBgColor = (status: string): string => {
     switch (status) {
-      case 'completed': return 'bg-success/10 border-success/30';
-      case 'failed': return 'bg-danger/10 border-danger/30';
-      case 'cancelled': return 'bg-background-tertiary/50 border-border';
-      case 'in_progress': return 'bg-primary/10 border-primary/30';
-      case 'pending': return 'bg-warning/10 border-warning/30';
-      default: return 'bg-background-tertiary/50 border-border';
+      case 'completed': return 'bg-green-500/10 border-green-500/30';
+      case 'failed': return 'bg-red-500/10 border-red-500/30';
+      case 'cancelled': return 'bg-slate-800/50 border-slate-700';
+      case 'in_progress': return 'bg-cyan-500/10 border-cyan-500/30';
+      case 'pending': return 'bg-orange-500/10 border-orange-500/30';
+      default: return 'bg-slate-800/50 border-slate-700';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle2 size={16} className="text-success" />;
-      case 'failed': return <XCircle size={16} className="text-danger" />;
-      case 'cancelled': return <XCircle size={16} className="text-text-muted" />;
-      case 'in_progress': return <Clock size={16} className="text-primary animate-pulse" />;
-      case 'pending': return <Clock size={16} className="text-warning" />;
+      case 'completed': return <CheckCircle2 size={16} className="text-green-400" />;
+      case 'failed': return <XCircle size={16} className="text-red-400" />;
+      case 'cancelled': return <XCircle size={16} className="text-slate-500" />;
+      case 'in_progress': return <Clock size={16} className="text-cyan-400 animate-pulse" />;
+      case 'pending': return <Clock size={16} className="text-orange-400" />;
       default: return null;
     }
   };
@@ -148,29 +148,29 @@ const AdminSyncPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-primary to-background-secondary/30">
+    <div className="min-h-screen bg-slate-950">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 via-primary/40 to-accent/30 border-2 border-primary/40 flex items-center justify-center shadow-lg">
-            <Shield size={24} className="text-primary" />
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-cyan-500/30 via-blue-500/40 to-cyan-500/30 border-2 border-cyan-500/40 flex items-center justify-center shadow-lg">
+            <Shield size={24} className="text-cyan-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-text-primary">Admin - Bulk Swimmer Sync</h1>
-            <p className="text-sm text-text-secondary">Manage SwimRankings data synchronization</p>
+            <h1 className="text-3xl font-bold text-slate-100">Admin - Bulk Swimmer Sync</h1>
+            <p className="text-sm text-slate-400">Manage SwimRankings data synchronization</p>
           </div>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="bg-danger/10 border border-danger rounded-xl p-4 shadow-lg flex items-start gap-3">
-            <AlertCircle size={20} className="text-danger flex-shrink-0 mt-0.5" />
+          <div className="bg-red-500/10 border border-red-500 rounded-xl p-4 shadow-lg flex items-start gap-3">
+            <AlertCircle size={20} className="text-red-400 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <strong className="block text-danger text-sm font-semibold mb-1">Error</strong>
-              <p className="text-text-secondary text-sm">{error}</p>
+              <strong className="block text-red-400 text-sm font-semibold mb-1">Error</strong>
+              <p className="text-slate-400 text-sm">{error}</p>
             </div>
             <button
-              className="text-text-muted hover:text-text-primary transition-colors"
+              className="text-slate-500 hover:text-slate-100 transition-colors"
               onClick={() => setError(null)}
             >
               ×
@@ -179,19 +179,19 @@ const AdminSyncPage: React.FC = () => {
         )}
 
         {/* Start Sync Section */}
-        <section className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-          <h2 className="text-xl font-bold text-text-primary mb-3 flex items-center gap-2">
-            <Play size={20} className="text-primary" />
+        <section className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+          <h2 className="text-xl font-bold text-slate-100 mb-3 flex items-center gap-2">
+            <Play size={20} className="text-cyan-400" />
             Start New Bulk Sync
           </h2>
-          <p className="text-text-secondary mb-6 leading-relaxed">
+          <p className="text-slate-400 mb-6 leading-relaxed">
             Sync all swimmers with SwimRankings links. Only stale data (older than 48 hours) will be updated unless forced.
           </p>
           <div className="flex flex-wrap gap-4">
             <button
               onClick={() => startBulkSync(false)}
               disabled={isLoading || (currentJob !== null && ['pending', 'in_progress'].includes(currentJob.status))}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Users size={18} />
               <span>{isLoading ? 'Starting...' : 'Sync All Swimmers'}</span>
@@ -199,7 +199,7 @@ const AdminSyncPage: React.FC = () => {
             <button
               onClick={() => startBulkSync(true)}
               disabled={isLoading || (currentJob !== null && ['pending', 'in_progress'].includes(currentJob.status))}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-warning to-warning/80 text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-warning/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-orange-500 to-orange-400 text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Zap size={18} />
               <span>Force Full Sync</span>
@@ -209,10 +209,10 @@ const AdminSyncPage: React.FC = () => {
 
         {/* Current Job Progress */}
         {currentJob && (
-          <section className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 shadow-lg">
+          <section className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 shadow-lg">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                <TrendingUp size={20} className="text-primary" />
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <TrendingUp size={20} className="text-cyan-400" />
                 Current Sync Job
               </h2>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusBgColor(currentJob.status)} border`}>
@@ -223,13 +223,13 @@ const AdminSyncPage: React.FC = () => {
 
             {/* Progress Bar */}
             <div className="mb-6">
-              <div className="flex justify-between text-sm text-text-secondary mb-2 font-medium">
+              <div className="flex justify-between text-sm text-slate-400 mb-2 font-medium">
                 <span>Progress: {currentJob.swimmers_processed} / {currentJob.total_swimmers} swimmers</span>
-                <span className="text-text-primary font-bold">{getProgressPercentage(currentJob)}%</span>
+                <span className="text-slate-100 font-bold">{getProgressPercentage(currentJob)}%</span>
               </div>
-              <div className="w-full bg-background-tertiary rounded-full h-3 overflow-hidden shadow-inner">
+              <div className="w-full bg-slate-800/50 rounded-full h-3 overflow-hidden shadow-inner">
                 <div
-                  className="bg-linear-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-lg"
+                  className="bg-linear-to-r from-cyan-500 to-blue-500 h-3 rounded-full transition-all duration-500 shadow-lg"
                   style={{ width: `${getProgressPercentage(currentJob)}%` }}
                 />
               </div>
@@ -237,19 +237,19 @@ const AdminSyncPage: React.FC = () => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-linear-to-br from-success/10 to-success/5 border border-success/30 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-success mb-1">{currentJob.swimmers_succeeded}</div>
-                <div className="text-sm text-text-secondary font-medium">Succeeded</div>
+              <div className="bg-linear-to-br from-green-500/10 to-green-500/5 border border-green-500/30 rounded-xl p-4 text-center">
+                <div className="text-3xl font-bold text-green-400 mb-1">{currentJob.swimmers_succeeded}</div>
+                <div className="text-sm text-slate-400 font-medium">Succeeded</div>
               </div>
-              <div className="bg-linear-to-br from-danger/10 to-danger/5 border border-danger/30 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-danger mb-1">{currentJob.swimmers_failed}</div>
-                <div className="text-sm text-text-secondary font-medium">Failed</div>
+              <div className="bg-linear-to-br from-red-500/10 to-red-500/5 border border-red-500/30 rounded-xl p-4 text-center">
+                <div className="text-3xl font-bold text-red-400 mb-1">{currentJob.swimmers_failed}</div>
+                <div className="text-sm text-slate-400 font-medium">Failed</div>
               </div>
-              <div className="bg-linear-to-br from-primary/10 to-primary/5 border border-primary/30 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-primary mb-1">
+              <div className="bg-linear-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 rounded-xl p-4 text-center">
+                <div className="text-3xl font-bold text-cyan-400 mb-1">
                   {currentJob.total_swimmers - currentJob.swimmers_processed}
                 </div>
-                <div className="text-sm text-text-secondary font-medium">Remaining</div>
+                <div className="text-sm text-slate-400 font-medium">Remaining</div>
               </div>
             </div>
 
@@ -258,7 +258,7 @@ const AdminSyncPage: React.FC = () => {
               {['pending', 'in_progress'].includes(currentJob.status) && (
                 <button
                   onClick={() => cancelBulkSync(currentJob.id)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-danger text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-danger/25"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25"
                 >
                   <XCircle size={18} />
                   <span>Cancel Sync</span>
@@ -267,7 +267,7 @@ const AdminSyncPage: React.FC = () => {
               {currentJob.swimmers_failed > 0 && (
                 <button
                   onClick={() => fetchJobFailures(currentJob.id)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-background-tertiary border border-border text-text-primary rounded-lg font-semibold transition-all duration-200 hover:bg-background-secondary hover:border-primary/30"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 border border-slate-700 text-slate-100 rounded-lg font-semibold transition-all duration-200 hover:bg-slate-800 hover:border-cyan-500/30"
                 >
                   <AlertCircle size={18} />
                   <span>View Failures ({currentJob.swimmers_failed})</span>
@@ -277,10 +277,10 @@ const AdminSyncPage: React.FC = () => {
 
             {/* Error Message */}
             {currentJob.error_message && (
-              <div className="mt-6 p-4 bg-danger/10 border border-danger/30 rounded-xl">
+              <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
                 <div className="flex items-start gap-2">
-                  <AlertCircle size={18} className="text-danger shrink-0 mt-0.5" />
-                  <p className="text-sm text-danger font-medium">{currentJob.error_message}</p>
+                  <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-400 font-medium">{currentJob.error_message}</p>
                 </div>
               </div>
             )}
@@ -289,30 +289,30 @@ const AdminSyncPage: React.FC = () => {
 
         {/* Failures List */}
         {failures.length > 0 && (
-          <section className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <AlertCircle size={20} className="text-danger" />
+          <section className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 shadow-lg">
+            <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+              <AlertCircle size={20} className="text-red-400" />
               Failed Swimmers ({failures.length})
             </h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border">
-                <thead className="bg-background-tertiary/50">
+              <table className="min-w-full divide-y divide-slate-700">
+                <thead className="bg-slate-800/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Swimmer</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Error</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Failed At</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Swimmer</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Error</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Failed At</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-y divide-slate-700/50">
                   {failures.map((failure, idx) => (
-                    <tr key={idx} className="hover:bg-background-tertiary/30 transition-colors">
-                      <td className="px-4 py-3 text-sm font-semibold text-text-primary whitespace-nowrap">
+                    <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3 text-sm font-semibold text-slate-100 whitespace-nowrap">
                         {failure.swimmer_name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-text-secondary">
+                      <td className="px-4 py-3 text-sm text-slate-400">
                         {failure.error_message}
                       </td>
-                      <td className="px-4 py-3 text-sm text-text-muted whitespace-nowrap">
+                      <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">
                         {new Date(failure.failed_at).toLocaleString()}
                       </td>
                     </tr>
@@ -324,35 +324,35 @@ const AdminSyncPage: React.FC = () => {
         )}
 
         {/* Sync History */}
-        <section className="bg-linear-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-6 shadow-lg">
-          <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-            <Clock size={20} className="text-primary" />
+        <section className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 shadow-lg">
+          <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <Clock size={20} className="text-cyan-400" />
             Sync History
           </h2>
           {jobHistory.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                <Clock size={32} className="text-primary" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                <Clock size={32} className="text-cyan-400" />
               </div>
-              <p className="text-text-secondary">No sync jobs yet</p>
+              <p className="text-slate-400">No sync jobs yet</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border">
-                <thead className="bg-background-tertiary/50">
+              <table className="min-w-full divide-y divide-slate-700">
+                <thead className="bg-slate-800/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Started</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Total</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Succeeded</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Failed</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Started</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Succeeded</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Failed</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-y divide-slate-700/50">
                   {jobHistory.map((job) => (
-                    <tr key={job.id} className="hover:bg-background-tertiary/30 transition-colors">
-                      <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap">
+                    <tr key={job.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3 text-sm text-slate-100 whitespace-nowrap">
                         {job.started_at ? new Date(job.started_at).toLocaleString() : 'Not started'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -361,13 +361,13 @@ const AdminSyncPage: React.FC = () => {
                           {job.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-text-primary font-semibold whitespace-nowrap">
+                      <td className="px-4 py-3 text-sm text-slate-100 font-semibold whitespace-nowrap">
                         {job.total_swimmers}
                       </td>
-                      <td className="px-4 py-3 text-sm text-success font-semibold whitespace-nowrap">
+                      <td className="px-4 py-3 text-sm text-green-400 font-semibold whitespace-nowrap">
                         {job.swimmers_succeeded}
                       </td>
-                      <td className="px-4 py-3 text-sm text-danger font-semibold whitespace-nowrap">
+                      <td className="px-4 py-3 text-sm text-red-400 font-semibold whitespace-nowrap">
                         {job.swimmers_failed}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -378,7 +378,7 @@ const AdminSyncPage: React.FC = () => {
                               fetchJobFailures(job.id);
                             }
                           }}
-                          className="text-primary hover:text-accent font-semibold text-sm transition-colors"
+                          className="text-cyan-400 hover:text-blue-400 font-semibold text-sm transition-colors"
                         >
                           View Details
                         </button>

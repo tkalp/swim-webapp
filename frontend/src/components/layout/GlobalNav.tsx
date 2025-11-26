@@ -195,7 +195,6 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
             to="/"
             className="flex items-center gap-2 sm:gap-3 hover:opacity-90 transition-opacity duration-200 group"
           >
-            <img src={logo} alt="Aquilus" className="h-8 sm:h-10 w-auto object-contain" />
             <span className="text-lg sm:text-xl font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
               aquilus
             </span>

@@ -105,9 +105,12 @@ export async function getSquadById(squadId: string): Promise<Squad | null> {
  * Create a new squad
  */
 export async function createSquad(coachId: string, squadData: CreateSquadData): Promise<Squad> {
+  console.log('Creating squad with coachId:', coachId, 'data:', squadData)
+  
+  // Include coach_id in the squad data for the database trigger
   const { data: squad, error: squadError } = await supabase
     .from('squads')
-    .insert([squadData])
+    .insert([{ ...squadData, coach_id: coachId }])
     .select()
     .single()
 
@@ -116,22 +119,8 @@ export async function createSquad(coachId: string, squadData: CreateSquadData): 
     throw new Error(`Failed to create squad: ${squadError.message}`)
   }
 
-  // Add the coach as owner of the squad
-  const { error: membershipError } = await supabase
-    .from('coach_squads')
-    .insert([{
-      coach_id: coachId,
-      squad_id: squad.id,
-      role: 'owner'
-    }])
-
-  if (membershipError) {
-    // Cleanup: delete the squad if membership creation fails
-    await supabase.from('squads').delete().eq('id', squad.id)
-    console.error('Error creating squad membership:', membershipError)
-    throw new Error(`Failed to create squad membership: ${membershipError.message}`)
-  }
-
+  console.log('Squad created successfully:', squad)
+  
   return squad
 }
 

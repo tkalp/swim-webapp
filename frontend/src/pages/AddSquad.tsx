@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { createSquad } from '@/services/squadService'
 import { Input, Textarea, Button, Breadcrumb } from '@/components/ui'
 import { ArrowLeft, Users } from 'lucide-react'
 
@@ -22,21 +22,22 @@ export default function AddSquadPage() {
     if (!coachId) return setError('You must be signed in to create a squad')
     if (!name.trim()) return setError('Please enter a squad name')
 
+    console.log('Creating squad with coachId:', coachId)
+    
     setLoading(true)
     try {
-      // Create squad row
-      const { data: squadData, error: createErr } = await supabase
-        .from('squads')
-        .insert({ name: name.trim(), description: description.trim(), coach_id: coachId })
-        .select('id')
-        .limit(1)
-        .single()
+      // Create squad and coach_squads relationship
+      const squad = await createSquad(coachId, {
+        name: name.trim(),
+        description: description.trim() || null
+      })
 
-      if (createErr || !squadData) throw createErr ?? new Error('Failed to create squad')
-
+      console.log('Squad created successfully:', squad)
+      
       // Navigate to the newly created squad page
       navigate(`/squads`)
     } catch (err: any) {
+      console.error('Error creating squad:', err)
       setError(err?.message || 'Failed to create squad')
     } finally {
       setLoading(false)
@@ -60,10 +61,10 @@ export default function AddSquadPage() {
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
               <Users size={24} className="text-cyan-400" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-linear-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Create Squad
             </h1>
           </div>

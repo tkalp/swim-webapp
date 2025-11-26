@@ -18,12 +18,6 @@ import { presetRange, formatRangeSubtitle } from '@/utils/dateRanges';
 import PageHeader from '@/components/ui/PageHeader';
 
 
-const TABS = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'bestTimes', label: 'Best Times' },
-  { key: 'finaPoints', label: 'FINA Points' },
-];
-
 export default function SwimmerPage() {
   const { swimmerId } = useParams<{ swimmerId: string }>();
 
@@ -47,12 +41,35 @@ export default function SwimmerPage() {
     swimmer,
   } = useSwimmerStats(swimmerId, { from, to });
 
+  // Dynamically create tabs based on whether there's attendance data
+  const TABS = useMemo(() => {
+    const tabs = [];
+    // Only show overview if there's attendance data
+    if (totalAttendance > 0) {
+      tabs.push({ key: 'overview', label: 'Overview' });
+    }
+    tabs.push({ key: 'bestTimes', label: 'Best Times' });
+    tabs.push({ key: 'finaPoints', label: 'FINA Points' });
+    return tabs;
+  }, [totalAttendance]);
+
   // Fetch squad_id from swimmer to check permissions
   const [squadId, setSquadId] = useState<string | null>(null);
   const { hasPermission } = usePermissions(squadId || '');
   const [syncStatus, setSyncStatus] = useState<SwimmerSyncStatus | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const externalLinkIdRef = useRef<string | null>(null);
+
+  // UI state - set default tab based on available tabs
+  const [tab, setTab] = useState(() => totalAttendance > 0 ? "overview" : "bestTimes");
+
+  // Update tab if it becomes invalid (e.g., overview tab removed)
+  useEffect(() => {
+    const validTabs = TABS.map(t => t.key);
+    if (!validTabs.includes(tab)) {
+      setTab(TABS[0]?.key || 'bestTimes');
+    }
+  }, [TABS, tab]);
 
   // Set squad ID when swimmer loads
   useEffect(() => {
@@ -151,9 +168,6 @@ export default function SwimmerPage() {
     }
   };
   
-  // UI state
-  const [tab, setTab] = useState("overview");
-
   const rangeSubtitle = useMemo(
     () => formatRangeSubtitle(from, to),
     [from, to]
