@@ -86,10 +86,10 @@ export default function FinaPointsRadarChart({
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-6 backdrop-blur-sm shadow-lg">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-6 shadow-lg">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-background-secondary/50 rounded w-1/3"></div>
-          <div className="h-64 bg-background-secondary/50 rounded"></div>
+          <div className="h-6 bg-slate-800/50 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-800/50 rounded"></div>
         </div>
       </div>
     );
@@ -97,13 +97,13 @@ export default function FinaPointsRadarChart({
 
   if (error || !data || Object.keys(data.by_stroke).length === 0) {
     return (
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-6 backdrop-blur-sm shadow-lg">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-6 shadow-lg">
         <div className="text-center py-8">
-          <Activity className="w-12 h-12 text-text-tertiary mx-auto mb-3 opacity-50" />
-          <p className="text-text-secondary text-sm">
+          <Activity className="w-12 h-12 text-slate-500 mx-auto mb-3 opacity-50" />
+          <p className="text-slate-300 text-sm">
             {error || "No FINA points data available yet"}
           </p>
-          <p className="text-text-tertiary text-xs mt-1">
+          <p className="text-slate-400 text-xs mt-1">
             Add some race results to see your performance analysis
           </p>
         </div>
@@ -123,6 +123,21 @@ export default function FinaPointsRadarChart({
     };
   });
 
+  // Calculate dynamic domain for better visualization
+  const maxPoints = Math.max(...chartData.map(d => d.points), 100);
+  const domainMax = maxPoints < 300 ? 400 : maxPoints < 600 ? 800 : 1000;
+  
+  // Determine performance level for color coding
+  const getPerformanceLevel = (points: number) => {
+    if (points >= 800) return 'elite';
+    if (points >= 600) return 'advanced';
+    if (points >= 400) return 'intermediate';
+    if (points >= 200) return 'developing';
+    return 'beginner';
+  };
+  
+  const averagePoints = chartData.reduce((sum, d) => sum + d.points, 0) / chartData.filter(d => d.points > 0).length || 0;
+
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -131,24 +146,38 @@ export default function FinaPointsRadarChart({
         key => STROKE_DISPLAY_NAMES[key] === data.stroke
       ) || data.stroke.toLowerCase();
       const strokeData = strokeKey ? finaData?.by_stroke[strokeKey] : null;
+      const level = getPerformanceLevel(data.points);
+      const levelColors = {
+        elite: { bg: 'bg-purple-500/20', text: 'text-purple-400', label: 'Elite' },
+        advanced: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', label: 'Advanced' },
+        intermediate: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Intermediate' },
+        developing: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Developing' },
+        beginner: { bg: 'bg-slate-500/20', text: 'text-slate-400', label: 'Beginner' }
+      };
+      const levelInfo = levelColors[level];
       
       return (
-        <div className="bg-background-elevated/95 backdrop-blur-md border border-border/60 rounded-lg shadow-xl p-3">
-          <p className="font-semibold text-text-primary mb-2">{data.stroke}</p>
+        <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/60 rounded-lg shadow-xl p-3">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="font-semibold text-slate-100">{data.stroke}</p>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded ${levelInfo.bg} ${levelInfo.text}`}>
+              {levelInfo.label}
+            </span>
+          </div>
           <div className="space-y-1 text-xs">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-text-secondary">Best Score:</span>
-              <span className="font-bold text-accent">{data.points} pts</span>
+              <span className="text-slate-300">Best Score:</span>
+              <span className="font-bold text-cyan-400">{data.points} pts</span>
             </div>
             {strokeData && strokeData.best_by_distance && (
-              <div className="mt-2 pt-2 border-t border-border/40">
-                <p className="text-text-tertiary mb-1">Best Events:</p>
+              <div className="mt-2 pt-2 border-t border-slate-700/40">
+                <p className="text-slate-400 mb-1">Best Events:</p>
                 {Object.entries(strokeData.best_by_distance)
                   .sort((a, b) => b[1].fina_points - a[1].fina_points)
                   .map(([distance, result]) => (
                     <div key={distance} className="flex items-center justify-between gap-2">
-                      <span className="text-text-secondary">{distance}m:</span>
-                      <span className="font-medium text-text-primary">
+                      <span className="text-slate-300">{distance}m:</span>
+                      <span className="font-medium text-slate-100">
                         {result.time_result} ({result.fina_points})
                       </span>
                     </div>
@@ -165,51 +194,55 @@ export default function FinaPointsRadarChart({
   const finaData = data;
 
   return (
-    <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-6 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-6 shadow-lg hover:shadow-xl transition-all duration-300">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center shadow-md shadow-accent/25">
-            <Trophy className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <Trophy className="w-6 h-6 text-cyan-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">
+            <h3 className="text-lg font-semibold text-slate-100">
               FINA Points Performance
             </h3>
-            <p className="text-xs text-text-tertiary">
+            <p className="text-xs text-slate-400">
               Best scores by stroke • {course} Pool
             </p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+          <div className="text-2xl font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
             {data.overall_best_fina_points}
           </div>
-          <div className="text-xs text-text-tertiary">Peak Score</div>
+          <div className="text-xs text-slate-400">Peak Score</div>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-background-secondary/30 rounded-lg p-4 border border-border/40 hover:border-accent/40 transition-colors">
+        <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 hover:border-cyan-500/40 transition-all duration-200">
           <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-accent" />
-            <span className="text-xs text-text-tertiary uppercase tracking-wider">Peak Score</span>
+            <div className="p-1.5 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+              <Trophy className="w-4 h-4 text-cyan-400" />
+            </div>
+            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Peak Score</span>
           </div>
-          <div className="text-2xl font-bold text-text-primary">
+          <div className="text-2xl font-bold text-slate-100">
             {data.overall_best_fina_points}
           </div>
         </div>
-        <div className="bg-background-secondary/30 rounded-lg p-4 border border-border/40 hover:border-primary/40 transition-colors">
+        <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 hover:border-purple-500/40 transition-all duration-200">
           <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-4 h-4 text-primary" />
-            <span className="text-xs text-text-tertiary uppercase tracking-wider">Best Event</span>
+            <div className="p-1.5 rounded-lg bg-linear-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+              <Activity className="w-4 h-4 text-purple-400" />
+            </div>
+            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Best Event</span>
           </div>
           <div className="space-y-1">
-            <div className="text-base font-bold text-text-primary">
+            <div className="text-base font-bold text-slate-100">
               {data.overall_best_result.distance}m {STROKE_DISPLAY_NAMES[data.overall_best_result.stroke] || data.overall_best_result.stroke}
             </div>
-            <div className="text-sm font-mono font-semibold text-accent">
+            <div className="text-sm font-mono font-semibold text-cyan-400">
               {formatTime(data.overall_best_result.time_seconds)}
             </div>
           </div>
@@ -218,38 +251,63 @@ export default function FinaPointsRadarChart({
 
       {/* Radar Chart */}
       <div className="relative">
-        <ResponsiveContainer width="100%" height={400}>
+        {/* Performance Level Legend */}
+        <div className="absolute top-2 right-2 z-10 bg-slate-800/80 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-xs">
+          <div className="font-semibold text-slate-200 mb-2">Performance Tiers</div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+              <span className="text-slate-300">Elite (800+)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+              <span className="text-slate-300">Advanced (600+)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-slate-300">Intermediate (400+)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <span className="text-slate-300">Developing (200+)</span>
+            </div>
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={450}>
           <RadarChart data={chartData}>
             <defs>
               <linearGradient id="colorBest" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.7} />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2} />
               </linearGradient>
-              <linearGradient id="colorAverage" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#059669" stopOpacity={0.2} />
+              {/* Reference line gradients for performance tiers */}
+              <linearGradient id="refLine" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#059669" stopOpacity={0.1} />
               </linearGradient>
             </defs>
             <PolarGrid
-              stroke="rgba(148, 163, 184, 0.2)"
-              strokeWidth={1}
+              stroke="rgba(100, 116, 139, 0.4)"
+              strokeWidth={1.5}
               gridType="polygon"
             />
             <PolarAngleAxis
               dataKey="stroke"
               tick={{
-                fill: "rgb(148, 163, 184)",
-                fontSize: 13,
-                fontWeight: 600,
+                fill: "rgb(203, 213, 225)",
+                fontSize: 14,
+                fontWeight: 700,
               }}
               tickLine={false}
             />
             <PolarRadiusAxis
               angle={90}
-              domain={[0, 1000]}
+              domain={[0, domainMax]}
               tick={{
                 fill: "rgb(148, 163, 184)",
-                fontSize: 11,
+                fontSize: 12,
+                fontWeight: 600,
               }}
               tickCount={6}
               axisLine={false}
@@ -257,23 +315,50 @@ export default function FinaPointsRadarChart({
             <Radar
               name="Best Score"
               dataKey="points"
-              stroke="#6366f1"
+              stroke="#06b6d4"
               fill="url(#colorBest)"
-              fillOpacity={0.6}
-              strokeWidth={3}
-              dot={{
-                r: 5,
-                fill: "#6366f1",
-                strokeWidth: 2,
-                stroke: "#fff",
+              fillOpacity={0.5}
+              strokeWidth={4}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                const level = getPerformanceLevel(payload.points);
+                const colors = {
+                  elite: '#a855f7',
+                  advanced: '#06b6d4',
+                  intermediate: '#10b981',
+                  developing: '#eab308',
+                  beginner: '#94a3b8'
+                };
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={7}
+                    fill={colors[level]}
+                    stroke="#0f172a"
+                    strokeWidth={2.5}
+                  />
+                );
               }}
               activeDot={{
-                r: 7,
-                fill: "#6366f1",
+                r: 10,
+                fill: "#06b6d4",
                 strokeWidth: 3,
                 stroke: "#fff",
               }}
             />
+            {/* Average reference line */}
+            {averagePoints > 0 && (
+              <Radar
+                name="Average"
+                dataKey={() => averagePoints}
+                stroke="#10b981"
+                fill="none"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+              />
+            )}
             <Tooltip content={<CustomTooltip />} />
             <Legend
               wrapperStyle={{
@@ -283,7 +368,7 @@ export default function FinaPointsRadarChart({
               }}
               iconType="circle"
               formatter={(value: string) => (
-                <span className="text-text-secondary">{value}</span>
+                <span className="text-slate-300">{value}</span>
               )}
             />
           </RadarChart>
@@ -292,7 +377,7 @@ export default function FinaPointsRadarChart({
 
       {/* Stroke Breakdown */}
       <div className="mt-6 space-y-3">
-        <h4 className="text-sm font-semibold text-text-secondary mb-3">
+        <h4 className="text-sm font-semibold text-slate-300 mb-3">
           Best Events by Stroke
         </h4>
         {Object.entries(data.by_stroke)
@@ -309,12 +394,12 @@ export default function FinaPointsRadarChart({
             return (
               <div
                 key={stroke}
-                className="group relative bg-background-secondary/20 rounded-lg p-4 border border-border/30 hover:border-border/60 transition-all duration-200"
+                className="group relative bg-slate-800/30 rounded-xl p-4 border border-slate-700/40 hover:border-slate-600/60 hover:shadow-lg transition-all duration-200"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-base font-semibold text-text-primary">
+                      <span className="text-base font-semibold text-slate-100">
                         {displayName}
                       </span>
                       <span
@@ -326,23 +411,23 @@ export default function FinaPointsRadarChart({
                     </div>
                     {bestDistance && (
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium text-text-secondary">
+                        <span className="font-medium text-slate-300">
                           {bestDistance[0]}m
                         </span>
-                        <span className="text-text-tertiary">•</span>
-                        <span className="font-mono font-semibold text-accent">
+                        <span className="text-slate-500">•</span>
+                        <span className="font-mono font-semibold text-cyan-400">
                           {formatTime(bestDistance[1].time_seconds)}
                         </span>
                       </div>
                     )}
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-medium text-text-tertiary">
+                    <span className="text-xs font-medium text-slate-400">
                       {percentage.toFixed(1)}%
                     </span>
                   </div>
                 </div>
-                <div className="relative h-2 bg-background-secondary rounded-full overflow-hidden">
+                <div className="relative h-2 bg-slate-800/50 rounded-full overflow-hidden">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
                     style={{
