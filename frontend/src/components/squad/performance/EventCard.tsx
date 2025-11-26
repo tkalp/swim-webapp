@@ -14,20 +14,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
 
   return (
     <div 
-      className="bg-background-elevated border border-border rounded-lg p-4 hover:border-primary/50 transition-all cursor-pointer hover:shadow-lg"
+      className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg p-4 hover:border-cyan-500/50 transition-all cursor-pointer hover:shadow-lg"
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h5 className="font-medium text-text-primary text-sm">
+            <h5 className="font-medium text-slate-100 text-sm">
               {formatEventName(event.event)}
             </h5>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${getActivityBadgeStyles(event.activity)}`}>
               {formatActivity(event.activity)}
             </span>
           </div>
-          <div className="text-xs text-text-secondary">
+          <div className="text-xs text-slate-400">
             {event.attempts} attempts
           </div>
         </div>
@@ -41,26 +41,26 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
       
       <div className="space-y-2 text-xs">
         <div className="flex justify-between">
-          <span className="text-text-secondary">First:</span>
-          <span className="text-text-primary font-mono">
+          <span className="text-slate-400">First:</span>
+          <span className="text-slate-100 font-mono">
             {formatTimeFromSeconds(event.first_time)}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-text-secondary">Best:</span>
+          <span className="text-slate-400">Best:</span>
           <span className="text-primary font-mono font-semibold">
             {formatTimeFromSeconds(event.best_time)}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-text-secondary">Latest:</span>
-          <span className="text-text-primary font-mono">
+          <span className="text-slate-400">Latest:</span>
+          <span className="text-slate-100 font-mono">
             {formatTimeFromSeconds(event.latest_time)}
           </span>
         </div>
-        <div className="pt-2 border-t border-border">
+        <div className="pt-2 border-t border-slate-800/60">
           <div className="flex items-center justify-between">
-            <span className="text-text-secondary">Change:</span>
+            <span className="text-slate-400">Change:</span>
             <div className="flex items-center gap-1">
               {eventImproving ? (
                 <TrendingDown className="w-3 h-3 text-green-400" />
@@ -79,3 +79,4 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
     </div>
   );
 };
+

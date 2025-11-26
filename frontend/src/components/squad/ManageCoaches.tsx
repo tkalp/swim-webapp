@@ -163,7 +163,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
 
       {/* Error */}
       {error && (
-        <div className="bg-danger/10 border border-danger/30 rounded-lg p-3 text-sm text-danger">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-500">
           {error}
         </div>
       )}
@@ -171,17 +171,17 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
       {/* Add Coach Modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background-elevated rounded-xl border border-border max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-text-primary mb-4">Add Coach to Squad</h3>
+          <div className="bg-slate-900/90 rounded-xl border border-slate-700 max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">Add Coach to Squad</h3>
             
             {availableConnections.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-sm text-text-muted mb-4">
+                <p className="text-sm text-slate-500 mb-4">
                   You don't have any connections to add. Connect with other coaches in the Network page first.
                 </p>
                 <button
                   onClick={() => setShowAdd(false)}
-                  className="px-4 py-2 bg-background-tertiary text-text-secondary rounded-lg hover:bg-background-secondary transition-all font-medium"
+                  className="px-4 py-2 bg-slate-800/50 text-slate-400 rounded-lg hover:bg-slate-800/70 transition-all font-medium"
                 >
                   Close
                 </button>
@@ -189,13 +189,13 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
             ) : (
               <form onSubmit={handleAddCoach} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">
+                  <label className="block text-sm font-medium text-slate-100 mb-2">
                     Select Coach
                   </label>
                   <select
                     value={selectedCoachId}
                     onChange={(e) => setSelectedCoachId(e.target.value)}
-                    className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   >
                     <option value="">Choose a coach...</option>
@@ -212,24 +212,24 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">
+                  <label className="block text-sm font-medium text-slate-100 mb-2">
                     Role
                   </label>
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value as 'admin' | 'member')}
-                    className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                   </select>
-                  <p className="text-xs text-text-muted mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     {selectedRole === 'admin' ? 'Can manage most squad features' : 'Limited permissions'}
                   </p>
                 </div>
 
                 {error && (
-                  <div className="bg-danger/10 border border-danger/30 rounded-lg p-3 text-sm text-danger">
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-500">
                     {error}
                   </div>
                 )}
@@ -244,7 +244,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                   <button
                     type="button"
                     onClick={() => setShowAdd(false)}
-                    className="px-4 py-2 bg-background-tertiary text-text-secondary rounded-lg hover:bg-background-secondary transition-all font-medium"
+                    className="px-4 py-2 bg-slate-800/50 text-slate-400 rounded-lg hover:bg-slate-800/70 transition-all font-medium"
                   >
                     Cancel
                   </button>
@@ -271,7 +271,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-text-primary">
+                    <h4 className="text-sm font-bold text-slate-100">
                       {membership.coach ? `${membership.coach.first_name} ${membership.coach.last_name}` : `Coach ${membership.coach_id.substring(0, 8)}`}
                     </h4>
                     <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getRoleBadge(membership.role)}`}>
@@ -286,7 +286,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setEditingPermissions(editingPermissions === membership.id ? null : membership.id)}
-                    className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-all"
+                    className="p-1.5 text-slate-500 hover:text-primary hover:bg-primary/10 rounded transition-all"
                     title="Edit permissions"
                   >
                     <Settings size={16} />
@@ -296,7 +296,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                       membership.id, 
                       membership.coach ? `${membership.coach.first_name} ${membership.coach.last_name}` : `Coach ${membership.coach_id.substring(0, 8)}`
                     )}
-                    className="p-1.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded transition-all"
+                    className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded transition-all"
                     title="Remove coach"
                   >
                     <Trash2 size={16} />
@@ -307,8 +307,8 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
 
             {/* Permissions Editor */}
             {editingPermissions === membership.id && (
-              <div className="mt-3 pt-3 border-t border-border space-y-2">
-                <p className="text-xs font-medium text-text-secondary mb-2">Permissions</p>
+              <div className="mt-3 pt-3 border-t border-slate-700 space-y-2">
+                <p className="text-xs font-medium text-slate-400 mb-2">Permissions</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { key: 'can_manage_swimmers', label: 'Manage Swimmers' },
@@ -320,12 +320,12 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                     { key: 'can_view_analytics', label: 'View Analytics' },
                     { key: 'can_manage_notes', label: 'Manage Notes' },
                   ].map((perm) => (
-                    <label key={perm.key} className="flex items-center gap-2 text-xs text-text-primary cursor-pointer">
+                    <label key={perm.key} className="flex items-center gap-2 text-xs text-slate-100 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={membership.permissions[perm.key as keyof SquadPermissions] as boolean}
                         onChange={(e) => handleUpdatePermissions(membership, { [perm.key]: e.target.checked })}
-                        className="rounded border-border text-primary focus:ring-primary"
+                        className="rounded border-slate-700 text-primary focus:ring-primary"
                       />
                       {perm.label}
                     </label>
@@ -339,3 +339,5 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
     </div>
   );
 }
+
+

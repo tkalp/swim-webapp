@@ -95,14 +95,14 @@ export default function CreateFromScheduleModal({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 text-danger text-sm">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-500 text-sm">
             {error}
           </div>
         )}
 
         {/* Info Banner */}
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
-          <p className="text-sm text-text-primary">
+          <p className="text-sm text-slate-100">
             <strong>💡 Tip:</strong> This will create training sessions for all schedules over the selected period.
           </p>
           {sessionCount > 0 && (
@@ -114,7 +114,7 @@ export default function CreateFromScheduleModal({
 
         {/* Start Date Selection */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-text-primary font-semibold">
+          <div className="flex items-center gap-2 text-slate-100 font-semibold">
             <Calendar size={18} className="text-primary" />
             <h3>Start Date</h3>
           </div>
@@ -129,13 +129,13 @@ export default function CreateFromScheduleModal({
 
         {/* Days to Create */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-text-primary font-semibold">
-            <CalendarCheck size={18} className="text-accent" />
+          <div className="flex items-center gap-2 text-slate-100 font-semibold">
+            <CalendarCheck size={18} className="text-cyan-400" />
             <h3>Number of Days</h3>
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm text-text-secondary">
+            <label className="block text-sm text-slate-400">
               Create sessions for the next
             </label>
             <div className="flex items-center gap-3">
@@ -145,9 +145,9 @@ export default function CreateFromScheduleModal({
                 max="30"
                 value={daysToCreate}
                 onChange={(e) => setDaysToCreate(Math.max(1, Math.min(30, parseInt(e.target.value) || 7)))}
-                className="flex-1 px-4 py-3 bg-background-tertiary border border-border/50 rounded-lg text-text-primary focus:outline-none focus:border-primary transition-colors"
+                className="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-100 focus:outline-none focus:border-primary transition-colors"
               />
-              <span className="text-text-secondary">days</span>
+              <span className="text-slate-400">days</span>
             </div>
           </div>
         </div>
@@ -155,27 +155,27 @@ export default function CreateFromScheduleModal({
         {/* Schedule Preview */}
         {schedules.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-text-primary font-semibold">
-              <CheckCircle size={18} className="text-success" />
+            <div className="flex items-center gap-2 text-slate-100 font-semibold">
+              <CheckCircle size={18} className="text-green-500" />
               <h3>Active Schedules ({schedules.length})</h3>
             </div>
 
-            <div className="bg-background-tertiary/50 border border-border/30 rounded-lg p-4 max-h-48 overflow-y-auto">
+            <div className="bg-slate-800/50/50 border border-slate-700/30 rounded-lg p-4 max-h-48 overflow-y-auto">
               <div className="space-y-2">
                 {schedules.map((schedule) => (
                   <div
                     key={schedule.id}
-                    className="flex items-center justify-between py-2 border-b border-border/20 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-slate-700/20 last:border-0"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-text-tertiary uppercase">
+                      <span className="text-xs font-semibold text-slate-500 uppercase">
                         {schedule.day_of_week}
                       </span>
-                      <span className="text-sm text-text-primary capitalize">
+                      <span className="text-sm text-slate-100 capitalize">
                         {schedule.training_type.replace('_', ' ')}
                       </span>
                     </div>
-                    <span className="text-xs text-text-secondary">
+                    <span className="text-xs text-slate-400">
                       {schedule.start_time} - {schedule.end_time}
                     </span>
                   </div>
@@ -191,7 +191,7 @@ export default function CreateFromScheduleModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-background-tertiary text-text-primary rounded-lg font-semibold hover:bg-background-secondary transition-all disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-slate-800/50 text-slate-100 rounded-lg font-semibold hover:bg-slate-800/70 transition-all disabled:opacity-50"
           >
             Cancel
           </button>
@@ -207,3 +207,5 @@ export default function CreateFromScheduleModal({
     </Modal>
   );
 }
+
+

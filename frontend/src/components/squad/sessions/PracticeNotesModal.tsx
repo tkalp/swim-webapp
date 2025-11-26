@@ -139,7 +139,7 @@ export default function PracticeNotesModal({
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Icon size={16} className={config.color} />
-          <label className="text-sm font-medium text-text-primary">{config.label}</label>
+          <label className="text-sm font-medium text-slate-100">{config.label}</label>
         </div>
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((rating) => (
@@ -150,7 +150,7 @@ export default function PracticeNotesModal({
               className={`w-12 h-12 rounded-xl border-2 transition-all font-semibold ${
                 value === rating
                   ? 'bg-primary border-primary text-white scale-110 shadow-lg'
-                  : 'bg-background-tertiary border-border hover:border-primary/50 text-text-secondary hover:text-text-primary hover:scale-105'
+                  : 'bg-slate-800/50 border-slate-700 hover:border-primary/50 text-slate-400 hover:text-slate-100 hover:scale-105'
               }`}
             >
               {rating}
@@ -165,18 +165,18 @@ export default function PracticeNotesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl shadow-2xl border border-border/60 w-full max-w-3xl max-h-[90vh] overflow-hidden">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-800/60 w-full max-w-3xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/40">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-              {noteType === 'pre' ? <FileText size={20} className="text-primary" /> : <Sparkles size={20} className="text-accent" />}
+              {noteType === 'pre' ? <FileText size={20} className="text-primary" /> : <Sparkles size={20} className="text-cyan-400" />}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">
+              <h2 className="text-xl font-bold text-slate-100">
                 {noteType === 'pre' ? 'Pre-Practice Notes' : 'Post-Practice Notes'}
               </h2>
-              <p className="text-sm text-text-secondary">
+              <p className="text-sm text-slate-400">
                 {new Date(sessionDate).toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   month: 'long', 
@@ -188,7 +188,7 @@ export default function PracticeNotesModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-background-secondary transition-colors text-text-secondary hover:text-text-primary"
+            className="p-2 rounded-lg hover:bg-slate-800/70 transition-colors text-slate-400 hover:text-slate-100"
           >
             <X size={20} />
           </button>
@@ -197,10 +197,10 @@ export default function PracticeNotesModal({
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           {error && (
-            <div className="mb-4 p-4 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-3">
-              <AlertCircle size={20} className="text-danger shrink-0 mt-0.5" />
+            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
+              <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-danger">{error}</p>
+                <p className="text-sm font-medium text-red-500">{error}</p>
               </div>
             </div>
           )}
@@ -208,40 +208,40 @@ export default function PracticeNotesModal({
           {loading ? (
             <div className="py-12 text-center">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-text-secondary">Loading notes...</p>
+              <p className="text-slate-400">Loading notes...</p>
             </div>
           ) : (
             <div className="space-y-6">
               {noteType === 'pre' ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Announcements
                     </label>
                     <textarea
                       value={announcements}
                       onChange={(e) => setAnnouncements(e.target.value)}
                       placeholder="Any important announcements for the team..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={3}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Reminders
                     </label>
                     <textarea
                       value={reminders}
                       onChange={(e) => setReminders(e.target.value)}
                       placeholder="Things to remember for this session..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={2}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Session Focus
                     </label>
                     <input
@@ -249,12 +249,12 @@ export default function PracticeNotesModal({
                       value={focus}
                       onChange={(e) => setFocus(e.target.value)}
                       placeholder="e.g., Underwater work, Turns, Starts..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Equipment Needed
                     </label>
                     <input
@@ -262,19 +262,19 @@ export default function PracticeNotesModal({
                       value={equipmentNeeded}
                       onChange={(e) => setEquipmentNeeded(e.target.value)}
                       placeholder="e.g., Fins, paddles, snorkels..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Additional Notes
                     </label>
                     <textarea
                       value={preNotes}
                       onChange={(e) => setPreNotes(e.target.value)}
                       placeholder="Any other notes or comments..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={3}
                     />
                   </div>
@@ -282,8 +282,8 @@ export default function PracticeNotesModal({
               ) : (
                 <>
                   {/* Ratings Section */}
-                  <div className="bg-background-tertiary/30 rounded-xl p-5 border border-border/30 space-y-5">
-                    <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-4">Session Ratings (Optional)</h3>
+                  <div className="bg-slate-800/50/30 rounded-xl p-5 border border-slate-700/30 space-y-5">
+                    <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wider mb-4">Session Ratings (Optional)</h3>
                     {renderRatingSelector(overallRating, setOverallRating, RATING_LABELS.overall_rating)}
                     {renderRatingSelector(effortLevel, setEffortLevel, RATING_LABELS.effort_level)}
                     {renderRatingSelector(techniqueQuality, setTechniqueQuality, RATING_LABELS.technique_quality)}
@@ -291,33 +291,33 @@ export default function PracticeNotesModal({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       What Went Well ✨
                     </label>
                     <textarea
                       value={whatWentWell}
                       onChange={(e) => setWhatWentWell(e.target.value)}
                       placeholder="Highlight the positives from this session..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={3}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Areas for Improvement 🎯
                     </label>
                     <textarea
                       value={areasForImprovement}
                       onChange={(e) => setAreasForImprovement(e.target.value)}
                       placeholder="What can we work on next time..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={3}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Next Session Focus
                     </label>
                     <input
@@ -325,32 +325,32 @@ export default function PracticeNotesModal({
                       value={nextSessionFocus}
                       onChange={(e) => setNextSessionFocus(e.target.value)}
                       placeholder="What to emphasize next practice..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Individual Highlights 🌟
                     </label>
                     <textarea
                       value={individualHighlights}
                       onChange={(e) => setIndividualHighlights(e.target.value)}
                       placeholder="Shout-outs to swimmers who stood out..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={3}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
+                    <label className="block text-sm font-medium text-slate-100 mb-2">
                       Additional Notes
                     </label>
                     <textarea
                       value={postNotes}
                       onChange={(e) => setPostNotes(e.target.value)}
                       placeholder="Any other observations or comments..."
-                      className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                       rows={3}
                     />
                   </div>
@@ -361,10 +361,10 @@ export default function PracticeNotesModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border/40 bg-background-secondary/20">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-700/40 bg-slate-800/70/20">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-background-tertiary hover:bg-background-secondary text-text-secondary hover:text-text-primary font-medium transition-all"
+            className="px-5 py-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800/70 text-slate-400 hover:text-slate-100 font-medium transition-all"
           >
             Cancel
           </button>
@@ -380,3 +380,4 @@ export default function PracticeNotesModal({
     </div>
   );
 }
+

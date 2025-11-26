@@ -113,19 +113,19 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
       />
 
       {/* Weekly Grid */}
-      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl overflow-hidden">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl overflow-hidden">
         <div className="flex gap-4 min-h-[500px] overflow-x-auto">
           {DAYS_OF_WEEK.map(day => {
           const daySessions = schedulesByDay[day]
           const hasActiveSessions = daySessions.length > 0
 
           return (
-            <div key={day} className="flex-1 min-w-[200px] bg-background-elevated rounded-xl border border-border/60 flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div key={day} className="flex-1 min-w-[200px] bg-slate-900/90 rounded-xl border border-slate-800/60 flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
               {/* Day Header */}
-              <div className="flex justify-between items-center p-4 bg-linear-to-br from-background-secondary to-background-tertiary/50 border-b border-border/60">
+              <div className="flex justify-between items-center p-4 bg-linear-to-br bg-slate-800/60 border-b border-slate-800/60">
                 <div>
-                  <h3 className="font-bold text-text-primary text-base mb-0.5">{day}</h3>
-                  <span className="text-xs text-text-secondary font-medium">
+                  <h3 className="font-bold text-slate-100 text-base mb-0.5">{day}</h3>
+                  <span className="text-xs text-slate-400 font-medium">
                     {daySessions.length} session{daySessions.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -144,12 +144,12 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
               <div className="flex-1 p-4 flex flex-col gap-3">
                 {hasActiveSessions ? (
                   daySessions.map(session => (
-                    <div key={session.id} className="bg-linear-to-br from-background-secondary to-background-tertiary/50 border border-border/60 rounded-xl p-4 hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all duration-200 group">
+                    <div key={session.id} className="bg-linear-to-br bg-slate-800/60 border border-slate-800/60 rounded-xl p-4 hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all duration-200 group">
                       <div className="flex justify-between items-start mb-3">
                         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ${
                           session.training_type === 'Swim' 
-                            ? 'bg-accent/20 text-accent border border-accent/40' 
-                            : 'bg-warning/20 text-warning border border-warning/40'
+                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' 
+                            : 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
                         }`}>
                           {session.training_type === 'Swim' ? (
                             <MapPin size={14} />
@@ -161,14 +161,14 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
                         {canManage && (
                           <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <button
-                              className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-primary/20 text-text-secondary hover:text-primary transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
+                              className="w-7 h-7 rounded-lg bg-slate-900/90 hover:bg-primary/20 text-slate-400 hover:text-primary transition-colors duration-200 flex items-center justify-center shadow-sm border border-slate-700/40"
                               onClick={() => handleEditSchedule(session)}
                               title="Edit session"
                             >
                               <Edit size={14} />
                             </button>
                             <button
-                              className="w-7 h-7 rounded-lg bg-background-elevated hover:bg-danger/20 text-text-secondary hover:text-danger transition-colors duration-200 flex items-center justify-center shadow-sm border border-border/40"
+                              className="w-7 h-7 rounded-lg bg-slate-900/90 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors duration-200 flex items-center justify-center shadow-sm border border-slate-700/40"
                               onClick={() => handleDeleteSchedule(session.id)}
                               title="Delete session"
                             >
@@ -178,18 +178,18 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-text-primary mb-2">
+                      <div className="flex items-center gap-2 text-slate-100 mb-2">
                         <Clock size={14} className="text-primary" />
                         <span className="text-sm font-semibold">
                           {formatTime(session.start_time)} - {formatTime(session.end_time)}
                         </span>
-                        <span className="text-xs text-text-secondary font-medium">
+                        <span className="text-xs text-slate-400 font-medium">
                           ({getDuration(session.start_time, session.end_time)})
                         </span>
                       </div>
 
                       {session.until && (
-                        <div className="flex items-center gap-2 text-xs text-text-secondary mt-2 pt-2 border-t border-border/40">
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-2 pt-2 border-t border-slate-700/40">
                           <Calendar size={12} />
                           <span>Until: {new Date(session.until).toLocaleDateString()}</span>
                         </div>
@@ -198,10 +198,10 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
                   ))
                 ) : (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="w-16 h-16 rounded-full bg-background-secondary border border-border/60 flex items-center justify-center text-text-muted mb-3 shadow-sm">
+                    <div className="w-16 h-16 rounded-full bg-slate-800/60 border border-slate-800/60 flex items-center justify-center text-slate-500 mb-3 shadow-sm">
                       <Calendar size={24} />
                     </div>
-                    <p className="text-text-secondary text-sm mb-3 font-medium">No sessions scheduled</p>
+                    <p className="text-slate-400 text-sm mb-3 font-medium">No sessions scheduled</p>
                     <button
                       className="px-4 py-2 bg-transparent text-primary border border-primary/40 hover:bg-primary/10 rounded-lg transition-all duration-200 text-sm font-semibold hover:scale-105"
                       onClick={() => handleCreateSchedule(day)}
@@ -233,3 +233,5 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
     </div>
   )
 }
+
+

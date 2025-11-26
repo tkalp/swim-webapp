@@ -183,15 +183,15 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
   };
 
   const getEffortLevelColor = (level: number) => {
-    if (level <= 3) return "text-success";
-    if (level <= 6) return "text-warning";
-    return "text-danger";
+    if (level <= 3) return "text-green-500";
+    if (level <= 6) return "text-orange-500";
+    return "text-red-500";
   };
 
   const getEffortLevelBg = (level: number) => {
-    if (level <= 3) return "bg-success/10 border-success/30";
-    if (level <= 6) return "bg-warning/10 border-warning/30";
-    return "bg-danger/10 border-danger/30";
+    if (level <= 3) return "bg-green-500/10 border-green-500/30";
+    if (level <= 6) return "bg-orange-500/10 border-orange-500/30";
+    return "bg-red-500/10 border-red-500/30";
   };
 
   const formatDate = (dateString: string) => {
@@ -238,7 +238,7 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
               placeholder="Search workouts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-text-primary placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
             />
           </div>
 
@@ -268,8 +268,8 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-danger/10 border-l-4 border-danger rounded-lg p-4 mb-6">
-          <p className="text-danger font-medium">{error}</p>
+        <div className="bg-red-500/10 border-l-4 border-red-500 rounded-lg p-4 mb-6">
+          <p className="text-red-500 font-medium">{error}</p>
         </div>
       )}
 
@@ -279,14 +279,14 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="bg-background-elevated rounded-2xl border border-border/60 p-6 animate-pulse"
+              className="bg-slate-900/90 rounded-2xl border border-slate-800/60 p-6 animate-pulse"
             >
-              <div className="h-6 bg-background-tertiary rounded-lg w-3/4 mb-4"></div>
-              <div className="h-4 bg-background-tertiary rounded-lg w-full mb-2"></div>
-              <div className="h-4 bg-background-tertiary rounded-lg w-2/3 mb-4"></div>
+              <div className="h-6 bg-slate-800/50 rounded-lg w-3/4 mb-4"></div>
+              <div className="h-4 bg-slate-800/50 rounded-lg w-full mb-2"></div>
+              <div className="h-4 bg-slate-800/50 rounded-lg w-2/3 mb-4"></div>
               <div className="flex gap-2">
-                <div className="h-8 bg-background-tertiary rounded-lg flex-1"></div>
-                <div className="h-8 bg-background-tertiary rounded-lg flex-1"></div>
+                <div className="h-8 bg-slate-800/50 rounded-lg flex-1"></div>
+                <div className="h-8 bg-slate-800/50 rounded-lg flex-1"></div>
               </div>
             </div>
           ))}
@@ -306,10 +306,10 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-text-primary mb-1 line-clamp-1">
+                  <h3 className="text-lg font-bold text-slate-100 mb-1 line-clamp-1">
                     {workout.name}
                   </h3>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-xs text-slate-500">
                     Created {formatDate(workout.created_at)}
                   </p>
                 </div>
@@ -323,7 +323,7 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
               </div>
 
               {/* Description Preview */}
-              <p className="text-sm text-text-secondary mb-4 line-clamp-2">
+              <p className="text-sm text-slate-400 mb-4 line-clamp-2">
                 {workout.raw_description}
               </p>
 
@@ -335,22 +335,22 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
               )}
 
               {/* Stats */}
-              <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-border/40 px-1">
+              <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-700/40 px-1">
                 <div className="flex items-center gap-1">
                   <Activity size={12} className="text-primary" />
-                  <span className="text-xs font-semibold text-text-primary">
+                  <span className="text-xs font-semibold text-slate-100">
                     {workout.total_meters}m
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock size={12} className="text-accent" />
-                  <span className="text-xs font-semibold text-text-primary">
+                  <Clock size={12} className="text-cyan-400" />
+                  <span className="text-xs font-semibold text-slate-100">
                     {workout.estimated_time_minutes}min
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Flame size={12} className="text-warning" />
-                  <span className="text-xs font-semibold text-text-primary">
+                  <Flame size={12} className="text-orange-500" />
+                  <span className="text-xs font-semibold text-slate-100">
                     {workout.estimated_calories}
                   </span>
                 </div>
@@ -358,14 +358,14 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
 
               {/* Usage Info */}
               <div className="flex items-center gap-4 mb-2 text-xs">
-                <div className="flex items-center gap-1.5 text-text-muted">
+                <div className="flex items-center gap-1.5 text-slate-500">
                   <TrendingUp size={14} />
                   <span>
                     Used {workout.usage_count || 0} time{workout.usage_count !== 1 ? "s" : ""}
                   </span>
                 </div>
                 {workout.last_used_at && (
-                  <div className="flex items-center gap-1.5 text-text-muted">
+                  <div className="flex items-center gap-1.5 text-slate-500">
                     <Calendar size={14} />
                     <span>Last: {formatDate(workout.last_used_at)}</span>
                   </div>
@@ -385,21 +385,21 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
                   <>
                     <button
                       onClick={() => handleEditWorkout(workout.id)}
-                      className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
+                      className="px-2.5 py-2 bg-slate-800/70 border border-slate-700/40 text-slate-400 hover:text-primary hover:bg-primary/10 hover:border-primary/50 rounded-lg transition-all duration-200"
                       title="Edit workout"
                     >
                       <Edit size={14} />
                     </button>
                     <button
                       onClick={() => handleDuplicateWorkout(workout.id)}
-                      className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-accent hover:bg-accent/10 hover:border-accent/50 rounded-lg transition-all duration-200"
+                      className="px-2.5 py-2 bg-slate-800/70 border border-slate-700/40 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 rounded-lg transition-all duration-200"
                       title="Duplicate workout"
                     >
                       <Copy size={14} />
                     </button>
                     <button
                       onClick={() => handleDeleteWorkout(workout.id, workout.name)}
-                      className="px-2.5 py-2 bg-background-secondary/80 border border-border/40 text-text-secondary hover:text-danger hover:bg-danger/10 hover:border-danger/50 rounded-lg transition-all duration-200"
+                      className="px-2.5 py-2 bg-slate-800/70 border border-slate-700/40 text-slate-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/50 rounded-lg transition-all duration-200"
                       title="Delete workout"
                     >
                       <Trash2 size={14} />
@@ -417,7 +417,7 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
         <div ref={observerTarget} className="mt-6 min-h-[100px]">
           {loadingMore && (
             <div className="flex justify-center items-center py-8">
-              <div className="flex items-center gap-3 text-text-muted">
+              <div className="flex items-center gap-3 text-slate-500">
                 <div className="w-5 h-5 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-sm font-medium">Loading more workouts...</span>
               </div>
@@ -425,12 +425,12 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
           )}
           {!loadingMore && !hasMore && workouts.length > PAGE_SIZE && (
             <div className="text-center py-6">
-              <p className="text-sm text-text-muted">You've reached the end of your workout library</p>
+              <p className="text-sm text-slate-500">You've reached the end of your workout library</p>
             </div>
           )}
           {!loadingMore && hasMore && !searchQuery && (
             <div className="text-center py-6">
-              <p className="text-xs text-text-muted">Scroll down to load more...</p>
+              <p className="text-xs text-slate-500">Scroll down to load more...</p>
             </div>
           )}
         </div>
@@ -461,10 +461,10 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
 
       {/* No Results State */}
       {!loading && filteredWorkouts.length === 0 && searchQuery && (
-        <div className="bg-background-elevated rounded-2xl border border-border/60 p-12 text-center">
-          <Search className="w-16 h-16 text-text-muted mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-semibold text-text-primary mb-2">No Results Found</h3>
-          <p className="text-text-secondary">
+        <div className="bg-slate-900/90 rounded-2xl border border-slate-800/60 p-12 text-center">
+          <Search className="w-16 h-16 text-slate-500 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-semibold text-slate-100 mb-2">No Results Found</h3>
+          <p className="text-slate-400">
             No workouts match your search query "{searchQuery}"
           </p>
         </div>
@@ -472,3 +472,6 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
     </div>
   );
 }
+
+
+

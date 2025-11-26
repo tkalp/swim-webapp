@@ -54,10 +54,10 @@ ${currentWorkout.workout}`
   }
 
   return (
-    <div className="min-h-screen bg-[#191c29] text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       {/* Error Toast */}
       {error && (
-        <div className="fixed top-6 right-6 max-w-md bg-background-elevated border border-red-500 rounded-xl p-4 shadow-2xl z-50 animate-in slide-in-from-right duration-300">
+        <div className="fixed top-6 right-6 max-w-md bg-slate-900/90 backdrop-blur-xl border border-red-500 rounded-xl p-4 shadow-2xl z-50 animate-in slide-in-from-right duration-300">
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <div className="font-semibold text-red-400 text-sm mb-1">Error</div>
@@ -79,7 +79,7 @@ ${currentWorkout.workout}`
           {/* Left Column - Input */}
           <div className="w-full lg:w-1/2 space-y-6">
             {/* Main Input Card */}
-            <div className="bg-background-elevated border border-gray-700 rounded-2xl p-8 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500">
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-8 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-3">Describe Your Workout</h2>
                 <p className="text-gray-400 text-base leading-relaxed">
@@ -96,7 +96,7 @@ ${currentWorkout.workout}`
                   </label>
                   <div className="relative">
                     <textarea
-                      className="w-full h-32 px-4 py-3 bg-[#0f172a] border border-gray-600 rounded-xl text-white placeholder-gray-500 resize-none focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300"
+                      className="w-full h-32 px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 resize-none focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       placeholder="Describe your ideal workout... (e.g., 'Create a 3000 yard sprint workout for competitive swimmers with focus on underwater kicks and starts')"
@@ -105,7 +105,7 @@ ${currentWorkout.workout}`
                 </div>
 
                 <button
-                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-primary to-accent-purple hover:from-accent hover:to-purple-500 text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1 active:translate-y-0 disabled:transform-none"
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1 active:translate-y-0 disabled:transform-none"
                   onClick={handleGenerate}
                   disabled={loading || !prompt.trim()}
                 >

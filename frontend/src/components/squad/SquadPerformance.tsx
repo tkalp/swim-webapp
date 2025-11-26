@@ -83,9 +83,9 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
   // Get activity badge styles
   const getActivityBadgeStyles = (activity?: string): string => {
     const act = (activity ?? '').toLowerCase();
-    if (act === 'kick') return 'bg-gradient-to-br from-warning/20 to-warning/10 border border-warning/40 text-warning';
-    if (act === 'pull') return 'bg-gradient-to-br from-success/20 to-success/10 border border-success/40 text-success';
-    return 'bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/40 text-primary';
+    if (act === 'kick') return 'bg-linear-to-br from-orange-500/20 to-orange-500/10 border border-orange-500/40 text-orange-400';
+    if (act === 'pull') return 'bg-linear-to-br from-green-500/20 to-green-500/10 border border-green-500/40 text-green-400';
+    return 'bg-linear-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/40 text-cyan-400';
   };
 
   // Format activity label
@@ -99,7 +99,7 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
       </div>
     );
   }
@@ -122,17 +122,17 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
         {/* Header with date range picker */}
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h2 className="text-2xl font-bold text-text-primary">Performance Analytics</h2>
-            <p className="text-sm text-text-secondary mt-1">Track improvement trends across your squad</p>
+            <h2 className="text-2xl font-bold text-slate-100">Performance Analytics</h2>
+            <p className="text-sm text-slate-400 mt-1">Track improvement trends across your squad</p>
           </div>
-          <div className="flex items-center gap-2 bg-background-elevated/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-border/40">
+          <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-slate-800/40">
             <DateInput
               label=""
               value={dateRange.start}
               onChange={(value) => handleDateChange('start', value)}
               placeholder="Start"
             />
-            <span className="text-text-tertiary font-medium text-sm">→</span>
+            <span className="text-slate-500 font-medium text-sm">→</span>
             <DateInput
               label=""
               value={dateRange.end}
@@ -146,26 +146,26 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
         <SquadSummaryStats summary={data.summary} />
 
         {/* Performance Table */}
-        <div className="bg-background-elevated border border-border rounded-lg overflow-hidden shadow-md">
-          <div className="p-6 border-b border-border">
-            <h3 className="text-xl font-semibold text-text-primary">Swimmer Performance Breakdown</h3>
-            <p className="text-sm text-text-secondary mt-1">Click on a swimmer to view event details</p>
+        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg overflow-hidden shadow-md">
+          <div className="p-6 border-b border-slate-800/60">
+            <h3 className="text-xl font-semibold text-slate-100">Swimmer Performance Breakdown</h3>
+            <p className="text-sm text-slate-400 mt-1">Click on a swimmer to view event details</p>
           </div>
 
           {data.swimmers.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-text-secondary">
+              <p className="text-slate-400">
                 No performance data available for the selected date range.
               </p>
-              <p className="text-text-muted text-sm mt-2">
+              <p className="text-slate-500 text-sm mt-2">
                 Try adjusting the date range or ensure swimmers have logged workouts.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-background">
-                  <tr className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                <thead className="bg-slate-800/30">
+                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     <th className="px-6 py-3">Swimmer</th>
                     <th className="px-6 py-3 text-center">Events</th>
                     <th className="px-6 py-3 text-center">PRs</th>
@@ -174,7 +174,7 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                     <th className="px-6 py-3 text-center">Trend</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-slate-800/40">
                   {data.swimmers.map((swimmer) => {
                     const isExpanded = expandedSwimmer === swimmer.swimmer_id;
                     const isImproving = swimmer.avg_improvement_pct < 0;
@@ -183,25 +183,25 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                       <React.Fragment key={swimmer.swimmer_id}>
                         {/* Main row */}
                         <tr 
-                          className="hover:bg-background cursor-pointer transition-colors"
+                          className="hover:bg-slate-800/30 cursor-pointer transition-colors"
                           onClick={() => toggleSwimmerExpanded(swimmer.swimmer_id)}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-linear-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center">
-                                <span className="text-primary font-semibold text-sm">
+                              <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center">
+                                <span className="text-cyan-400 font-semibold text-sm">
                                   {swimmer.swimmer_name.split(' ').map(n => n[0]).join('')}
                                 </span>
                               </div>
                               <div>
-                                <div className="font-medium text-text-primary">{swimmer.swimmer_name}</div>
-                                <div className="text-xs text-text-secondary">
+                                <div className="font-medium text-slate-100">{swimmer.swimmer_name}</div>
+                                <div className="text-xs text-slate-400">
                                   {isExpanded ? 'Hide' : 'View'} event breakdown
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center text-text-primary">
+                          <td className="px-6 py-4 text-center text-slate-100">
                             {swimmer.events_analyzed}
                           </td>
                           <td className="px-6 py-4 text-center">
@@ -238,9 +238,9 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                         {/* Expanded event details */}
                         {isExpanded && (
                           <tr>
-                            <td colSpan={6} className="px-6 py-4 bg-background">
+                            <td colSpan={6} className="px-6 py-4 bg-slate-800/30">
                               <div className="space-y-3">
-                                <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">
+                                <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
                                   Event Performance Details
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -251,19 +251,19 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                                     return (
                                       <div 
                                         key={idx}
-                                        className="bg-background-elevated border border-border rounded-lg p-4"
+                                        className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg p-4"
                                       >
                                         <div className="flex items-start justify-between mb-2">
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
-                                              <h5 className="font-medium text-text-primary text-sm">
+                                              <h5 className="font-medium text-slate-100 text-sm">
                                                 {formatEventName(event.event)}
                                               </h5>
                                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${getActivityBadgeStyles(event.activity)}`}>
                                                 {formatActivity(event.activity)}
                                               </span>
                                             </div>
-                                            <div className="text-xs text-text-secondary">
+                                            <div className="text-xs text-slate-400">
                                               {event.attempts} attempts
                                             </div>
                                           </div>
@@ -277,26 +277,26 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                                         
                                         <div className="space-y-2 text-xs">
                                           <div className="flex justify-between">
-                                            <span className="text-text-secondary">First:</span>
-                                            <span className="text-text-primary font-mono">
+                                            <span className="text-slate-400">First:</span>
+                                            <span className="text-slate-100 font-mono">
                                               {formatTimeFromSeconds(event.first_time)}
                                             </span>
                                           </div>
                                           <div className="flex justify-between">
-                                            <span className="text-text-secondary">Best:</span>
-                                            <span className="text-primary font-mono font-semibold">
+                                            <span className="text-slate-400">Best:</span>
+                                            <span className="text-cyan-400 font-mono font-semibold">
                                               {formatTimeFromSeconds(event.best_time)}
                                             </span>
                                           </div>
                                           <div className="flex justify-between">
-                                            <span className="text-text-secondary">Latest:</span>
-                                            <span className="text-text-primary font-mono">
+                                            <span className="text-slate-400">Latest:</span>
+                                            <span className="text-slate-100 font-mono">
                                               {formatTimeFromSeconds(event.latest_time)}
                                             </span>
                                           </div>
-                                          <div className="pt-2 border-t border-border">
+                                          <div className="pt-2 border-t border-slate-800/60">
                                             <div className="flex items-center justify-between">
-                                              <span className="text-text-secondary">Change:</span>
+                                              <span className="text-slate-400">Change:</span>
                                               <div className="flex items-center gap-1">
                                                 {eventImproving ? (
                                                   <TrendingDown className="w-3 h-3 text-green-400" />
@@ -334,3 +334,4 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
 };
 
 export default SquadPerformanceTab;
+

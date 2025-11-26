@@ -40,23 +40,23 @@ function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
         <div className="flex-1">
           {title && (
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-cyan-400">
                 <BarChart3 size={20} />
               </div>
-              <h3 className="text-lg font-semibold text-text-primary">
+              <h3 className="text-lg font-semibold text-slate-100">
                 {title}
               </h3>
             </div>
           )}
           {subtitle && (
-            <p className="text-sm text-text-secondary mb-3">{subtitle}</p>
+            <p className="text-sm text-slate-400 mb-3">{subtitle}</p>
           )}
           {total > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-text-primary">
+              <span className="text-lg font-semibold text-slate-100">
                 {total}
               </span>
-              <span className="text-sm text-text-secondary">
+              <span className="text-sm text-slate-400">
                 attendance records
               </span>
             </div>
@@ -66,7 +66,7 @@ function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
 
       {/* Chart */}
       <div className="flex-1 min-h-[280px] relative group">
-        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-accent/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-blue-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <ResponsiveContainer width="100%" height={380}>
           <BarChart
             data={pctData}
@@ -148,7 +148,7 @@ function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap shrink justify-center gap-3 border-t border-border/50 max-w-full overflow-hidden ">
+      <div className="flex flex-wrap shrink justify-center gap-3 border-t border-slate-700/50 max-w-full overflow-hidden ">
         {pctData.map((d, i) => (
           <div
             key={i}
@@ -159,10 +159,10 @@ function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
               className="w-3 h-3 rounded-full shadow-sm border border-white/20 group-hover:scale-110 transition-transform duration-200 shrink-0"
               style={{ backgroundColor: d.color }}
             />
-            <span className="text-xs font-medium text-text-secondary group-hover:text-text-primary transition-colors truncate">
+            <span className="text-xs font-medium text-slate-400 group-hover:text-slate-100 transition-colors truncate">
               {d.label}
             </span>
-            <span className="text-xs font-bold text-text-primary bg-background-tertiary px-2 py-0.5 rounded border border-border/50 group-hover:border-primary/30 transition-colors shrink-0">
+            <span className="text-xs font-bold text-slate-100 bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700/50 group-hover:border-cyan-500/30 transition-colors shrink-0">
               {d.value}
             </span>
           </div>
@@ -173,3 +173,4 @@ function AttendanceChart({ data, title, subtitle, totalSessions }: Props) {
 }
 
 export default memo(AttendanceChart);
+

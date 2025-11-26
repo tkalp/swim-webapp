@@ -42,14 +42,14 @@ export const SwimmerRow: React.FC<SwimmerRowProps> = ({
               </span>
             </div>
             <div>
-              <div className="font-medium text-text-primary">{swimmer.swimmer_name}</div>
-              <div className="text-xs text-text-secondary">
+              <div className="font-medium text-slate-100">{swimmer.swimmer_name}</div>
+              <div className="text-xs text-slate-400">
                 {isExpanded ? 'Hide' : 'View'} event breakdown
               </div>
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 text-center text-text-primary">
+        <td className="px-6 py-4 text-center text-slate-100">
           {swimmer.events_analyzed}
         </td>
         <td className="px-6 py-4 text-center">
@@ -88,7 +88,7 @@ export const SwimmerRow: React.FC<SwimmerRowProps> = ({
         <tr>
           <td colSpan={6} className="px-6 py-4 bg-background">
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">
+              <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
                 Event Performance Details
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -116,3 +116,6 @@ export const SwimmerRow: React.FC<SwimmerRowProps> = ({
     </React.Fragment>
   );
 };
+
+
+

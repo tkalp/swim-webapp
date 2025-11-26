@@ -22,8 +22,8 @@ const SIDEBAR_ITEMS: Array<{
 
 export function SquadSidebar({ activeTab, onTabChange }: SquadSidebarProps) {
   return (
-    <aside className="w-64 bg-slate-900/50 backdrop-blur-xl border-r border-slate-800/60 shrink-0 hidden lg:block">
-      <nav className="sticky top-0 p-6 space-y-2">
+    <aside className="w-64 bg-slate-900/50 backdrop-blur-xl border-r border-slate-800/60 shrink-0 hidden lg:flex lg:flex-col h-screen">
+      <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
         <div className="mb-6 pb-4 border-b border-slate-800/40">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">
             Squad Menu

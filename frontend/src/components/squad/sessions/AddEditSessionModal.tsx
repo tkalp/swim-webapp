@@ -125,7 +125,7 @@ export default function AddEditSessionModal({
 
         {/* Date and Time Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-text-primary font-semibold">
+          <div className="flex items-center gap-2 text-slate-100 font-semibold">
             <Calendar size={18} className="text-primary" />
             <h3>Date & Time</h3>
           </div>
@@ -141,7 +141,7 @@ export default function AddEditSessionModal({
 
             {/* Start Time */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-text-muted uppercase tracking-wide flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <Clock size={14} />
                 Start Time
               </label>
@@ -149,7 +149,7 @@ export default function AddEditSessionModal({
                 type="time"
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full bg-background-tertiary border border-border rounded-lg px-4 py-2.5 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                className="w-full bg-slate-800/60 border border-slate-800/60 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
                 required
               />
             </div>
@@ -164,7 +164,7 @@ export default function AddEditSessionModal({
 
             {/* End Time */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-text-muted uppercase tracking-wide flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <Clock size={14} />
                 End Time
               </label>
@@ -172,7 +172,7 @@ export default function AddEditSessionModal({
                 type="time"
                 value={formData.end_time}
                 onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full bg-background-tertiary border border-border rounded-lg px-4 py-2.5 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                className="w-full bg-slate-800/60 border border-slate-800/60 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
                 required
               />
             </div>
@@ -181,7 +181,7 @@ export default function AddEditSessionModal({
 
         {/* Session Details Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-text-primary font-semibold">
+          <div className="flex items-center gap-2 text-slate-100 font-semibold">
             <Type size={18} className="text-accent" />
             <h3>Session Details</h3>
           </div>
@@ -197,7 +197,7 @@ export default function AddEditSessionModal({
 
             {/* Workout ID (Optional) */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-text-muted uppercase tracking-wide flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <FileText size={14} />
                 Workout ID (Optional)
               </label>
@@ -207,10 +207,10 @@ export default function AddEditSessionModal({
                 onChange={(e) =>
                   setFormData({ ...formData, workout_id: e.target.value || null })
                 }
-                className="w-full bg-background-tertiary border border-border rounded-lg px-4 py-2.5 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                className="w-full bg-slate-800/60 border border-slate-800/60 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
                 placeholder="Enter workout ID or leave empty"
               />
-              <p className="text-xs text-text-muted">Link this session to a specific workout (optional)</p>
+              <p className="text-xs text-slate-500">Link this session to a specific workout (optional)</p>
             </div>
           </div>
         </div>
@@ -221,14 +221,14 @@ export default function AddEditSessionModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-background-tertiary text-text-primary rounded-lg font-semibold hover:bg-background-secondary transition-all disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-slate-800/60 text-slate-100 rounded-lg font-semibold hover:bg-slate-800/70 transition-all disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-dark via-primary to-accent text-white rounded-lg font-semibold hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/25 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="flex-1 px-4 py-3 bg-linear-to-r from-cyan-600 via-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
             {loading ? 'Saving...' : isEdit ? 'Update Session' : 'Create Session'}
           </button>
@@ -237,3 +237,4 @@ export default function AddEditSessionModal({
     </Modal>
   );
 }
+

@@ -149,7 +149,7 @@ export default function AttendanceModal({
       case 'absent':
         return <XCircle className="w-5 h-5 text-danger" />;
       default:
-        return <div className="w-5 h-5 rounded-full border-2 border-border" />;
+        return <div className="w-5 h-5 rounded-full border-2 border-slate-800/60" />;
     }
   };
 
@@ -160,15 +160,15 @@ export default function AttendanceModal({
     if (buttonStatus === 'present') {
       return `${baseClass} ${isSelected 
         ? 'bg-success text-white shadow-md' 
-        : 'bg-background-secondary text-text-secondary hover:bg-success/20 hover:text-success border border-border'}`;
+        : 'bg-slate-800/60 text-slate-400 hover:bg-green-500/20 hover:text-green-400 border border-slate-800/60'}`;
     } else if (buttonStatus === 'late') {
       return `${baseClass} ${isSelected 
         ? 'bg-warning text-white shadow-md' 
-        : 'bg-background-secondary text-text-secondary hover:bg-warning/20 hover:text-warning border border-border'}`;
+        : 'bg-slate-800/60 text-slate-400 hover:bg-orange-500/20 hover:text-orange-400 border border-slate-800/60'}`;
     } else {
       return `${baseClass} ${isSelected 
         ? 'bg-danger text-white shadow-md' 
-        : 'bg-background-secondary text-text-secondary hover:bg-danger/20 hover:text-danger border border-border'}`;
+        : 'bg-slate-800/60 text-slate-400 hover:bg-red-500/20 hover:text-red-400 border border-slate-800/60'}`;
     }
   };
 
@@ -176,16 +176,16 @@ export default function AttendanceModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-background-elevated rounded-xl shadow-2xl border border-border max-w-3xl w-full max-h-[75vh] overflow-hidden flex flex-col">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl shadow-2xl border border-slate-800/60 max-w-3xl w-full max-h-[75vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border bg-linear-to-r from-primary/10 to-accent/10">
+        <div className="flex items-center justify-between p-6 border-b border-slate-800/60 bg-linear-to-r from-cyan-500/10 to-blue-500/10">
           <div>
-            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" />
               Take Attendance
             </h2>
             {sessionDate && (
-              <p className="text-sm text-text-secondary mt-1">
+              <p className="text-sm text-slate-400 mt-1">
                 {new Date(sessionDate).toLocaleDateString(undefined, {
                   weekday: 'long',
                   month: 'long',
@@ -197,17 +197,17 @@ export default function AttendanceModal({
           </div>
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text-primary transition-colors p-2 hover:bg-background-secondary rounded-lg"
+            className="text-slate-500 hover:text-slate-100 transition-colors p-2 hover:bg-slate-800/60 rounded-lg"
           >
             <X size={24} />
           </button>
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-4 gap-3 p-4 bg-background-secondary/50">
-          <div className="text-center p-3 bg-background-elevated rounded-lg border border-border">
-            <div className="text-2xl font-bold text-text-primary">{summary.total}</div>
-            <div className="text-xs text-text-secondary">Total</div>
+        <div className="grid grid-cols-4 gap-3 p-4 bg-slate-800/50">
+          <div className="text-center p-3 bg-slate-900/90 backdrop-blur-xl rounded-lg border border-slate-800/60">
+            <div className="text-2xl font-bold text-slate-100">{summary.total}</div>
+            <div className="text-xs text-slate-400">Total</div>
           </div>
           <div className="text-center p-3 bg-success/10 rounded-lg border border-success/30">
             <div className="text-2xl font-bold text-success">
@@ -230,7 +230,7 @@ export default function AttendanceModal({
         </div>
 
         {/* Quick Actions */}
-        <div className="flex gap-2 p-4 border-b border-border">
+        <div className="flex gap-2 p-4 border-b border-slate-800/60">
           <button
             onClick={handleMarkAllPresent}
             className="px-4 py-2 bg-success/20 text-success rounded-lg text-sm font-medium hover:bg-success/30 transition-colors border border-success/30"
@@ -260,7 +260,7 @@ export default function AttendanceModal({
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : swimmers.length === 0 ? (
-            <div className="text-center py-12 text-text-muted">
+            <div className="text-center py-12 text-slate-500">
               <Users size={48} className="mx-auto mb-2 opacity-50" />
               <p>No swimmers found in this squad</p>
             </div>
@@ -273,13 +273,13 @@ export default function AttendanceModal({
                 return (
                   <div
                     key={swimmer.id}
-                    className="p-4 bg-background-secondary/50 rounded-lg border border-border hover:border-border-light transition-all"
+                    className="p-4 bg-slate-800/50 rounded-lg border border-slate-800/60 hover:border-slate-700/50 transition-all"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(status)}
                         <div>
-                          <div className="font-semibold text-text-primary">
+                          <div className="font-semibold text-slate-100">
                             {swimmer.first_name} {swimmer.last_name}
                           </div>
                         </div>
@@ -313,7 +313,7 @@ export default function AttendanceModal({
                         placeholder="Add notes (optional)..."
                         value={notes}
                         onChange={(e) => handleNotesChange(swimmer.id, e.target.value)}
-                        className="w-full px-3 py-2 bg-background-elevated border border-border rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        className="w-full px-3 py-2 bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg text-sm text-slate-100 placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
                     )}
                   </div>
@@ -324,14 +324,14 @@ export default function AttendanceModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-border bg-background-secondary/30">
-          <div className="text-sm text-text-muted">
+        <div className="flex items-center justify-between p-6 border-t border-slate-800/60 bg-slate-800/30">
+          <div className="text-sm text-slate-500">
             {swimmers.filter(s => localAttendance.has(s.id)).length} of {swimmers.length} recorded
           </div>
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2.5 bg-background-secondary text-text-primary rounded-lg font-medium hover:bg-background-tertiary transition-colors border border-border"
+              className="px-6 py-2.5 bg-slate-800/60 text-slate-100 rounded-lg font-medium hover:bg-slate-800/50 transition-colors border border-slate-800/60"
             >
               Cancel
             </button>
@@ -358,3 +358,6 @@ export default function AttendanceModal({
     </div>
   );
 }
+
+
+

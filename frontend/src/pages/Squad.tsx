@@ -156,14 +156,14 @@ export default function SquadPage() {
 
       {/* Main Content with Sidebar */}
       {!loading && (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex h-screen overflow-hidden">
           {/* Sidebar Navigation */}
           <SquadSidebar activeTab={tab} onTabChange={setTab} />
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          <main className="flex-1 flex flex-col overflow-hidden pb-20 lg:pb-0">
             {/* Breadcrumb Navigation */}
-            <div className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800/60 px-6 py-4">
+            <div className="shrink-0 bg-slate-900/50 backdrop-blur-xl border-b border-slate-800/60 px-6 py-4">
               <Breadcrumb 
                 items={[
                   { label: 'Squads', href: '/squads' },
@@ -174,7 +174,7 @@ export default function SquadPage() {
             </div>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="flex-1 overflow-y-auto p-6">
               {tab === 'overview' && squadId && <OverviewTab squadId={squadId} />}
               {tab === 'team' && squadId && (
                 <SwimmersGrid 

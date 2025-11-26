@@ -130,19 +130,19 @@ export default function ScheduleFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="bg-background-elevated border border-border rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+      <div className="bg-slate-900/90 border border-slate-700 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex justify-between items-center p-6 border-b border-border bg-background-primary">
+          <div className="flex justify-between items-center p-6 border-b border-slate-700 bg-slate-950">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary-dark to-primary flex items-center justify-center text-white">
                 <Calendar size={20} />
               </div>
-              <h2 className="text-lg font-semibold text-text-primary">{schedule ? 'Edit Schedule' : 'New Schedule'}</h2>
+              <h2 className="text-lg font-semibold text-slate-100">{schedule ? 'Edit Schedule' : 'New Schedule'}</h2>
             </div>
             <button 
               type="button" 
-              className="w-9 h-9 rounded-lg bg-background-secondary hover:bg-background-tertiary border-none flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200"
+              className="w-9 h-9 rounded-lg bg-slate-800/70 hover:bg-slate-800/50 border-none flex items-center justify-center text-slate-400 hover:text-slate-100 transition-colors duration-200"
               onClick={onClose}
             >
               <X size={18} />
@@ -153,7 +153,7 @@ export default function ScheduleFormModal({
           <div className="flex-1 p-6 overflow-y-auto">
             {/* Day of Week */}
             <div className="mb-6">
-              <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-100 mb-3">
                 <Calendar size={16} />
                 Day of Week
               </label>
@@ -165,7 +165,7 @@ export default function ScheduleFormModal({
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border ${
                       formData.day_of_week === day 
                         ? 'bg-primary text-white border-primary' 
-                        : 'bg-background-secondary text-text-secondary border-border hover:border-primary/50 hover:bg-primary/10'
+                        : 'bg-slate-800/70 text-slate-400 border-slate-700 hover:border-primary/50 hover:bg-primary/10'
                     }`}
                     onClick={() => setFormData(prev => ({ ...prev, day_of_week: day }))}
                   >
@@ -177,7 +177,7 @@ export default function ScheduleFormModal({
 
             {/* Training Type */}
             <div className="mb-6">
-              <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-100 mb-3">
                 <Users size={16} />
                 Training Type
               </label>
@@ -189,7 +189,7 @@ export default function ScheduleFormModal({
                     className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl font-medium transition-all duration-200 border ${
                       formData.training_type === type 
                         ? 'bg-primary text-white border-primary' 
-                        : 'bg-background-secondary text-text-secondary border-border hover:border-primary/50 hover:bg-primary/10'
+                        : 'bg-slate-800/70 text-slate-400 border-slate-700 hover:border-primary/50 hover:bg-primary/10'
                     }`}
                     onClick={() => setFormData(prev => ({ ...prev, training_type: type }))}
                   >
@@ -203,14 +203,14 @@ export default function ScheduleFormModal({
             {/* Time Selection */}
             <div className="flex gap-4 mb-6">
               <div className="flex-1">
-                <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-100 mb-2">
                   <Clock size={14} />
                   Start Time
                 </label>
                 <select
                   value={formData.start_time}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                  className="w-full p-3 bg-background-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-primary transition-colors duration-200"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-primary transition-colors duration-200"
                 >
                   {TIME_OPTIONS.map(time => (
                     <option key={time} value={time}>
@@ -221,14 +221,14 @@ export default function ScheduleFormModal({
               </div>
 
               <div className="flex-1">
-                <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-100 mb-2">
                   <Clock size={14} />
                   End Time
                 </label>
                 <select
                   value={formData.end_time}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                  className="w-full p-3 bg-background-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-primary transition-colors duration-200"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-primary transition-colors duration-200"
                 >
                   {TIME_OPTIONS.map(time => (
                     <option key={time} value={time}>
@@ -240,12 +240,12 @@ export default function ScheduleFormModal({
             </div>
 
             {errors.time && (
-              <div className="text-danger text-xs mt-1">{errors.time}</div>
+              <div className="text-red-500 text-xs mt-1">{errors.time}</div>
             )}
 
             {/* End Date (Optional) */}
             <div className="mb-6">
-              <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-100 mb-2">
                 <Calendar size={14} />
                 End Date (Optional)
               </label>
@@ -253,11 +253,11 @@ export default function ScheduleFormModal({
                 type="date"
                 value={formData.until}
                 onChange={(e) => setFormData(prev => ({ ...prev, until: e.target.value }))}
-                className="w-full p-3 bg-background-primary border border-border rounded-lg text-text-primary text-sm focus:outline-none focus:border-primary transition-colors duration-200"
+                className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-primary transition-colors duration-200"
                 min={new Date().toISOString().split('T')[0]}
               />
               {errors.until && (
-                <div className="text-danger text-xs mt-1">{errors.until}</div>
+                <div className="text-red-500 text-xs mt-1">{errors.until}</div>
               )}
             </div>
 
@@ -272,14 +272,14 @@ export default function ScheduleFormModal({
                     className="sr-only"
                   />
                   <div className={`w-12 h-7 rounded-full transition-colors duration-200 ${
-                    formData.active ? 'bg-primary' : 'bg-background-secondary'
+                    formData.active ? 'bg-primary' : 'bg-slate-800/70'
                   }`}>
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform duration-200 mt-1 ml-1 ${
                       formData.active ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </div>
                 </div>
-                <span className="text-sm font-medium text-text-primary">
+                <span className="text-sm font-medium text-slate-100">
                   {formData.active ? 'Active Schedule' : 'Inactive Schedule'}
                 </span>
               </label>
@@ -287,10 +287,10 @@ export default function ScheduleFormModal({
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 p-6 border-t border-border bg-background-primary">
+          <div className="flex justify-end gap-3 p-6 border-t border-slate-700 bg-slate-950">
             <button 
               type="button" 
-              className="px-5 py-2.5 border border-border bg-background-secondary text-text-secondary hover:bg-background-tertiary hover:text-text-primary rounded-lg transition-colors duration-200 font-medium"
+              className="px-5 py-2.5 border border-slate-700 bg-slate-800/70 text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 rounded-lg transition-colors duration-200 font-medium"
               onClick={onClose}
               disabled={loading}
             >
@@ -309,3 +309,4 @@ export default function ScheduleFormModal({
     </div>
   )
 }
+

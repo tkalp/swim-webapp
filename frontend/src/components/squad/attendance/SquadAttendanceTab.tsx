@@ -50,7 +50,7 @@ const SquadAttendanceTab: React.FC<SquadAttendanceTabProps> = ({ squadId }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
       </div>
     );
   }
@@ -71,12 +71,12 @@ const SquadAttendanceTab: React.FC<SquadAttendanceTabProps> = ({ squadId }) => {
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-transparent bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text">Attendance Metrics</h1>
-          <p className="text-text-secondary text-sm mt-1 font-medium">Track attendance rates and commitment across the squad</p>
+          <h1 className="text-3xl font-bold text-transparent bg-linear-to-r from-emerald-400 to-green-400 bg-clip-text">Attendance Metrics</h1>
+          <p className="text-slate-400 text-sm mt-1 font-medium">Track attendance rates and commitment across the squad</p>
         </div>
         
-        <div className="flex items-center gap-3 bg-background-elevated/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-border/40 shadow-lg">
-          <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Period:</span>
+        <div className="flex items-center gap-3 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Period:</span>
           <AttendanceHeader
             startDate={dateRange.start}
             endDate={dateRange.end}
@@ -95,3 +95,4 @@ const SquadAttendanceTab: React.FC<SquadAttendanceTabProps> = ({ squadId }) => {
 };
 
 export default SquadAttendanceTab;
+

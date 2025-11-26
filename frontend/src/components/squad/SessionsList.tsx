@@ -302,14 +302,14 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleAddSession}
-                className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-primary to-accent text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-200"
               >
                 <Plus size={18} />
                 Add Session
               </button>
               <button
                 onClick={handleCreateFromSchedule}
-                className="flex items-center gap-2 px-4 py-2.5 bg-background-elevated border border-primary/30 text-primary rounded-xl font-semibold text-sm hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/90 backdrop-blur-xl border border-cyan-500/30 text-cyan-400 rounded-xl font-semibold text-sm hover:bg-cyan-500/10 hover:scale-105 transition-all duration-200"
               >
                 <Calendar size={18} />
                 Create from Schedule
@@ -319,67 +319,52 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
         }
       />
 
-      {/* Date Range Toolbar - Modern Style */}
-      <div className="bg-linear-to-br from-background-elevated to-background-secondary/50 rounded-2xl border border-border/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl mb-6">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-linear-to-br from-accent to-primary rounded-xl flex items-center justify-center shadow-lg shadow-accent/25">
-            <CalendarRange className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-text-primary">Date Range</h3>
-            <p className="text-xs text-text-secondary">Filter sessions by period</p>
+      {/* Date Range Filter - Compact Style */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Period:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: "week" as const, label: "This Week" },
+              { key: "nextweek" as const, label: "Next Week" },
+              { key: "7d" as const, label: "Last 7 Days" },
+              { key: "30d" as const, label: "Last 30 Days" },
+              { key: "month" as const, label: "This Month" },
+              { key: "all" as const, label: "All Time" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                className={`group px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 ${
+                  dateRange === key
+                    ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/40 ring-2 ring-cyan-500/50"
+                    : "bg-slate-800/80 text-slate-400 hover:bg-slate-800/60 hover:text-slate-100 hover:shadow-md border border-slate-700/40 hover:border-cyan-500/30"
+                }`}
+                onClick={() => setDateRange(key)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
-
-        {/* Quick Preset Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {[
-            { key: "week" as const, label: "This Week" },
-            { key: "nextweek" as const, label: "Next Week" },
-            { key: "7d" as const, label: "Last 7 Days" },
-            { key: "30d" as const, label: "Last 30 Days" },
-            { key: "month" as const, label: "This Month" },
-            { key: "all" as const, label: "All Time" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              className={`group px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 ${
-                dateRange === key
-                  ? "bg-linear-to-r from-primary to-accent text-white shadow-lg shadow-primary/40 ring-2 ring-primary/50"
-                  : "bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-md border border-border/40 hover:border-primary/30"
-              }`}
-              onClick={() => setDateRange(key)}
-            >
-              {label}
-            </button>
-          ))}
-          
-          {/* Divider */}
-          <div className="h-8 w-px bg-border/40"></div>
-          
-          {/* Custom Date Range */}
-          <div className="flex items-center gap-2">
+        
+        {/* Custom Date Range */}
+        {dateRange === "custom" && (
+          <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
             <DateInput
               label=""
               value={customStart}
-              onChange={(value) => {
-                setCustomStart(value);
-                setDateRange("custom");
-              }}
+              onChange={(value) => setCustomStart(value)}
               placeholder="Start"
             />
-            <span className="text-text-tertiary font-medium text-sm">→</span>
+            <span className="text-slate-500 font-medium text-sm">→</span>
             <DateInput
               label=""
               value={customEnd}
-              onChange={(value) => {
-                setCustomEnd(value);
-                setDateRange("custom");
-              }}
+              onChange={(value) => setCustomEnd(value)}
               placeholder="End"
             />
           </div>
-        </div>
+        )}
       </div>
 
       {/* Stats Overview */}
@@ -432,74 +417,74 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
         <div className="mb-6 mt-6">
           <button
             onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-            className="flex items-center gap-3 p-3 rounded-lg bg-background-elevated border border-border hover:border-border-light transition-colors duration-200 text-xs"
+            className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 hover:border-slate-700/50 transition-colors duration-200 text-xs"
           >
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-accent rounded-full"></div>
-              <div className="w-2 h-2 bg-accent-purple rounded-full"></div>
-              <div className="w-2 h-2 bg-success rounded-full"></div>
-              <div className="w-2 h-2 bg-warning rounded-full"></div>
-              <div className="w-2 h-2 bg-danger rounded-full"></div>
-              <span className="text-text-secondary font-medium ml-1">Chart Colors</span>
+              <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-slate-400 font-medium ml-1">Chart Colors</span>
             </div>
             <ChevronDown 
               size={14} 
-              className={`text-text-muted transition-transform duration-200 ${
+              className={`text-slate-500 transition-transform duration-200 ${
                 isLegendExpanded ? 'rotate-180' : ''
               }`}
             />
           </button>
           
           {isLegendExpanded && (
-            <div className="mt-3 p-4 bg-background-elevated border border-border rounded-lg">
+            <div className="mt-3 p-4 bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg">
               <div className="grid grid-cols-2 gap-6 text-xs">
                 <div>
-                  <div className="text-text-secondary font-medium mb-3">Strokes</div>
+                  <div className="text-slate-400 font-medium mb-3">Strokes</div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#22D3EE' }}></div>
-                      <span className="text-text-muted">Freestyle</span>
+                      <span className="text-slate-500">Freestyle</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#8B5CF6' }}></div>
-                      <span className="text-text-muted">Backstroke</span>
+                      <span className="text-slate-500">Backstroke</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#10B981' }}></div>
-                      <span className="text-text-muted">Breaststroke</span>
+                      <span className="text-slate-500">Breaststroke</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#F59E0B' }}></div>
-                      <span className="text-text-muted">Butterfly</span>
+                      <span className="text-slate-500">Butterfly</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#EF4444' }}></div>
-                      <span className="text-text-muted">IM</span>
+                      <span className="text-slate-500">IM</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#6B7280' }}></div>
-                      <span className="text-text-muted">Choice</span>
+                      <span className="text-slate-500">Choice</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <div className="text-text-secondary font-medium mb-3">Activities</div>
+                  <div className="text-slate-400 font-medium mb-3">Activities</div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#22D3EE' }}></div>
-                      <span className="text-text-muted">Swim</span>
+                      <span className="text-slate-500">Swim</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#EF4444' }}></div>
-                      <span className="text-text-muted">Kick</span>
+                      <span className="text-slate-500">Kick</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#10B981' }}></div>
-                      <span className="text-text-muted">Pull</span>
+                      <span className="text-slate-500">Pull</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#F59E0B' }}></div>
-                      <span className="text-text-muted">Drill</span>
+                      <span className="text-slate-500">Drill</span>
                     </div>
                   </div>
                 </div>
@@ -532,19 +517,19 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
             );
 
             return (
-              <div key={s.id} className="group bg-linear-to-br from-background-elevated to-background-secondary/30 border border-border/60 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+              <div key={s.id} className="group bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl overflow-hidden hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300">
                 {/* Header with Date & Type */}
-                <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-border/40 px-5 py-4">
+                <div className="bg-linear-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-slate-700/40 px-5 py-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-semibold text-text-primary mb-0.5">
+                      <div className="text-sm font-semibold text-slate-100 mb-0.5">
                         {startDate.toLocaleDateString(undefined, {
                           weekday: "long",
                           month: "long",
                           day: "numeric",
                         })}
                       </div>
-                      <div className="text-xs text-text-secondary">
+                      <div className="text-xs text-slate-400">
                         {startDate.toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -557,12 +542,12 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-background-elevated/80 border border-border/40 rounded-lg">
-                        <Clock size={14} className="text-accent" />
-                        <span className="text-xs font-semibold text-text-primary">{duration} min</span>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 backdrop-blur-xl/80 border border-slate-700/40 rounded-lg">
+                        <Clock size={14} className="text-cyan-400" />
+                        <span className="text-xs font-semibold text-slate-100">{duration} min</span>
                       </div>
-                      <div className="px-3 py-1.5 bg-primary/15 border border-primary/30 rounded-lg">
-                        <span className="text-xs font-bold text-primary">{s.training_type}</span>
+                      <div className="px-3 py-1.5 bg-primary/15 border border-cyan-500/30 rounded-lg">
+                        <span className="text-xs font-bold text-cyan-400">{s.training_type}</span>
                       </div>
                     </div>
                   </div>
@@ -574,29 +559,29 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <FileText size={16} className="text-primary" />
-                          <span className="text-sm font-semibold text-text-primary">Workout Details</span>
+                          <FileText size={16} className="text-cyan-400" />
+                          <span className="text-sm font-semibold text-slate-100">Workout Details</span>
                         </div>
                         <button
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-primary rounded-lg transition-all duration-200 text-xs font-semibold group/btn"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-xs font-semibold group/btn"
                           onClick={() => handleViewWorkout(s.workout_id!)}
                         >
                           <span>View Full Workout</span>
                           <ChevronRight size={14} className="group-hover/btn:translate-x-0.5 transition-transform" />
                         </button>
                       </div>
-                      <div className="bg-background-secondary/40 rounded-xl p-3 border border-border/30 min-h-[280px]">
+                      <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 min-h-[280px]">
                         <WorkoutMiniChart workoutId={s.workout_id} />
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-background-tertiary/30 border border-dashed border-border/40 rounded-xl p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
-                      <FileText size={24} className="inline-block text-text-tertiary/60 mb-2" />
-                      <p className="text-sm font-medium text-text-secondary mb-1">No workout assigned</p>
-                      <p className="text-xs text-text-tertiary mb-3">Create a workout to add training details for this session</p>
+                    <div className="bg-slate-800/30 border border-dashed border-slate-700/40 rounded-xl p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
+                      <FileText size={24} className="inline-block text-slate-500/60 mb-2" />
+                      <p className="text-sm font-medium text-slate-400 mb-1">No workout assigned</p>
+                      <p className="text-xs text-slate-500 mb-3">Create a workout to add training details for this session</p>
                       {canManage && (
                         <button
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-primary rounded-lg transition-all duration-200 text-sm font-semibold"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-sm font-semibold"
                           onClick={() => navigate(`/workouts/create?sessionId=${s.id}`)}
                         >
                           <Plus size={16} />
@@ -609,19 +594,19 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
 
                 {/* Footer - Session Actions */}
                 {(canManage || canManageAttendance) && (
-                  <div className="border-t border-border/30 px-5 py-3">
+                  <div className="border-t border-slate-700/30 px-5 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       {canManage && (
                         <>
                           <button
-                            className="p-2 hover:bg-blue-500/10 text-text-secondary hover:text-blue-400 rounded-lg transition-all duration-200"
+                            className="p-2 hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 rounded-lg transition-all duration-200"
                             onClick={() => handlePracticeNotes(s.id, s.start_date, 'pre')}
                             title="Pre-practice notes"
                           >
                             <ClipboardList size={16} />
                           </button>
                           <button
-                            className="p-2 hover:bg-purple-500/10 text-text-secondary hover:text-purple-400 rounded-lg transition-all duration-200"
+                            className="p-2 hover:bg-purple-500/10 text-slate-400 hover:text-purple-400 rounded-lg transition-all duration-200"
                             onClick={() => handlePracticeNotes(s.id, s.start_date, 'post')}
                             title="Post-practice notes"
                           >
@@ -631,7 +616,7 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
                       )}
                       {canManageAttendance && (
                         <button
-                          className="p-2 hover:bg-accent/10 text-text-secondary hover:text-accent rounded-lg transition-all duration-200"
+                          className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
                           onClick={() => handleTakeAttendance(s.id, s.start_date)}
                           title="Take attendance"
                         >
@@ -641,14 +626,14 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
                       {canManage && (
                         <>
                           <button
-                            className="p-2 hover:bg-primary/10 text-text-secondary hover:text-primary rounded-lg transition-all duration-200"
+                            className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
                             onClick={() => handleEditSession(s)}
                             title="Edit session"
                           >
                             <Edit2 size={16} />
                           </button>
                           <button
-                            className="p-2 hover:bg-danger/10 text-text-secondary hover:text-danger rounded-lg transition-all duration-200"
+                            className="p-2 hover:bg-red-500/10 text-slate-400 hover:text-red-400 rounded-lg transition-all duration-200"
                             onClick={() => handleDeleteSession(s.id)}
                             title="Delete session"
                           >

@@ -12,10 +12,10 @@ export function SquadPageHeader({ title, subtitle, actions }: SquadPageHeaderPro
     <div className="mb-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-100 tracking-tight mb-2">
             {title}
           </h1>
-          <p className="text-text-secondary text-base">
+          <p className="text-slate-400 text-base">
             {subtitle}
           </p>
         </div>
@@ -29,3 +29,4 @@ export function SquadPageHeader({ title, subtitle, actions }: SquadPageHeaderPro
     </div>
   );
 }
+

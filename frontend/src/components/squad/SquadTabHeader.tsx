@@ -15,7 +15,7 @@ export function SquadTabHeader({ title, subtitle, actions }: SquadTabHeaderProps
           {title}
         </h1>
         {subtitle && (
-          <p className="text-text-secondary text-sm mt-1 font-medium">
+          <p className="text-slate-400 text-sm mt-1 font-medium">
             {subtitle}
           </p>
         )}
@@ -24,3 +24,4 @@ export function SquadTabHeader({ title, subtitle, actions }: SquadTabHeaderProps
     </div>
   );
 }
+

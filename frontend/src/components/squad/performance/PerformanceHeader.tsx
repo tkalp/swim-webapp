@@ -19,7 +19,7 @@ export const PerformanceHeader: React.FC<PerformanceHeaderProps> = ({
         onChange={(value) => onDateChange('start', value)}
         placeholder="Start date"
       />
-      <span className="text-text-tertiary font-medium text-sm">→</span>
+      <span className="text-slate-500 font-medium text-sm">→</span>
       <DateInput
         value={endDate}
         onChange={(value) => onDateChange('end', value)}
@@ -28,3 +28,4 @@ export const PerformanceHeader: React.FC<PerformanceHeaderProps> = ({
     </div>
   );
 };
+

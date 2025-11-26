@@ -24,16 +24,16 @@ function SessionsPerWeekChart({
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center text-accent">
               <Calendar size={20} />
             </div>
-            <h3 className="text-lg font-semibold text-text-primary">Sessions Per Week</h3>
+            <h3 className="text-lg font-semibold text-slate-100">Sessions Per Week</h3>
           </div>
-          <p className="text-sm text-text-secondary mb-3">Weekly training frequency</p>
+          <p className="text-sm text-slate-400 mb-3">Weekly training frequency</p>
           {total > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
                 <TrendingUp size={16} className="text-accent" />
                 <span className="text-2xl font-bold bg-gradient-to-r from-accent via-primary to-primary-dark bg-clip-text text-transparent">{total}</span>
               </div>
-              <span className="text-sm text-text-secondary">total sessions</span>
+              <span className="text-sm text-slate-400">total sessions</span>
             </div>
           )}
         </div>
@@ -114,14 +114,14 @@ function SessionsPerWeekChart({
       </div>
       
       {bestWeek && (
-        <div className="mt-6 pt-4 border-t border-border/50">
+        <div className="mt-6 pt-4 border-t border-slate-700/50">
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-accent/10 to-primary/10 rounded-xl border border-accent/20">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/30 to-primary/30 flex items-center justify-center">
               <Trophy size={16} className="text-accent" />
             </div>
             <div>
-              <p className="text-sm text-text-secondary">Best week in range</p>
-              <p className="text-text-primary font-semibold">
+              <p className="text-sm text-slate-400">Best week in range</p>
+              <p className="text-slate-100 font-semibold">
                 <span className="text-accent font-bold">{bestWeek.week}</span> with{' '}
                 <span className="text-primary font-bold">{bestWeek.sessions}</span> sessions
               </p>
@@ -134,3 +134,4 @@ function SessionsPerWeekChart({
 }
 
 export default memo(SessionsPerWeekChart);
+
