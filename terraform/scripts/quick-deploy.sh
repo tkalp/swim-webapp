@@ -22,14 +22,8 @@ git fetch origin
 git checkout feature/add-search-swimmer-feature
 git pull origin feature/add-search-swimmer-feature
 
-echo "🛑 Stopping containers..."
-docker-compose down
-
-echo "🔨 Building new images..."
-docker-compose build --no-cache
-
-echo "🚀 Starting containers..."
-docker-compose up -d
+echo "🔄 Restarting services..."
+docker-compose up -d --build
 
 echo "⏳ Waiting for containers to be ready..."
 sleep 5
