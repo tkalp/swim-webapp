@@ -39,6 +39,47 @@ class WorkoutParser:
             'sprint': r'\b(?:sprint|sp)\b'
         }
         
+        # Equipment patterns (Phase 1)
+        self.equipment_patterns = {
+            'fins': r'\b(?:fins?|flippers?)\b',
+            'paddles': r'\b(?:paddles?|pads?)\b',
+            'buoy': r'\b(?:buoy|pull\s*buoy)\b',
+            'snorkel': r'\b(?:snorkel|snk)\b',
+            'band': r'\b(?:band|ankle\s*band)\b',
+            'board': r'\b(?:board|kickboard|kb)\b',
+            'parachute': r'\b(?:parachute|chute)\b',
+            'tempo_trainer': r'\b(?:tempo\s*trainer|tt)\b'
+        }
+        
+        # Drill patterns (Phase 2)
+        self.drill_patterns = {
+            'catch_up': r'\b(?:catch\s*up|catchup)\b',
+            'single_arm': r'\b(?:single\s*arm|sa|one\s*arm)\b',
+            'fur_trader': r'\b(?:fur\s*trader)\b',
+            'sl_kick': r'\b(?:sl\s*kick|streamline\s*kick)\b',
+            'spin_im': r'\b(?:spin\s*im)\b',
+            'tarzan': r'\b(?:tarzan)\b',
+            'fist_drill': r'\b(?:fist|fists)\b',
+            'fingertip_drag': r'\b(?:fingertip\s*drag|ftd)\b',
+            '6_kick': r'\b(?:6\s*kick|six\s*kick)\b',
+            '3_stroke': r'\b(?:3\s*stroke|three\s*stroke)\b',
+            'underwater': r'\b(?:underwater|uw)\b',
+            'vertical_kick': r'\b(?:vertical\s*kick|vk)\b',
+            'sculling': r'\b(?:scull|sculling)\b'
+        }
+        
+        # Intensity patterns (Phase 1)
+        self.intensity_patterns = {
+            'build': r'\b(?:build|building)\b',
+            'descend': r'\b(?:descend|descending|desc)\b',
+            'negative_split': r'\b(?:negative\s*split|neg\s*split|ns)\b',
+            'fast': r'\b(?:fast|hard|strong)\b',
+            'easy': r'\b(?:easy|ez|light|recovery)\b',
+            'moderate': r'\b(?:moderate|mod)\b',
+            'max': r'\b(?:max|maximum|all\s*out)\b',
+            'pace_target': r'\b(?:pb|pr|race\s*pace|goal\s*pace)(?:\s*[+\-]\s*\d+)?\b'
+        }
+        
         # Distance patterns
         self.set_pattern = r'(\d+)\s*x\s*(\d+)'
         self.standalone_pattern = r'^\s*(\d+)\s*(?:m|meters|yds|yards)?\s+'
@@ -49,9 +90,21 @@ class WorkoutParser:
         self.time_pattern = r'@\s*(\d+):(\d+)'
         self.interval_pattern = r'(\d+):(\d+)'
         
+        # Progressive interval patterns (Phase 3)
+        self.progressive_interval_pattern = r'@\s*(\d+:\d+(?:\s*/\s*\d+:\d+)+)'
+        
         # Mixed breakdown patterns (slash and plus notation)
         self.mixed_breakdown_pattern = r'as\s+(.+?)(?:\s+on\s+|\s*$)'
         self.component_separator_pattern = r'[/+]'
+        
+        # Distance sub-component pattern (Phase 2)
+        self.distance_component_pattern = r'(\d+)\s*([a-zA-Z\s]+?)(?:\s*[-–—]\s*|\s*$)'
+        
+        # Cycle count pattern (Phase 3)
+        self.cycle_pattern = r'by\s+(\d+)\s+cycles?'
+        
+        # Superset/bracket pattern (Phase 3)
+        self.superset_pattern = r'(\d+)\s*x\s*\[([^\]]+)\]\s*(?:\+\s*(.+))?'
         
         # Round-based set patterns
         self.round_pattern = r'^(\d+)\s*(?:x|rounds?)\s*(?:of\s*)?$'
@@ -166,8 +219,16 @@ class WorkoutParser:
                 i += 1
                 continue
             
+            # PHASE 3: Check for superset patterns BEFORE non-swimming check (e.g., "3 x [50 + 100] + 30 rest")
+            superset_info = self._parse_superset(line)
+            if superset_info:
+                sets.append(superset_info)
+                i += 1
+                continue
+            
             if self._is_non_swimming_activity(line):
                 i += 1
+                continue
                 continue
                 
             # Check for traditional set patterns (e.g., "4 x 100")
@@ -319,6 +380,15 @@ class WorkoutParser:
     def _create_set_info(self, reps: int, unit_distance: int, line: str) -> Dict:
         """Create standardized set information dictionary"""
         total_distance = reps * unit_distance
+        
+        # Extract new fields (Phases 1-3)
+        equipment = self.identify_equipment(line)
+        intensity = self.extract_intensity_markers(line)
+        drill_name = self.identify_drill(line)
+        cycle_count = self.extract_cycle_count(line)
+        interval_time = self.extract_interval_time(line)
+        is_progressive = self.is_progressive_interval(line)
+        
         return {
             'reps': reps,
             'distance': unit_distance,  # Distance per rep (unit distance)
@@ -328,7 +398,12 @@ class WorkoutParser:
             'stroke': self.identify_stroke(line),
             'activity': self.identify_activity(line),
             'energy_zone': self.identify_energy_zone(line),
-            'interval_time': self.extract_interval_time(line)
+            'interval_time': interval_time,
+            'equipment': equipment,  # Phase 1
+            'intensity': intensity,  # Phase 1
+            'drill_name': drill_name,  # Phase 2
+            'cycle_count': cycle_count,  # Phase 3
+            'is_progressive': is_progressive  # Phase 3
         }
     
     def _parse_indented_breakdown(self, reps: int, total_distance: int, parent_line: str, breakdown_lines: List[str]) -> List[Dict]:
@@ -372,6 +447,9 @@ class WorkoutParser:
                         'total_distance': comp_distance * reps,  # Total across all reps
                         'stroke': self.identify_stroke(clean_line),
                         'activity': self.identify_activity(clean_line + " " + parent_line),
+                        'equipment': self.identify_equipment(clean_line),
+                        'intensity': self.extract_intensity_markers(clean_line),
+                        'drill_name': self.identify_drill(clean_line),
                         'description': breakdown_line.strip()
                     })
             
@@ -417,6 +495,9 @@ class WorkoutParser:
                         'total_distance': comp_total_distance,
                         'stroke': self.identify_stroke(clean_line),
                         'activity': self.identify_activity(clean_line + " " + parent_line),
+                        'equipment': self.identify_equipment(clean_line),
+                        'intensity': self.extract_intensity_markers(clean_line),
+                        'drill_name': self.identify_drill(clean_line),
                         'description': breakdown_line.strip()
                     })
             
@@ -522,6 +603,26 @@ class WorkoutParser:
         
         description_part = breakdown_line[colon_index + 1:].strip()
         
+        # PHASE 2: Check for distance sub-components (e.g., "30 Kick - 70 Swim")
+        distance_components = self._parse_distance_components_in_breakdown(description_part, unit_distance)
+        if distance_components:
+            # Create a component for each distance sub-component
+            result_components = []
+            for dist_comp in distance_components:
+                result_components.append({
+                    'reps': component_reps,
+                    'distance': dist_comp['distance'],
+                    'total_distance': dist_comp['distance'] * component_reps,
+                    'stroke': dist_comp['stroke'],
+                    'activity': dist_comp['activity'],
+                    'drill_name': dist_comp['drill_name'],
+                    'equipment': dist_comp['equipment'],
+                    'intensity': dist_comp['intensity'],
+                    'interval_time': self.extract_interval_time(breakdown_line),
+                    'description': f"{breakdown_line.split(':')[0]}: {description_part}"
+                })
+            return result_components
+        
         # Check if this contains slash-separated sub-components with distances
         if '/' in description_part and re.search(r'\d+', description_part):
             # Parse slash-separated sub-components (e.g., "25 Free Kick / 25 Fly Kick")
@@ -541,6 +642,9 @@ class WorkoutParser:
                         'total_distance': sub_total_distance,
                         'stroke': self.identify_stroke(sub_part),
                         'activity': self.identify_activity(sub_part),
+                        'equipment': self.identify_equipment(sub_part),
+                        'intensity': self.extract_intensity_markers(sub_part),
+                        'drill_name': self.identify_drill(sub_part),
                         'interval_time': self.extract_interval_time(breakdown_line),
                         'description': f"{breakdown_line.split(':')[0]}: {sub_part}"
                     })
@@ -567,6 +671,9 @@ class WorkoutParser:
                 'total_distance': component_reps * unit_distance,
                 'stroke': stroke,
                 'activity': activity,
+                'equipment': self.identify_equipment(breakdown_line),
+                'intensity': self.extract_intensity_markers(breakdown_line),
+                'drill_name': self.identify_drill(breakdown_line),
                 'interval_time': self.extract_interval_time(breakdown_line),
                 'description': breakdown_line
             })
@@ -974,17 +1081,45 @@ class WorkoutParser:
         return 'swim'
     
     def identify_energy_zone(self, text: str) -> str:
-        """Identify energy zone"""
+        """Identify energy zone based on explicit markers or intensity descriptors"""
         text_lower = text.lower()
         
+        # First check for explicit energy zone markers (EN1, EN2, SP1, etc.)
         for zone, pattern in self.energy_zone_patterns.items():
             if re.search(pattern, text_lower):
                 return zone
         
+        # If no explicit zone, infer from intensity markers
+        # Race pace, PB, PR (with or without modifiers like +10, -5) -> sprint zone
+        if re.search(r'\b(?:race\s*pace|pb|pr|max|maximum|all\s*out|sprint)(?:\s*[+\-]\s*\d+)?', text_lower):
+            return 'sprint'
+        
+        # Fast, hard, strong -> EN3 (threshold/anaerobic)
+        if re.search(r'\b(?:fast|hard|strong)\b', text_lower):
+            return 'en3'
+        
+        # Build, descend -> EN2 (aerobic with variation)
+        if re.search(r'\b(?:build|descend|negative\s*split)\b', text_lower):
+            return 'en2'
+        
+        # Easy, recovery, light -> EN1 (aerobic base)
+        if re.search(r'\b(?:easy|ez|light|recovery)\b', text_lower):
+            return 'en1'
+        
+        # Moderate -> EN2
+        if re.search(r'\b(?:moderate|mod)\b', text_lower):
+            return 'en2'
+        
+        # Default to EN1 if no intensity markers found
         return 'en1'
     
     def extract_interval_time(self, text: str) -> Optional[float]:
-        """Extract interval time in seconds"""
+        """Extract interval time in seconds (returns first interval for progressive sets)"""
+        # PHASE 3: Check for progressive intervals first
+        progressive = self.extract_progressive_intervals(text)
+        if progressive and len(progressive) > 0:
+            return progressive[0]  # Return first interval for backward compatibility
+        
         # Check for "on X:XX" pattern (most common in swim workouts)
         on_time_match = re.search(r'\bon\s+(\d+):(\d+)', text, re.IGNORECASE)
         if on_time_match:
@@ -1010,3 +1145,170 @@ class WorkoutParser:
             return minutes * 60 + seconds
         
         return None
+    
+    # ============================================================================
+    # PHASE 1: Equipment and Intensity Recognition
+    # ============================================================================
+    
+    def identify_equipment(self, text: str) -> List[str]:
+        """Identify equipment mentioned in the text"""
+        text_lower = text.lower()
+        equipment = []
+        
+        for equip_name, pattern in self.equipment_patterns.items():
+            if re.search(pattern, text_lower):
+                equipment.append(equip_name)
+        
+        return equipment
+    
+    def extract_intensity_markers(self, text: str) -> Dict[str, any]:
+        """Extract intensity markers and pace targets from text"""
+        text_lower = text.lower()
+        intensity = {
+            'type': None,
+            'pace_target': None,
+            'modifier': None
+        }
+        
+        # Check for intensity types
+        for intensity_type, pattern in self.intensity_patterns.items():
+            if re.search(pattern, text_lower):
+                intensity['type'] = intensity_type
+                break
+        
+        # Check for pace targets with modifiers (e.g., PB+5, PR-3)
+        pace_match = re.search(r'\b(pb|pr|race\s*pace|goal\s*pace)\s*([+\-])\s*(\d+)\b', text_lower)
+        if pace_match:
+            intensity['pace_target'] = pace_match.group(1).replace(' ', '_')
+            intensity['modifier'] = f"{pace_match.group(2)}{pace_match.group(3)}"
+        elif re.search(r'\b(pb|pr|race\s*pace|goal\s*pace)\b', text_lower):
+            # Pace target without modifier
+            pace_simple = re.search(r'\b(pb|pr|race\s*pace|goal\s*pace)\b', text_lower)
+            intensity['pace_target'] = pace_simple.group(1).replace(' ', '_')
+        
+        return intensity
+    
+    # ============================================================================
+    # PHASE 2: Drill Recognition and Distance Sub-components
+    # ============================================================================
+    
+    def identify_drill(self, text: str) -> Optional[str]:
+        """Identify drill name from text"""
+        text_lower = text.lower()
+        
+        for drill_name, pattern in self.drill_patterns.items():
+            if re.search(pattern, text_lower):
+                return drill_name
+        
+        return None
+    
+    def _parse_distance_components_in_breakdown(self, line: str, total_distance: int) -> List[Dict]:
+        """Parse distance sub-components within a breakdown line (e.g., '30 Kick - 70 Swim')"""
+        components = []
+        
+        # Match patterns like "30 Kick - 70 Swim" or "100 Swim — 100 Fur Trader"
+        sub_component_pattern = r'(\d+)\s+([a-zA-Z\s]+?)(?:\s*[-–—]\s*|$)'
+        matches = re.finditer(sub_component_pattern, line)
+        
+        accumulated_distance = 0
+        for match in matches:
+            distance = int(match.group(1))
+            description = match.group(2).strip()
+            accumulated_distance += distance
+            
+            # Don't exceed total distance
+            if accumulated_distance > total_distance:
+                break
+            
+            component = {
+                'distance': distance,
+                'stroke': self.identify_stroke(description),
+                'activity': self.identify_activity(description),
+                'drill_name': self.identify_drill(description),
+                'equipment': self.identify_equipment(description),
+                'intensity': self.extract_intensity_markers(description)
+            }
+            components.append(component)
+        
+        # Only return if we successfully parsed components that match the total
+        if components and accumulated_distance == total_distance:
+            return components
+        
+        return []
+    
+    # ============================================================================
+    # PHASE 3: Progressive Intervals, Supersets, and Cycle Counts
+    # ============================================================================
+    
+    def is_progressive_interval(self, text: str) -> bool:
+        """Check if the set has progressive intervals (multiple time values)"""
+        # Look for pattern like "@ 1:30 / 1:25 / 1:20"
+        return bool(re.search(self.progressive_interval_pattern, text))
+    
+    def extract_progressive_intervals(self, text: str) -> Optional[List[float]]:
+        """Extract progressive interval times in seconds"""
+        match = re.search(self.progressive_interval_pattern, text)
+        if not match:
+            return None
+        
+        # Split the matched group by / to get individual times
+        times_str = match.group(1)
+        time_parts = re.split(r'\s*/\s*', times_str)
+        
+        intervals = []
+        for time_part in time_parts:
+            time_match = re.match(r'(\d+):(\d+)', time_part)
+            if time_match:
+                minutes, seconds = map(int, time_match.groups())
+                intervals.append(minutes * 60 + seconds)
+        
+        return intervals if intervals else None
+    
+    def extract_cycle_count(self, text: str) -> Optional[int]:
+        """Extract cycle count from text (e.g., 'by 8 cycles')"""
+        match = re.search(self.cycle_pattern, text, re.IGNORECASE)
+        if match:
+            return int(match.group(1))
+        return None
+    
+    def _parse_superset(self, line: str) -> Optional[Dict]:
+        """Parse superset notation like '3 x [50 + 100] + 30 rest'"""
+        match = re.search(self.superset_pattern, line)
+        if not match:
+            return None
+        
+        reps = int(match.group(1))
+        inner_content = match.group(2)
+        rest_content = match.group(3) if match.group(3) else None
+        
+        # Parse the inner content for distances
+        inner_distances = re.findall(r'(\d+)', inner_content)
+        
+        if not inner_distances:
+            return None
+        
+        # Calculate total distance per rep
+        distances = [int(d) for d in inner_distances]
+        unit_distance = sum(distances)
+        
+        superset_info = {
+            'reps': reps,
+            'distance': unit_distance,
+            'unit_distance': unit_distance,
+            'total_distance': reps * unit_distance,
+            'line_text': line,
+            'components': distances,
+            'rest': rest_content,
+            'is_superset': True,
+            'stroke': self.identify_stroke(line),
+            'activity': self.identify_activity(line),
+            'energy_zone': self.identify_energy_zone(line),
+            'interval_time': self.extract_interval_time(line),
+            'equipment': self.identify_equipment(line),
+            'intensity': self.extract_intensity_markers(line),
+            'drill_name': self.identify_drill(line),
+            'cycle_count': self.extract_cycle_count(line),
+            'is_progressive': self.is_progressive_interval(line)
+        }
+        
+        return superset_info

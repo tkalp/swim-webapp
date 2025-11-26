@@ -14,7 +14,6 @@ export function WorkoutNameInput({ value, onChange, autoFocus }: WorkoutNameInpu
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="e.g., Sprint Training Session, Endurance Set"
-      required
       autoFocus={autoFocus}
     />
   );

@@ -52,7 +52,7 @@ async def analyze_workout_text(
     
     try:
         analyzer = get_analyzer()  # Use singleton instance
-        analysis = analyzer.analyze_workout(request.workout_text, request.workout_id)
+        analysis = analyzer.analyze_workout_enhanced(request.workout_text, request.workout_id)
         
         # Add classification
         if 'error' not in analysis:

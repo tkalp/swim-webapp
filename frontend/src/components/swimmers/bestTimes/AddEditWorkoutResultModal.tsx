@@ -220,7 +220,7 @@ export default function AddEditWorkoutResultModal({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title={isEdit ? 'Edit Workout Result' : 'Add Workout Result'}
+      title={isEdit ? 'Edit Result' : 'Add Result'}
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -1,5 +1,6 @@
 // components/WorkoutDescriptionTextarea.tsx
 import { Textarea } from '@/components/ui';
+import { WorkoutWritingGuide } from '@/components/workout';
 
 type WorkoutDescriptionTextareaProps = {
   value: string;
@@ -23,16 +24,26 @@ export function WorkoutDescriptionTextarea({ value, onChange }: WorkoutDescripti
   };
 
   return (
-    <Textarea
-      label="Workout Description"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onKeyDown={handleKeyDown}
-      placeholder={"Warm-up: 400m easy freestyle\nMain Set: 8 x 50m freestyle @ 1:00\nCool-down: 200m easy choice"}
-      required
-      rows={12}
-      hint="Use Tab for indentation. Separate warm-up, main set, and cool-down sections."
-      className="font-mono text-sm"
-    />
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <label className="block text-sm font-semibold text-text-primary">
+            Workout Description
+            <span className="text-red-400 ml-1">*</span>
+          </label>
+        </div>
+        <WorkoutWritingGuide />
+      </div>
+      
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={"Warm-up: 400m easy freestyle\nMain Set: 8 x 50m freestyle @ 1:00\nCool-down: 200m easy choice"}
+        rows={12}
+        hint="Use Tab for indentation. Separate warm-up, main set, and cool-down sections."
+        className="font-mono text-sm"
+      />
+    </div>
   );
 }

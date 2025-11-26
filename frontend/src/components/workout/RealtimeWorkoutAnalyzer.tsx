@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { BarChart3, Target, Clock, Waves, ChevronDown, ChevronUp, Activity, Flame, Edit2 } from 'lucide-react';
+import { BarChart3, Target, Clock, Waves, ChevronDown, ChevronUp, Activity, Flame, Edit2, Wrench } from 'lucide-react';
 import { analyzeWorkout, type WorkoutAnalysis } from '@/services/workoutAnalysisService';
 import { useAnimatedValues } from '@/hooks/useAnimatedValue';
 
@@ -366,82 +366,68 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
       </div>
 
       {!isCollapsed && (
-        <div className="p-2.5 sm:p-3 md:p-4 space-y-2.5 sm:space-y-3 md:space-y-4">
+        <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 space-y-2 sm:space-y-2.5 md:space-y-3 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* Key Metrics Cards - Clickable to Edit - Responsive Grid */}
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             <div 
-              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 lg:p-4 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
+              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
               onClick={() => onEditMetric?.('distance', Math.round(animatedMetrics.totalMeters))}
               title="Click to edit distance"
             >
-              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2">
-                <Waves className="text-primary" size={12} />
-                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-primary truncate">Distance</span>
-                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
+              <div className="flex items-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
+                <Waves className="text-cyan-400" size={11} />
+                <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-cyan-400 truncate">Distance</span>
+                <Edit2 size={8} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
               </div>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-100 tabular-nums truncate">{Math.round(animatedMetrics.totalMeters)}m</p>
-              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">{Math.round(animatedMetrics.totalSets)} sets</p>
+              <p className="text-base sm:text-lg md:text-xl font-bold text-slate-100 tabular-nums truncate">{Math.round(animatedMetrics.totalMeters)}m</p>
+              <p className="text-[9px] sm:text-[10px] md:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">{Math.round(animatedMetrics.totalSets)} sets</p>
             </div>
             
             <div 
-              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 lg:p-4 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
+              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
               onClick={() => onEditMetric?.('duration', Math.round(animatedMetrics.estimatedDuration))}
               title="Click to edit duration"
             >
-              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2">
-                <Clock className="text-green-500" size={12} />
-                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-green-400 truncate">Duration</span>
-                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
+              <div className="flex items-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
+                <Clock className="text-green-400" size={11} />
+                <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-green-400 truncate">Duration</span>
+                <Edit2 size={8} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
               </div>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-100 tabular-nums truncate">{formatTime(animatedMetrics.estimatedDuration)}</p>
-              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">{formatTime(animatedMetrics.swimTime)} swim</p>
-            </div>
-
-            <div 
-              className="bg-slate-800/50 rounded-lg p-2 sm:p-2.5 md:p-3 lg:p-4 transition-colors duration-200 hover:bg-slate-800/70 cursor-pointer group relative touch-manipulation will-change-auto active:scale-95"
-              onClick={() => onEditMetric?.('calories', Math.round(animatedMetrics.calories))}
-              title="Click to edit calories"
-            >
-              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2">
-                <Flame className="text-orange-500" size={12} />
-                <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-orange-400 truncate">Calories</span>
-                <Edit2 size={10} className="ml-auto text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
-              </div>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-100 tabular-nums truncate">{Math.round(animatedMetrics.calories)}</p>
-              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">estimated</p>
+              <p className="text-base sm:text-lg md:text-xl font-bold text-slate-100 tabular-nums truncate">{formatTime(animatedMetrics.estimatedDuration)}</p>
+              <p className="text-[9px] sm:text-[10px] md:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">{formatTime(animatedMetrics.swimTime)} swim</p>
             </div>
           </div>
 
           {/* Stroke Distribution - Enhanced with Gradients */}
           {strokeChartData.length > 0 && (
-            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-2.5 sm:p-3 md:p-4 border border-slate-700/50">
-              <h3 className="text-xs sm:text-sm font-semibold text-slate-200 mb-2.5 sm:mb-3 md:mb-4 flex items-center gap-1.5 sm:gap-2">
+            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg p-2.5 sm:p-3 md:p-3.5 border border-slate-700/50">
+              <h3 className="text-xs sm:text-sm md:text-base font-semibold text-slate-200 mb-2 sm:mb-2.5 md:mb-3 flex items-center gap-1.5 sm:gap-2">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                  <Waves size={10} className="text-cyan-400 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
+                  <Waves size={11} className="text-cyan-400 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
                 </div>
                 Stroke Distribution
               </h3>
-              <div className="space-y-2 sm:space-y-2.5 md:space-y-3">
+              <div className="space-y-2 sm:space-y-2.5">
                 {strokeChartData.map((item, index) => {
                   const animatedPercentage = animatedStrokeValues[`stroke_${item.label.toLowerCase()}`] || item.percentage;
                   return (
                     <div key={`${item.label}-${index}`} className="group">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="flex items-center justify-between mb-1 sm:mb-1.5">
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                           <div
-                            className="w-3.5 h-3.5 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
+                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
                             style={{ 
                               background: item.colors.bg,
                               boxShadow: `0 0 8px ${item.colors.glow}`
                             }}
                           />
-                          <span className="text-sm font-medium text-slate-200 truncate">{item.label}</span>
+                          <span className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-200 truncate">{item.label}</span>
                         </div>
-                        <span className="text-sm font-semibold text-slate-100 ml-3 tabular-nums">
+                        <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-slate-100 ml-2 tabular-nums">
                           {animatedPercentage.toFixed(1)}%
                         </span>
                       </div>
-                      <div className="h-2.5 bg-slate-700/50 rounded-full overflow-hidden relative">
+                      <div className="h-1.5 sm:h-2 bg-slate-700/50 rounded-full overflow-hidden relative">
                         <div
                           className="h-full rounded-full transition-all duration-700 ease-out relative"
                           style={{
@@ -462,34 +448,34 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
 
           {/* Activity Distribution - Enhanced with Gradients */}
           {activityChartData.length > 0 && (
-            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg md:rounded-xl p-2.5 sm:p-3 md:p-4 border border-slate-700/50">
-              <h3 className="text-xs sm:text-sm font-semibold text-slate-200 mb-2.5 sm:mb-3 md:mb-4 flex items-center gap-1.5 sm:gap-2">
+            <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg p-2.5 sm:p-3 md:p-3.5 border border-slate-700/50">
+              <h3 className="text-xs sm:text-sm md:text-base font-semibold text-slate-200 mb-2 sm:mb-2.5 md:mb-3 flex items-center gap-1.5 sm:gap-2">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-lg bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                  <Activity size={10} className="text-purple-400 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
+                  <Activity size={11} className="text-purple-400 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />
                 </div>
                 Activity Breakdown
               </h3>
-              <div className="space-y-2 sm:space-y-2.5 md:space-y-3">
+              <div className="space-y-2 sm:space-y-2.5">
                 {activityChartData.map((item, index) => {
                   const animatedPercentage = animatedActivityValues[`activity_${item.label.toLowerCase()}`] || item.percentage;
                   return (
                     <div key={`${item.label}-${index}`} className="group">
                       <div className="flex items-center justify-between mb-1 sm:mb-1.5">
-                        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                           <div
-                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
+                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
                             style={{ 
                               background: item.colors.bg,
                               boxShadow: `0 0 8px ${item.colors.glow}`
                             }}
                           />
-                          <span className="text-xs sm:text-sm font-medium text-slate-200 truncate">{item.label}</span>
+                          <span className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-200 truncate">{item.label}</span>
                         </div>
-                        <span className="text-xs sm:text-sm font-semibold text-slate-100 ml-2 sm:ml-3 tabular-nums">
+                        <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-slate-100 ml-2 tabular-nums">
                           {animatedPercentage.toFixed(1)}%
                         </span>
                       </div>
-                      <div className="h-2 sm:h-2.5 bg-slate-700/50 rounded-full overflow-hidden relative">
+                      <div className="h-1.5 sm:h-2 bg-slate-700/50 rounded-full overflow-hidden relative">
                         <div
                           className="h-full rounded-full transition-all duration-700 ease-out relative will-change-transform"
                           style={{
@@ -509,6 +495,78 @@ export default function RealtimeWorkoutAnalyzer({ workoutText, className = '', o
               </div>
             </div>
           )}
+
+          {/* Equipment & Energy Zones - Compact Pills Display */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Equipment Pills */}
+            {analysis.equipment_breakdown && Object.keys(analysis.equipment_breakdown).length > 0 && (
+              <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg p-2 sm:p-2.5 border border-slate-700/50 overflow-hidden">
+                <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
+                  <div className="w-4 h-4 rounded bg-linear-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center shrink-0">
+                    <Wrench size={9} className="text-amber-400 sm:w-2.5 sm:h-2.5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-slate-300">Equipment</span>
+                </div>
+                <div className="flex flex-wrap gap-1 sm:gap-1.5 max-h-16 sm:max-h-20 overflow-y-auto custom-scrollbar">
+                  {Object.entries(analysis.equipment_breakdown)
+                    .filter(([_, meters]) => meters > 0)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([equipment, meters]) => (
+                      <span
+                        key={equipment}
+                        className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-500/10 border border-amber-500/30 rounded text-[9px] sm:text-[10px] md:text-xs font-medium text-amber-300 shrink-0"
+                        title={`${meters}m`}
+                      >
+                        {equipment.charAt(0).toUpperCase() + equipment.slice(1)}
+                        <span className="text-amber-400/70 text-[8px] sm:text-[9px] tabular-nums">{meters}m</span>
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Energy Zones Pills */}
+            {analysis.energy_zone_breakdown && Object.keys(analysis.energy_zone_breakdown).length > 0 && (
+              <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 rounded-lg p-2 sm:p-2.5 border border-slate-700/50 overflow-hidden">
+                <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
+                  <div className="w-4 h-4 rounded bg-linear-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center shrink-0">
+                    <Activity size={9} className="text-red-400 sm:w-2.5 sm:h-2.5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-slate-300">Zones</span>
+                </div>
+                <div className="flex flex-wrap gap-1 sm:gap-1.5 max-h-16 sm:max-h-20 overflow-y-auto custom-scrollbar">
+                  {Object.entries(analysis.energy_zone_breakdown)
+                    .filter(([zone, meters]) => zone !== 'total' && meters > 0)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([zone, meters]) => {
+                      const zoneColors: Record<string, string> = {
+                        'en1': 'bg-green-500/10 border-green-500/30 text-green-300',
+                        'en2': 'bg-blue-500/10 border-blue-500/30 text-blue-300',
+                        'en3': 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300',
+                        'sp1': 'bg-orange-500/10 border-orange-500/30 text-orange-300',
+                        'sp2': 'bg-red-500/10 border-red-500/30 text-red-300',
+                        'race': 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                      };
+                      const colorClass = zoneColors[zone.toLowerCase()] || 'bg-slate-500/10 border-slate-500/30 text-slate-300';
+                      const percentage = analysis.energy_zone_percentages?.[zone] 
+                        ? Math.round(analysis.energy_zone_percentages[zone] * 100) / 100 
+                        : 0;
+                      
+                      return (
+                        <span
+                          key={zone}
+                          className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 border rounded text-[9px] sm:text-[10px] md:text-xs font-medium ${colorClass} shrink-0`}
+                          title={`${meters}m (${percentage}%)`}
+                        >
+                          {zone.toUpperCase()}
+                          <span className="opacity-70 text-[8px] sm:text-[9px] tabular-nums">{percentage}%</span>
+                        </span>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

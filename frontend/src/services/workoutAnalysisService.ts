@@ -16,6 +16,8 @@ export interface WorkoutAnalysis {
   activity_percentages: Record<string, number>;
   energy_zone_breakdown: Record<string, number>;
   energy_zone_percentages: Record<string, number>;
+  equipment_breakdown?: Record<string, number>;
+  intensity_breakdown?: Record<string, number>;
   sets_details: Array<{
     distance: number;
     reps: number;

@@ -326,3 +326,100 @@ class WorkoutAnalyzer:
             classification_parts.append(activity_mod)
         
         return " - ".join(classification_parts)
+    
+    # ============================================================================
+    # Enhanced Analysis Methods (Phases 1-3)
+    # ============================================================================
+    
+    def _generate_equipment_breakdown(self, sets: List[Dict]) -> Dict:
+        """Generate equipment usage breakdown from sets"""
+        equipment_usage = {}
+        
+        for set_info in sets:
+            if set_info.get('equipment'):
+                for equip in set_info['equipment']:
+                    if equip not in equipment_usage:
+                        equipment_usage[equip] = 0
+                    equipment_usage[equip] += set_info['total_distance']
+            
+            # Also check breakdown components
+            if 'breakdown_components' in set_info and set_info['breakdown_components']:
+                for component in set_info['breakdown_components']:
+                    if component.get('equipment'):
+                        for equip in component['equipment']:
+                            if equip not in equipment_usage:
+                                equipment_usage[equip] = 0
+                            equipment_usage[equip] += component['total_distance']
+        
+        return {'breakdown': equipment_usage}
+    
+    def _generate_intensity_breakdown(self, sets: List[Dict]) -> Dict:
+        """Generate intensity type breakdown from sets"""
+        intensity_usage = {}
+        
+        for set_info in sets:
+            intensity = set_info.get('intensity', {})
+            if intensity and intensity.get('type'):
+                intensity_type = intensity['type']
+                if intensity_type not in intensity_usage:
+                    intensity_usage[intensity_type] = 0
+                intensity_usage[intensity_type] += set_info['total_distance']
+            
+            # Also check breakdown components
+            if 'breakdown_components' in set_info and set_info['breakdown_components']:
+                for component in set_info['breakdown_components']:
+                    comp_intensity = component.get('intensity', {})
+                    if comp_intensity and comp_intensity.get('type'):
+                        intensity_type = comp_intensity['type']
+                        if intensity_type not in intensity_usage:
+                            intensity_usage[intensity_type] = 0
+                        intensity_usage[intensity_type] += component['total_distance']
+        
+        return {'breakdown': intensity_usage}
+    
+    def _generate_drill_breakdown(self, sets: List[Dict]) -> Dict:
+        """Generate drill usage breakdown from sets"""
+        drill_usage = {}
+        
+        for set_info in sets:
+            if set_info.get('drill_name'):
+                drill = set_info['drill_name']
+                if drill not in drill_usage:
+                    drill_usage[drill] = 0
+                drill_usage[drill] += set_info['total_distance']
+            
+            # Also check breakdown components
+            if 'breakdown_components' in set_info and set_info['breakdown_components']:
+                for component in set_info['breakdown_components']:
+                    if component.get('drill_name'):
+                        drill = component['drill_name']
+                        if drill not in drill_usage:
+                            drill_usage[drill] = 0
+                        drill_usage[drill] += component['total_distance']
+        
+        return {'breakdown': drill_usage}
+    
+    def analyze_workout_enhanced(self, workout_text: str, workout_id: str = "CUSTOM") -> Dict:
+        """Complete analysis including Phase 1-3 enhancements"""
+        # Get base analysis
+        base_analysis = self.analyze_workout(workout_text, workout_id)
+        
+        # Add enhanced breakdowns
+        sets = self.parser.extract_sets(workout_text)
+        if sets:
+            equipment_analysis = self._generate_equipment_breakdown(sets)
+            intensity_analysis = self._generate_intensity_breakdown(sets)
+            drill_analysis = self._generate_drill_breakdown(sets)
+            
+            base_analysis['equipment_breakdown'] = equipment_analysis['breakdown']
+            base_analysis['intensity_breakdown'] = intensity_analysis['breakdown']
+            base_analysis['drill_breakdown'] = drill_analysis['breakdown']
+            
+            # Count progressive and superset workouts
+            progressive_count = sum(1 for s in sets if s.get('is_progressive'))
+            superset_count = sum(1 for s in sets if s.get('is_superset'))
+            
+            base_analysis['progressive_sets'] = progressive_count
+            base_analysis['superset_sets'] = superset_count
+        
+        return base_analysis

@@ -182,24 +182,6 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
     { value: "fly", label: "Butterfly" },
     { value: "im", label: "IM" },
   ];
-  const activityOptions: Option[] = [
-    { value: "", label: "All Activities" },
-    { value: "swim", label: "Swim" },
-    { value: "kick", label: "Kick" },
-    { value: "pull", label: "Pull" },
-  ];
-  const resultUnitsOptions: Option[] = [
-    { value: "", label: "All Pool Types" },
-    { value: "SCM", label: "SCM" },
-    { value: "LCM", label: "LCM" },
-    { value: "SCY", label: "SCY" },
-  ];
-
-  const sortOptions: Option[] = [
-    { value: "time", label: "Best Time" },
-    { value: "event", label: "Event" },
-    { value: "date", label: "Most Recent" },
-  ];
 
   return (
     <>
@@ -302,31 +284,6 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
             </div>
           </div>
         )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <CustomSelect
-            label="Activity"
-            value={filters.activity ?? ""}
-            onChange={(v) => setFilters((f) => ({ ...f, activity: v || undefined }))}
-            options={activityOptions}
-            placeholder="All Activities"
-          />
-
-          <CustomSelect
-            label="Pool Type"
-            value={filters.resultUnits ?? ""}
-            onChange={(v) => setFilters((f) => ({ ...f, resultUnits: v || undefined }))}
-            options={resultUnitsOptions}
-            placeholder="All Pool Types"
-          />
-
-          <CustomSelect
-            label="Sort By"
-            value={sortBy}
-            onChange={(v) => setSortBy(v as SortOption)}
-            options={sortOptions}
-          />
-        </div>
 
         {hasActiveFilters && (
           <div className="mt-3 flex justify-end">
