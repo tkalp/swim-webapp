@@ -46,7 +46,7 @@ export default function SwimmerPage() {
     const tabs = [];
     // Only show overview if there's attendance data
     if (totalAttendance > 0) {
-      tabs.push({ key: 'overview', label: 'Overview' });
+      tabs.push({ key: 'overview', label: 'Attendance' });
     }
     tabs.push({ key: 'bestTimes', label: 'Best Times' });
     tabs.push({ key: 'finaPoints', label: 'FINA Points' });

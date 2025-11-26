@@ -16,6 +16,9 @@ import RaceComparisonModal from '@/components/swimmers/bestTimes/RaceComparisonM
 import { X, AlertCircle, Activity, Edit2, Trash2, Calendar, Clock, ChevronDown, TrendingUp, TrendingDown, GitCompare, Award, Trophy } from "lucide-react";
 import { supabase } from '@/lib/supabase';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useToast } from '@/contexts/ToastContext';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function AttemptsModal({
   open,
@@ -53,11 +56,18 @@ export default function AttemptsModal({
   const tableParentRef = useRef<HTMLDivElement>(null);
   
   const { track } = useAnalytics();
+  const confirmDialog = useConfirmDialog();
+  const { showToast } = useToast();
 
   const handleDeleteAttempt = async (attemptId: string) => {
-    if (!confirm('Are you sure you want to delete this attempt? This action cannot be undone.')) {
-      return;
-    }
+    const confirmed = await confirmDialog.confirm({
+      title: 'Delete Attempt',
+      message: 'Are you sure you want to delete this attempt? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       const { error } = await supabase
@@ -74,8 +84,10 @@ export default function AttemptsModal({
       if (onDeleteAttempt) {
         onDeleteAttempt();
       }
+      
+      showToast('Attempt deleted successfully', 'success');
     } catch (error: any) {
-      alert(error.message || 'Failed to delete attempt');
+      showToast(error.message || 'Failed to delete attempt', 'error');
     }
   };
 
@@ -727,6 +739,17 @@ export default function AttemptsModal({
           eventName={`${query.distance}${query.units === "yards" ? "Y" : "M"} ${captialize(query.stroke)} ${captialize(query.activity)}`}
         />
       )}
+      
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={confirmDialog.handleCancel}
+        onConfirm={confirmDialog.handleConfirm}
+        title={confirmDialog.options.title}
+        message={confirmDialog.options.message}
+        confirmText={confirmDialog.options.confirmText}
+        cancelText={confirmDialog.options.cancelText}
+        variant={confirmDialog.options.variant}
+      />
     </>,
     document.body
   );

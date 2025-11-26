@@ -24,15 +24,15 @@ export default function RangeToolbar({
   rangeKey, from, to, onQuick, onChangeFrom, onChangeTo, onApplyCustom,
 }: Props) {
   return (
-    <section className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-lg space-y-3">
+    <section className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl p-4 shadow-lg space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary shadow-md">
+        <div className="w-8 h-8 rounded-lg bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-cyan-400 shadow-md">
           <Calendar size={16} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-text-primary">Date Range</h3>
-          <p className="text-xs text-text-secondary">Select a time period</p>
+          <h3 className="text-sm font-semibold text-slate-100">Date Range</h3>
+          <p className="text-xs text-slate-400">Select a time period</p>
         </div>
       </div>
 
@@ -43,8 +43,8 @@ export default function RangeToolbar({
             key={range.key}
             className={`px-3 py-1.5 rounded-lg transition-all text-xs font-medium ${
               rangeKey === range.key
-                ? 'bg-gradient-to-r from-primary to-accent text-white shadow-md shadow-primary/30'
-                : 'bg-background-tertiary/80 text-text-secondary hover:text-text-primary hover:bg-background-secondary border border-border/30'
+                ? 'bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/30'
+                : 'bg-slate-800/50 text-slate-400 hover:text-slate-100 hover:bg-slate-800 border border-slate-700/30'
             }`}
             onClick={() => onQuick(range.key)}
           >
@@ -54,8 +54,8 @@ export default function RangeToolbar({
       </div>
 
       {/* Custom Range */}
-      <div className="flex flex-wrap items-end gap-2 p-3 bg-background-tertiary/30 rounded-lg border border-border/30 relative">
-        <div className="flex-1 min-w-[130px] relative z-[1001]">
+      <div className="flex flex-wrap items-end gap-2 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30 relative">
+        <div className="flex-1 min-w-[130px] relative z-1001">
           <DateInput
             label="From Date"
             value={from ? from.slice(0, 10) : ""}
@@ -63,7 +63,7 @@ export default function RangeToolbar({
             placeholder="Select start date"
           />
         </div>
-        <div className="flex-1 min-w-[130px] relative z-[1001]">
+        <div className="flex-1 min-w-[130px] relative z-1001">
           <DateInput
             label="To Date"
             value={to ? to.slice(0, 10) : ""}
@@ -72,7 +72,7 @@ export default function RangeToolbar({
           />
         </div>
         <button
-          className="px-4 py-2 text-xs bg-gradient-to-r from-accent to-accent/90 hover:from-accent/90 hover:to-accent text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-accent/25 transition-all flex items-center gap-1.5"
+          className="px-4 py-2 text-xs bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-500/90 hover:to-blue-500/90 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all flex items-center gap-1.5"
           onClick={onApplyCustom}
         >
           <Check className="w-3 h-3" />

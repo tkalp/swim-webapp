@@ -205,16 +205,16 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
     <>
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom duration-500">
       {/* Header with Stats */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-6 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-6 shadow-lg hover:shadow-xl transition-all duration-300">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center shadow-md shadow-accent/25">
+            <div className="w-12 h-12 bg-linear-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-cyan-500/25">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Personal Best Times</h2>
-              <p className="text-xs text-text-tertiary">
-                <span className="font-semibold text-accent">{sorted.length}</span>{' '}
+              <h2 className="text-lg font-semibold text-slate-100">Personal Best Times</h2>
+              <p className="text-xs text-slate-500">
+                <span className="font-semibold text-cyan-400">{sorted.length}</span>{' '}
                 {sorted.length === 1 ? 'record' : 'records'} found
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
           {canManageResults && (
             <button
               onClick={() => setAddEditOpen(true)}
-              className="group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 bg-gradient-to-r from-primary to-accent text-white shadow-md shadow-primary/30 ring-2 ring-primary/50 flex items-center gap-2"
+              className="group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/30 ring-2 ring-cyan-500/50 flex items-center gap-2"
             >
               <Plus size={16} />
               Add Result
@@ -232,15 +232,15 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
       </div>
 
       {/* Filters & Sort */}
-      <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 rounded-xl border border-border/60 p-4 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-4 shadow-lg hover:shadow-xl transition-all duration-300">
         {/* Stroke Tabs */}
-        <div className="mb-4 pb-4 border-b border-border/50">
+        <div className="mb-4 pb-4 border-b border-slate-700/50">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center shadow-md shadow-accent/25">
+            <div className="w-8 h-8 bg-linear-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-cyan-500/25">
               <Filter className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-text-primary">Filter by Stroke</h3>
+              <h3 className="text-sm font-semibold text-slate-100">Filter by Stroke</h3>
             </div>
           </div>
 
@@ -249,8 +249,8 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
               onClick={() => setSelectedStroke("all")}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                 selectedStroke === "all"
-                  ? "bg-gradient-to-r from-primary to-accent text-white shadow-md"
-                  : "bg-background-tertiary/50 text-text-secondary hover:bg-background-secondary hover:text-text-primary"
+                  ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md"
+                  : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
               }`}
             >
               All Strokes
@@ -261,8 +261,8 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
                 onClick={() => setSelectedStroke(stroke)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                   selectedStroke === stroke
-                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-md"
-                    : "bg-background-tertiary/50 text-text-secondary hover:bg-background-secondary hover:text-text-primary"
+                    ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md"
+                    : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
                 }`}
               >
                 {strokeOptions.find(s => s.value === stroke)?.label || stroke}
@@ -273,15 +273,15 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
 
         {/* Distance Quick Filters */}
         {availableDistances.length > 0 && (
-          <div className="mb-4 pb-4 border-b border-border/50">
-            <h4 className="text-xs font-semibold text-text-tertiary mb-2 uppercase tracking-wider">Quick Distance Filter</h4>
+          <div className="mb-4 pb-4 border-b border-slate-700/50">
+            <h4 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Quick Distance Filter</h4>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilters(f => ({ ...f, distance: undefined }))}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   !filters.distance
-                    ? "bg-accent/20 text-accent border border-accent/30"
-                    : "bg-background-tertiary/30 text-text-muted hover:text-text-primary"
+                    ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30"
+                    : "bg-slate-800/30 text-slate-500 hover:text-slate-400"
                 }`}
               >
                 All
@@ -292,8 +292,8 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
                   onClick={() => setFilters(f => ({ ...f, distance }))}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     filters.distance === distance
-                      ? "bg-accent/20 text-accent border border-accent/30"
-                      : "bg-background-tertiary/30 text-text-muted hover:text-text-primary"
+                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30"
+                      : "bg-slate-800/30 text-slate-500 hover:text-slate-400"
                   }`}
                 >
                   {distance}m
@@ -346,14 +346,14 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
 
       {/* Error State */}
       {err && (
-        <div className="bg-background-card border border-danger/30 rounded-2xl p-6 shadow-lg">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 shadow-lg">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-danger/20 to-danger/10 flex items-center justify-center text-danger">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-red-500/20 to-red-500/10 flex items-center justify-center text-red-400">
               <Activity size={20} />
             </div>
             <div>
-              <strong className="block text-danger font-semibold mb-1">Error</strong>
-              <p className="text-text-secondary">{err}</p>
+              <strong className="block text-red-400 font-semibold mb-1">Error</strong>
+              <p className="text-slate-400">{err}</p>
             </div>
           </div>
         </div>
@@ -363,17 +363,17 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
       {loading && (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-background-card rounded-2xl p-6 border border-border animate-pulse">
+            <div key={i} className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-800/60 animate-pulse">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-xl"></div>
+                <div className="w-12 h-12 bg-linear-to-r from-slate-800/50 via-slate-700/50 to-slate-800/50 rounded-xl"></div>
                 <div className="flex-1">
-                  <div className="h-5 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded mb-2"></div>
-                  <div className="h-4 w-2/3 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded"></div>
+                  <div className="h-5 bg-linear-to-r from-slate-800/50 via-slate-700/50 to-slate-800/50 rounded mb-2"></div>
+                  <div className="h-4 w-2/3 bg-linear-to-r from-slate-800/50 via-slate-700/50 to-slate-800/50 rounded"></div>
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded"></div>
-                <div className="h-4 w-3/4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded"></div>
+                <div className="h-4 bg-linear-to-r from-slate-800/50 via-slate-700/50 to-slate-800/50 rounded"></div>
+                <div className="h-4 w-3/4 bg-linear-to-r from-slate-800/50 via-slate-700/50 to-slate-800/50 rounded"></div>
               </div>
             </div>
           ))}
@@ -382,19 +382,19 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
 
       {/* Empty State */}
       {!loading && sorted.length === 0 && (
-        <div className="bg-background-card backdrop-blur-sm border border-border rounded-2xl p-12 shadow-lg text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-6 text-primary">
+        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-12 shadow-lg text-center">
+          <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center mx-auto mb-6 text-cyan-400">
             <TrendingUp size={48} />
           </div>
-          <h3 className="text-xl font-bold text-text-primary mb-3">No Best Times Found</h3>
-          <p className="text-text-secondary mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-slate-100 mb-3">No Best Times Found</h3>
+          <p className="text-slate-400 mb-6 max-w-md mx-auto">
             {hasActiveFilters
               ? "Try adjusting your filters to see more results."
               : "No personal records have been recorded yet."}
           </p>
           {hasActiveFilters && (
             <button 
-              className="px-6 py-3 bg-gradient-to-r from-primary-dark via-primary to-accent text-white rounded-lg font-medium hover:scale-105 hover:shadow-lg hover:shadow-primary/25 transition-all flex items-center gap-2 mx-auto"
+              className="px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-medium hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 transition-all flex items-center gap-2 mx-auto"
               onClick={() => setFilters({})}
             >
               <RotateCcw size={16} />

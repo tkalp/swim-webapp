@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link2, Trash2, Search, CheckCircle, X, RefreshCw } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import {
   searchSwimRankings,
   linkSwimmer,
@@ -33,6 +35,7 @@ export default function SwimRankingsLink({
   onCancelSync,
 }: SwimRankingsLinkProps) {
   const { showToast } = useToast();
+  const confirmDialog = useConfirmDialog();
   const [showModal, setShowModal] = useState(false);
   const [searchFirstName, setSearchFirstName] = useState(firstName || '');
   const [searchLastName, setSearchLastName] = useState(lastName || '');
@@ -112,9 +115,14 @@ export default function SwimRankingsLink({
   }
 
   async function handleDelete(linkId: string) {
-    if (!confirm('Are you sure you want to remove this link?')) {
-      return;
-    }
+    const confirmed = await confirmDialog.confirm({
+      title: 'Remove Link',
+      message: 'Are you sure you want to remove this SwimRankings link?',
+      confirmText: 'Remove',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       await deleteLink(linkId);
@@ -393,6 +401,17 @@ export default function SwimRankingsLink({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={confirmDialog.handleCancel}
+        onConfirm={confirmDialog.handleConfirm}
+        title={confirmDialog.options.title}
+        message={confirmDialog.options.message}
+        confirmText={confirmDialog.options.confirmText}
+        cancelText={confirmDialog.options.cancelText}
+        variant={confirmDialog.options.variant}
+      />
     </>
   );
 }

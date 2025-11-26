@@ -96,6 +96,7 @@ USE_OXYLABS_PROXY=${use_oxylabs_proxy}
 OXYLABS_USERNAME=${oxylabs_username}
 OXYLABS_PASSWORD=${oxylabs_password}
 OXYLABS_COUNTRY=US
+SCRAPER_WORKERS=2
 ENVFILE
 
 # Install Docker Compose v2

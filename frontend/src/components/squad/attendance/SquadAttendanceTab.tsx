@@ -10,6 +10,19 @@ import { AttendanceStats } from '@/components/squad/attendance/AttendanceStats';
 import { AttendanceRankingsTable } from '@/components/squad/attendance/AttendanceRankingsTable';
 import { getDefaultDateRange } from '../performance/utils';
 
+// Helper function to check if attendance data exists
+export function hasAttendanceData(data: SquadAttendanceData | null): boolean {
+  if (!data) return false;
+  
+  // Check if there are any swimmers with attendance records
+  const hasSwimmers = data.swimmers && data.swimmers.length > 0;
+  
+  // Check if there are any sessions
+  const hasSessions = data.stats && data.stats.total_sessions > 0;
+  
+  return !!(hasSwimmers || hasSessions);
+}
+
 interface SquadAttendanceTabProps {
   squadId: string;
 }

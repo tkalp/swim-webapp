@@ -225,22 +225,22 @@ export default function AddEditWorkoutResultModal({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 text-danger text-sm">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
               {error}
             </div>
           )}
 
           {/* Event Details Section */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-text-primary font-semibold">
-              <Target size={18} className="text-primary" />
+            <div className="flex items-center gap-2 text-slate-100 font-semibold">
+              <Target size={18} className="text-cyan-400" />
               <h3>Event Details</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Distance */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-text-muted uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                   <Ruler size={14} />
                   Distance
                 </label>
@@ -248,7 +248,7 @@ export default function AddEditWorkoutResultModal({
                   type="number"
                   value={formData.distance}
                   onChange={(e) => setFormData({ ...formData, distance: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-background-tertiary border border-border rounded-lg px-4 py-2.5 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
                   placeholder="50"
                   required
                 />
@@ -290,15 +290,15 @@ export default function AddEditWorkoutResultModal({
 
           {/* Result Details Section */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-text-primary font-semibold">
-              <Clock size={18} className="text-accent" />
+            <div className="flex items-center gap-2 text-slate-100 font-semibold">
+              <Clock size={18} className="text-cyan-400" />
               <h3>Result Details</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Time Result */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-text-muted uppercase tracking-wide flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                   <Clock size={14} />
                   Time
                 </label>
@@ -306,11 +306,11 @@ export default function AddEditWorkoutResultModal({
                   type="text"
                   value={formData.time_result}
                   onChange={(e) => setFormData({ ...formData, time_result: e.target.value })}
-                  className="w-full bg-background-tertiary border border-border rounded-lg px-4 py-2.5 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono"
+                  className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all font-mono"
                   placeholder="32.21 or 1:23.45 or 00:01:23.45"
                   required
                 />
-                <p className="text-xs text-text-muted">Format: SS.mm, MM:SS.ss, or HH:MM:SS.ss</p>
+                <p className="text-xs text-slate-500">Format: SS.mm, MM:SS.ss, or HH:MM:SS.ss</p>
               </div>
 
               {/* Date */}
@@ -324,18 +324,18 @@ export default function AddEditWorkoutResultModal({
           </div>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-border">
+        <div className="flex gap-3 pt-4 border-t border-slate-700">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-background-tertiary border border-border rounded-lg text-text-secondary hover:text-text-primary hover:bg-background-elevated hover:border-primary/30 transition-all font-medium"
+            className="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 hover:border-cyan-500/30 transition-all font-medium"
             disabled={loading}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-dark via-primary to-accent text-white rounded-lg font-semibold hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             disabled={loading}
           >
             {loading ? (

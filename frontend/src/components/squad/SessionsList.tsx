@@ -17,16 +17,22 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import DateInput from '@/components/ui/DateInput';
-import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
-import AddEditSessionModal from '@/components/squad/sessions/AddEditSessionModal';
-import CreateFromScheduleModal from '@/components/squad/sessions/CreateFromScheduleModal';
-import AttendanceModal from '@/components/squad/sessions/AttendanceModal';
-import PracticeNotesModal from '@/components/squad/sessions/PracticeNotesModal';
-import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
-import { createSessionsFromSchedules, type TrainingSchedule } from '@/services/sessionService';
-import { useSessionApi } from '@/hooks/api';
+import DateInput from "@/components/ui/DateInput";
+import WorkoutMiniChart from "@/components/workout/WorkoutMiniChart";
+import AddEditSessionModal from "@/components/squad/sessions/AddEditSessionModal";
+import CreateFromScheduleModal from "@/components/squad/sessions/CreateFromScheduleModal";
+import AttendanceModal from "@/components/squad/sessions/AttendanceModal";
+import PracticeNotesModal from "@/components/squad/sessions/PracticeNotesModal";
+import { SquadPageHeader } from "@/components/squad/SquadPageHeader";
+import {
+  createSessionsFromSchedules,
+  type TrainingSchedule,
+} from "@/services/sessionService";
+import { useSessionApi } from "@/hooks/api";
 import "@/styles/SessionsList.css";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { useToast } from "@/contexts/ToastContext"; // if using alerts
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type Session = {
   id: string;
@@ -36,7 +42,14 @@ type Session = {
   workout_id?: string | null;
 };
 
-type DateRange = "all" | "7d" | "30d" | "month" | "custom" | "week" | "nextweek";
+type DateRange =
+  | "all"
+  | "7d"
+  | "30d"
+  | "month"
+  | "custom"
+  | "week"
+  | "nextweek";
 
 type SessionsListProps = {
   sessions: Session[];
@@ -47,52 +60,68 @@ type SessionsListProps = {
   onRefresh?: () => void;
 };
 
-export default function SessionsList({ sessions, squadId, schedules, canManage, canManageAttendance, onRefresh }: SessionsListProps) {
+export default function SessionsList({
+  sessions,
+  squadId,
+  schedules,
+  canManage,
+  canManageAttendance,
+  onRefresh,
+}: SessionsListProps) {
   const navigate = useNavigate();
   const { createSession, updateSession, deleteSession } = useSessionApi();
-  
+
   // Load date range state from localStorage or use default
   const [dateRange, setDateRange] = useState<DateRange>(() => {
-    const saved = localStorage.getItem('sessions-date-range');
+    const saved = localStorage.getItem("sessions-date-range");
     return (saved as DateRange) || "week";
   });
   const [customStart, setCustomStart] = useState(() => {
-    return localStorage.getItem('sessions-custom-start') || "";
+    return localStorage.getItem("sessions-custom-start") || "";
   });
   const [customEnd, setCustomEnd] = useState(() => {
-    return localStorage.getItem('sessions-custom-end') || "";
+    return localStorage.getItem("sessions-custom-end") || "";
   });
   const [isLegendExpanded, setIsLegendExpanded] = useState(() => {
-    const saved = localStorage.getItem('sessions-legend-expanded');
-    return saved === 'true';
+    const saved = localStorage.getItem("sessions-legend-expanded");
+    return saved === "true";
   });
+
+  const confirmDialog = useConfirmDialog();
 
   // Persist state to localStorage
   useEffect(() => {
-    localStorage.setItem('sessions-date-range', dateRange);
+    localStorage.setItem("sessions-date-range", dateRange);
   }, [dateRange]);
 
   useEffect(() => {
-    localStorage.setItem('sessions-custom-start', customStart);
+    localStorage.setItem("sessions-custom-start", customStart);
   }, [customStart]);
 
   useEffect(() => {
-    localStorage.setItem('sessions-custom-end', customEnd);
+    localStorage.setItem("sessions-custom-end", customEnd);
   }, [customEnd]);
 
   useEffect(() => {
-    localStorage.setItem('sessions-legend-expanded', String(isLegendExpanded));
+    localStorage.setItem("sessions-legend-expanded", String(isLegendExpanded));
   }, [isLegendExpanded]);
 
   // Modal state
   const [addEditModalOpen, setAddEditModalOpen] = useState(false);
-  const [createFromScheduleModalOpen, setCreateFromScheduleModalOpen] = useState(false);
+  const [createFromScheduleModalOpen, setCreateFromScheduleModalOpen] =
+    useState(false);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [practiceNotesModalOpen, setPracticeNotesModalOpen] = useState(false);
-  const [practiceNotesType, setPracticeNotesType] = useState<'pre' | 'post'>('pre');
+  const [practiceNotesType, setPracticeNotesType] = useState<"pre" | "post">(
+    "pre"
+  );
   const [editingSession, setEditingSession] = useState<Session | null>(null);
-  const [attendanceSessionId, setAttendanceSessionId] = useState<string | null>(null);
-  const [attendanceSessionDate, setAttendanceSessionDate] = useState<string | null>(null);
+  const [attendanceSessionId, setAttendanceSessionId] = useState<string | null>(
+    null
+  );
+  const [attendanceSessionDate, setAttendanceSessionDate] = useState<
+    string | null
+  >(null);
   const [notesSessionId, setNotesSessionId] = useState<string | null>(null);
   const [notesSessionDate, setNotesSessionDate] = useState<string | null>(null);
 
@@ -169,14 +198,18 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
         const end = endDate || new Date();
         return sessionDate >= start && sessionDate <= end;
       }
-      return !startDate || (sessionDate >= startDate && sessionDate <= endDate!);
+      return (
+        !startDate || (sessionDate >= startDate && sessionDate <= endDate!)
+      );
     });
   }, [sessions, dateRange, customStart, customEnd]);
 
   // Sort by most recent first
   const sortedSessions = useMemo(() => {
     return [...filteredSessions].sort((a, b) => {
-      return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+      return (
+        new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+      );
     });
   }, [filteredSessions]);
 
@@ -225,7 +258,11 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
     setAttendanceModalOpen(true);
   };
 
-  const handlePracticeNotes = (sessionId: string, sessionDate: string, type: 'pre' | 'post') => {
+  const handlePracticeNotes = (
+    sessionId: string,
+    sessionDate: string,
+    type: "pre" | "post"
+  ) => {
     setNotesSessionId(sessionId);
     setNotesSessionDate(sessionDate);
     setPracticeNotesType(type);
@@ -233,22 +270,30 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
   };
 
   const handleDeleteSession = async (sessionId: string) => {
-    if (!confirm('Are you sure you want to delete this training session?')) {
-      return;
-    }
+    const confirmed = await confirmDialog.confirm({
+      title: "Delete Training Session",
+      message:
+        "Are you sure you want to delete this session? All related workout data will be removed",
+      confirmText: "Delete",
+      variant: "danger", // or 'warning' or 'info'
+    });
+
+    if (!confirmed) return;
 
     try {
       await deleteSession(sessionId, squadId);
       // Store is automatically updated by the hook
     } catch (error) {
       // Error toast is automatically shown by the hook
-      console.error('Error deleting session:', error);
+      console.error("Error deleting session:", error);
     }
   };
 
   const handleSubmitSession = async (formData: any) => {
     try {
-      const startDateTime = new Date(`${formData.start_date}T${formData.start_time}`);
+      const startDateTime = new Date(
+        `${formData.start_date}T${formData.start_time}`
+      );
       const endDateTime = new Date(`${formData.end_date}T${formData.end_time}`);
 
       if (editingSession) {
@@ -272,19 +317,31 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
       // Store is automatically updated by the hook, no refresh needed
     } catch (error) {
       // Error toast is automatically shown by the hook
-      console.error('Error saving session:', error);
+      console.error("Error saving session:", error);
       throw error; // Re-throw so modal can handle it
     }
   };
 
-  const handleCreateFromScheduleSubmit = async (schedules: TrainingSchedule[], startDate: Date, days: number) => {
-    const result = await createSessionsFromSchedules(schedules, startDate, days, squadId);
-    
+  const handleCreateFromScheduleSubmit = async (
+    schedules: TrainingSchedule[],
+    startDate: Date,
+    days: number
+  ) => {
+    const result = await createSessionsFromSchedules(
+      schedules,
+      startDate,
+      days,
+      squadId
+    );
+
     // Optionally handle errors
     if (result.errors.length > 0) {
-      console.warn(`Created ${result.created.length} sessions with ${result.errors.length} errors:`, result.errors);
+      console.warn(
+        `Created ${result.created.length} sessions with ${result.errors.length} errors:`,
+        result.errors
+      );
     }
-    
+
     if (onRefresh) {
       onRefresh();
     }
@@ -292,432 +349,519 @@ export default function SessionsList({ sessions, squadId, schedules, canManage, 
 
   return (
     <>
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Header */}
-      <SquadPageHeader
-        title="Training Sessions"
-        subtitle={`${stats.total} session${stats.total !== 1 ? 's' : ''} found in the selected period`}
-        actions={
-          canManage ? (
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleAddSession}
-                className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-200"
-              >
-                <Plus size={18} />
-                Add Session
-              </button>
-              <button
-                onClick={handleCreateFromSchedule}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/90 backdrop-blur-xl border border-cyan-500/30 text-cyan-400 rounded-xl font-semibold text-sm hover:bg-cyan-500/10 hover:scale-105 transition-all duration-200"
-              >
-                <Calendar size={18} />
-                Create from Schedule
-              </button>
-            </div>
-          ) : undefined
-        }
-      />
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <SquadPageHeader
+          title="Training Sessions"
+          subtitle={`${stats.total} session${
+            stats.total !== 1 ? "s" : ""
+          } found in the selected period`}
+          actions={
+            canManage ? (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleAddSession}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-200"
+                >
+                  <Plus size={18} />
+                  Add Session
+                </button>
+                <button
+                  onClick={handleCreateFromSchedule}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/90 backdrop-blur-xl border border-cyan-500/30 text-cyan-400 rounded-xl font-semibold text-sm hover:bg-cyan-500/10 hover:scale-105 transition-all duration-200"
+                >
+                  <Calendar size={18} />
+                  Create from Schedule
+                </button>
+              </div>
+            ) : undefined
+          }
+        />
 
-      {/* Date Range Filter - Compact Style */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Period:</span>
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { key: "week" as const, label: "This Week" },
-              { key: "nextweek" as const, label: "Next Week" },
-              { key: "7d" as const, label: "Last 7 Days" },
-              { key: "30d" as const, label: "Last 30 Days" },
-              { key: "month" as const, label: "This Month" },
-              { key: "all" as const, label: "All Time" },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                className={`group px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 ${
-                  dateRange === key
-                    ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/40 ring-2 ring-cyan-500/50"
-                    : "bg-slate-800/80 text-slate-400 hover:bg-slate-800/60 hover:text-slate-100 hover:shadow-md border border-slate-700/40 hover:border-cyan-500/30"
-                }`}
-                onClick={() => setDateRange(key)}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Date Range Filter - Compact Style */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Period:
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { key: "week" as const, label: "This Week" },
+                { key: "nextweek" as const, label: "Next Week" },
+                { key: "7d" as const, label: "Last 7 Days" },
+                { key: "30d" as const, label: "Last 30 Days" },
+                { key: "month" as const, label: "This Month" },
+                { key: "all" as const, label: "All Time" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  className={`group px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 ${
+                    dateRange === key
+                      ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/40 ring-2 ring-cyan-500/50"
+                      : "bg-slate-800/80 text-slate-400 hover:bg-slate-800/60 hover:text-slate-100 hover:shadow-md border border-slate-700/40 hover:border-cyan-500/30"
+                  }`}
+                  onClick={() => setDateRange(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Custom Date Range */}
+          {dateRange === "custom" && (
+            <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
+              <DateInput
+                label=""
+                value={customStart}
+                onChange={(value) => setCustomStart(value)}
+                placeholder="Start"
+              />
+              <span className="text-slate-500 font-medium text-sm">→</span>
+              <DateInput
+                label=""
+                value={customEnd}
+                onChange={(value) => setCustomEnd(value)}
+                placeholder="End"
+              />
+            </div>
+          )}
         </div>
-        
-        {/* Custom Date Range */}
-        {dateRange === "custom" && (
-          <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-800/40 shadow-lg">
-            <DateInput
-              label=""
-              value={customStart}
-              onChange={(value) => setCustomStart(value)}
-              placeholder="Start"
-            />
-            <span className="text-slate-500 font-medium text-sm">→</span>
-            <DateInput
-              label=""
-              value={customEnd}
-              onChange={(value) => setCustomEnd(value)}
-              placeholder="End"
-            />
+
+        {/* Stats Overview */}
+        {sortedSessions.length > 0 && (
+          <div className="sessions-stats">
+            <div className="stat-card">
+              <div className="stat-icon">
+                <Activity size={20} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.total}</div>
+                <div className="stat-label">Total Sessions</div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <Clock size={20} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.duration}</div>
+                <div className="stat-label">Total Minutes</div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <TrendingUp size={20} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.avgDuration}</div>
+                <div className="stat-label">Avg Duration (min)</div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <FileText size={20} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.withWorkout}</div>
+                <div className="stat-label">With Workout</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Compact Workout Color Guide */}
+        {sortedSessions.length > 0 && (
+          <div className="mb-6 mt-6">
+            <button
+              onClick={() => setIsLegendExpanded(!isLegendExpanded)}
+              className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 hover:border-slate-700/50 transition-colors duration-200 text-xs"
+            >
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="text-slate-400 font-medium ml-1">
+                  Chart Colors
+                </span>
+              </div>
+              <ChevronDown
+                size={14}
+                className={`text-slate-500 transition-transform duration-200 ${
+                  isLegendExpanded ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {isLegendExpanded && (
+              <div className="mt-3 p-4 bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg">
+                <div className="grid grid-cols-2 gap-6 text-xs">
+                  <div>
+                    <div className="text-slate-400 font-medium mb-3">
+                      Strokes
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#22D3EE" }}
+                        ></div>
+                        <span className="text-slate-500">Freestyle</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#8B5CF6" }}
+                        ></div>
+                        <span className="text-slate-500">Backstroke</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#10B981" }}
+                        ></div>
+                        <span className="text-slate-500">Breaststroke</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#F59E0B" }}
+                        ></div>
+                        <span className="text-slate-500">Butterfly</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#EF4444" }}
+                        ></div>
+                        <span className="text-slate-500">IM</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#6B7280" }}
+                        ></div>
+                        <span className="text-slate-500">Choice</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-medium mb-3">
+                      Activities
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#22D3EE" }}
+                        ></div>
+                        <span className="text-slate-500">Swim</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#EF4444" }}
+                        ></div>
+                        <span className="text-slate-500">Kick</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#10B981" }}
+                        ></div>
+                        <span className="text-slate-500">Pull</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: "#F59E0B" }}
+                        ></div>
+                        <span className="text-slate-500">Drill</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sessions List */}
+        {sortedSessions.length === 0 ? (
+          <div className="sessions-empty">
+            <div className="empty-icon">
+              <Activity size={48} />
+            </div>
+            <h3 className="empty-title">No sessions found</h3>
+            <p className="empty-text">
+              {dateRange === "all"
+                ? "No training sessions have been recorded yet."
+                : "No training sessions found in the selected date range. Try adjusting your filters."}
+            </p>
+          </div>
+        ) : (
+          <div className="sessions-grid">
+            {sortedSessions.map((s) => {
+              const startDate = new Date(s.start_date);
+              const endDate = new Date(s.end_date);
+              const duration = Math.round(
+                (endDate.getTime() - startDate.getTime()) / (1000 * 60)
+              );
+
+              return (
+                <div
+                  key={s.id}
+                  className="group bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl overflow-hidden hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300"
+                >
+                  {/* Header with Date & Type */}
+                  <div className="bg-linear-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-slate-700/40 px-5 py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-100 mb-0.5">
+                          {startDate.toLocaleDateString(undefined, {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {startDate.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {" - "}
+                          {endDate.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 backdrop-blur-xl/80 border border-slate-700/40 rounded-lg">
+                          <Clock size={14} className="text-cyan-400" />
+                          <span className="text-xs font-semibold text-slate-100">
+                            {duration} min
+                          </span>
+                        </div>
+                        <div className="px-3 py-1.5 bg-primary/15 border border-cyan-500/30 rounded-lg">
+                          <span className="text-xs font-bold text-cyan-400">
+                            {s.training_type}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Body - Workout Section */}
+                  <div className="p-5">
+                    {s.workout_id ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <FileText size={16} className="text-cyan-400" />
+                            <span className="text-sm font-semibold text-slate-100">
+                              Workout Details
+                            </span>
+                          </div>
+                          <button
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-xs font-semibold group/btn"
+                            onClick={() => handleViewWorkout(s.workout_id!)}
+                          >
+                            <span>View Full Workout</span>
+                            <ChevronRight
+                              size={14}
+                              className="group-hover/btn:translate-x-0.5 transition-transform"
+                            />
+                          </button>
+                        </div>
+                        <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 min-h-[280px]">
+                          <WorkoutMiniChart workoutId={s.workout_id} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-800/30 border border-dashed border-slate-700/40 rounded-xl p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
+                        <FileText
+                          size={24}
+                          className="inline-block text-slate-500/60 mb-2"
+                        />
+                        <p className="text-sm font-medium text-slate-400 mb-1">
+                          No workout assigned
+                        </p>
+                        <p className="text-xs text-slate-500 mb-3">
+                          Create a workout to add training details for this
+                          session
+                        </p>
+                        {canManage && (
+                          <button
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-sm font-semibold"
+                            onClick={() =>
+                              navigate(`/workouts/create?sessionId=${s.id}`)
+                            }
+                          >
+                            <Plus size={16} />
+                            <span>Create Workout</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer - Session Actions */}
+                  {(canManage || canManageAttendance) && (
+                    <div className="border-t border-slate-700/30 px-5 py-3">
+                      <div className="flex items-center gap-2 justify-end">
+                        {canManage && (
+                          <>
+                            <button
+                              className="p-2 hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 rounded-lg transition-all duration-200"
+                              onClick={() =>
+                                handlePracticeNotes(s.id, s.start_date, "pre")
+                              }
+                              title="Pre-practice notes"
+                            >
+                              <ClipboardList size={16} />
+                            </button>
+                            <button
+                              className="p-2 hover:bg-purple-500/10 text-slate-400 hover:text-purple-400 rounded-lg transition-all duration-200"
+                              onClick={() =>
+                                handlePracticeNotes(s.id, s.start_date, "post")
+                              }
+                              title="Post-practice notes"
+                            >
+                              <Sparkles size={16} />
+                            </button>
+                          </>
+                        )}
+                        {canManageAttendance && (
+                          <button
+                            className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
+                            onClick={() =>
+                              handleTakeAttendance(s.id, s.start_date)
+                            }
+                            title="Take attendance"
+                          >
+                            <Users size={16} />
+                          </button>
+                        )}
+                        {canManage && (
+                          <>
+                            <button
+                              className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
+                              onClick={() => handleEditSession(s)}
+                              title="Edit session"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              className="p-2 hover:bg-red-500/10 text-slate-400 hover:text-red-400 rounded-lg transition-all duration-200"
+                              onClick={() => handleDeleteSession(s.id)}
+                              title="Delete session"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Stats Overview */}
-      {sortedSessions.length > 0 && (
-        <div className="sessions-stats">
-          <div className="stat-card">
-            <div className="stat-icon">
-              <Activity size={20} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.total}</div>
-              <div className="stat-label">Total Sessions</div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">
-              <Clock size={20} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.duration}</div>
-              <div className="stat-label">Total Minutes</div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">
-              <TrendingUp size={20} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.avgDuration}</div>
-              <div className="stat-label">Avg Duration (min)</div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">
-              <FileText size={20} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.withWorkout}</div>
-              <div className="stat-label">With Workout</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Compact Workout Color Guide */}
-      {sortedSessions.length > 0 && (
-        <div className="mb-6 mt-6">
-          <button
-            onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-            className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 hover:border-slate-700/50 transition-colors duration-200 text-xs"
-          >
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-slate-400 font-medium ml-1">Chart Colors</span>
-            </div>
-            <ChevronDown 
-              size={14} 
-              className={`text-slate-500 transition-transform duration-200 ${
-                isLegendExpanded ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-          
-          {isLegendExpanded && (
-            <div className="mt-3 p-4 bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-lg">
-              <div className="grid grid-cols-2 gap-6 text-xs">
-                <div>
-                  <div className="text-slate-400 font-medium mb-3">Strokes</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#22D3EE' }}></div>
-                      <span className="text-slate-500">Freestyle</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#8B5CF6' }}></div>
-                      <span className="text-slate-500">Backstroke</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#10B981' }}></div>
-                      <span className="text-slate-500">Breaststroke</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#F59E0B' }}></div>
-                      <span className="text-slate-500">Butterfly</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#EF4444' }}></div>
-                      <span className="text-slate-500">IM</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#6B7280' }}></div>
-                      <span className="text-slate-500">Choice</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-400 font-medium mb-3">Activities</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#22D3EE' }}></div>
-                      <span className="text-slate-500">Swim</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#EF4444' }}></div>
-                      <span className="text-slate-500">Kick</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#10B981' }}></div>
-                      <span className="text-slate-500">Pull</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#F59E0B' }}></div>
-                      <span className="text-slate-500">Drill</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Sessions List */}
-      {sortedSessions.length === 0 ? (
-        <div className="sessions-empty">
-          <div className="empty-icon">
-            <Activity size={48} />
-          </div>
-          <h3 className="empty-title">No sessions found</h3>
-          <p className="empty-text">
-            {dateRange === "all"
-              ? "No training sessions have been recorded yet."
-              : "No training sessions found in the selected date range. Try adjusting your filters."}
-          </p>
-        </div>
-      ) : (
-        <div className="sessions-grid">
-          {sortedSessions.map((s) => {
-            const startDate = new Date(s.start_date);
-            const endDate = new Date(s.end_date);
-            const duration = Math.round(
-              (endDate.getTime() - startDate.getTime()) / (1000 * 60)
-            );
-
-            return (
-              <div key={s.id} className="group bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl overflow-hidden hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300">
-                {/* Header with Date & Type */}
-                <div className="bg-linear-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-slate-700/40 px-5 py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-100 mb-0.5">
-                        {startDate.toLocaleDateString(undefined, {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {startDate.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        {" - "}
-                        {endDate.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 backdrop-blur-xl/80 border border-slate-700/40 rounded-lg">
-                        <Clock size={14} className="text-cyan-400" />
-                        <span className="text-xs font-semibold text-slate-100">{duration} min</span>
-                      </div>
-                      <div className="px-3 py-1.5 bg-primary/15 border border-cyan-500/30 rounded-lg">
-                        <span className="text-xs font-bold text-cyan-400">{s.training_type}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Body - Workout Section */}
-                <div className="p-5">
-                  {s.workout_id ? (
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <FileText size={16} className="text-cyan-400" />
-                          <span className="text-sm font-semibold text-slate-100">Workout Details</span>
-                        </div>
-                        <button
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-xs font-semibold group/btn"
-                          onClick={() => handleViewWorkout(s.workout_id!)}
-                        >
-                          <span>View Full Workout</span>
-                          <ChevronRight size={14} className="group-hover/btn:translate-x-0.5 transition-transform" />
-                        </button>
-                      </div>
-                      <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 min-h-[280px]">
-                        <WorkoutMiniChart workoutId={s.workout_id} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-slate-800/30 border border-dashed border-slate-700/40 rounded-xl p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
-                      <FileText size={24} className="inline-block text-slate-500/60 mb-2" />
-                      <p className="text-sm font-medium text-slate-400 mb-1">No workout assigned</p>
-                      <p className="text-xs text-slate-500 mb-3">Create a workout to add training details for this session</p>
-                      {canManage && (
-                        <button
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-sm font-semibold"
-                          onClick={() => navigate(`/workouts/create?sessionId=${s.id}`)}
-                        >
-                          <Plus size={16} />
-                          <span>Create Workout</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer - Session Actions */}
-                {(canManage || canManageAttendance) && (
-                  <div className="border-t border-slate-700/30 px-5 py-3">
-                    <div className="flex items-center gap-2 justify-end">
-                      {canManage && (
-                        <>
-                          <button
-                            className="p-2 hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 rounded-lg transition-all duration-200"
-                            onClick={() => handlePracticeNotes(s.id, s.start_date, 'pre')}
-                            title="Pre-practice notes"
-                          >
-                            <ClipboardList size={16} />
-                          </button>
-                          <button
-                            className="p-2 hover:bg-purple-500/10 text-slate-400 hover:text-purple-400 rounded-lg transition-all duration-200"
-                            onClick={() => handlePracticeNotes(s.id, s.start_date, 'post')}
-                            title="Post-practice notes"
-                          >
-                            <Sparkles size={16} />
-                          </button>
-                        </>
-                      )}
-                      {canManageAttendance && (
-                        <button
-                          className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
-                          onClick={() => handleTakeAttendance(s.id, s.start_date)}
-                          title="Take attendance"
-                        >
-                          <Users size={16} />
-                        </button>
-                      )}
-                      {canManage && (
-                        <>
-                          <button
-                            className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
-                            onClick={() => handleEditSession(s)}
-                            title="Edit session"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            className="p-2 hover:bg-red-500/10 text-slate-400 hover:text-red-400 rounded-lg transition-all duration-200"
-                            onClick={() => handleDeleteSession(s.id)}
-                            title="Delete session"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-
-    {/* Add/Edit Session Modal */}
-    <AddEditSessionModal
-      open={addEditModalOpen}
-      onClose={() => {
-        setAddEditModalOpen(false);
-        setEditingSession(null);
-      }}
-      squadId={squadId}
-      sessionId={editingSession?.id}
-      initialData={editingSession ? {
-        start_date: editingSession.start_date,
-        start_time: new Date(editingSession.start_date).toTimeString().slice(0, 5),
-        end_date: editingSession.end_date,
-        end_time: new Date(editingSession.end_date).toTimeString().slice(0, 5),
-        training_type: editingSession.training_type,
-        workout_id: editingSession.workout_id,
-      } : undefined}
-      onSubmit={handleSubmitSession}
-      onSuccess={() => {
-        setAddEditModalOpen(false);
-        setEditingSession(null);
-      }}
-    />
-
-    {/* Create from Schedule Modal */}
-    <CreateFromScheduleModal
-      open={createFromScheduleModalOpen}
-      onClose={() => setCreateFromScheduleModalOpen(false)}
-      squadId={squadId}
-      schedules={schedules}
-      onCreateBulkSessions={handleCreateFromScheduleSubmit}
-      onSuccess={() => setCreateFromScheduleModalOpen(false)}
-    />
-
-    {/* Attendance Modal */}
-    <AttendanceModal
-      open={attendanceModalOpen}
-      onClose={() => {
-        setAttendanceModalOpen(false);
-        setAttendanceSessionId(null);
-        setAttendanceSessionDate(null);
-      }}
-      sessionId={attendanceSessionId || ''}
-      squadId={squadId}
-      sessionDate={attendanceSessionDate || undefined}
-      onSuccess={() => {
-        setAttendanceModalOpen(false);
-        setAttendanceSessionId(null);
-        setAttendanceSessionDate(null);
-        if (onRefresh) {
-          onRefresh();
+      {/* Add/Edit Session Modal */}
+      <AddEditSessionModal
+        open={addEditModalOpen}
+        onClose={() => {
+          setAddEditModalOpen(false);
+          setEditingSession(null);
+        }}
+        squadId={squadId}
+        sessionId={editingSession?.id}
+        initialData={
+          editingSession
+            ? {
+                start_date: editingSession.start_date,
+                start_time: new Date(editingSession.start_date)
+                  .toTimeString()
+                  .slice(0, 5),
+                end_date: editingSession.end_date,
+                end_time: new Date(editingSession.end_date)
+                  .toTimeString()
+                  .slice(0, 5),
+                training_type: editingSession.training_type,
+                workout_id: editingSession.workout_id,
+              }
+            : undefined
         }
-      }}
-    />
+        onSubmit={handleSubmitSession}
+        onSuccess={() => {
+          setAddEditModalOpen(false);
+          setEditingSession(null);
+        }}
+      />
 
-    {/* Practice Notes Modal */}
-    <PracticeNotesModal
-      open={practiceNotesModalOpen}
-      onClose={() => {
-        setPracticeNotesModalOpen(false);
-        setNotesSessionId(null);
-        setNotesSessionDate(null);
-      }}
-      sessionId={notesSessionId || ''}
-      sessionDate={notesSessionDate || ''}
-      noteType={practiceNotesType}
-    />
+      {/* Create from Schedule Modal */}
+      <CreateFromScheduleModal
+        open={createFromScheduleModalOpen}
+        onClose={() => setCreateFromScheduleModalOpen(false)}
+        squadId={squadId}
+        schedules={schedules}
+        onCreateBulkSessions={handleCreateFromScheduleSubmit}
+        onSuccess={() => setCreateFromScheduleModalOpen(false)}
+      />
+
+      {/* Attendance Modal */}
+      <AttendanceModal
+        open={attendanceModalOpen}
+        onClose={() => {
+          setAttendanceModalOpen(false);
+          setAttendanceSessionId(null);
+          setAttendanceSessionDate(null);
+        }}
+        sessionId={attendanceSessionId || ""}
+        squadId={squadId}
+        sessionDate={attendanceSessionDate || undefined}
+        onSuccess={() => {
+          setAttendanceModalOpen(false);
+          setAttendanceSessionId(null);
+          setAttendanceSessionDate(null);
+          if (onRefresh) {
+            onRefresh();
+          }
+        }}
+      />
+
+      {/* Practice Notes Modal */}
+      <PracticeNotesModal
+        open={practiceNotesModalOpen}
+        onClose={() => {
+          setPracticeNotesModalOpen(false);
+          setNotesSessionId(null);
+          setNotesSessionDate(null);
+        }}
+        sessionId={notesSessionId || ""}
+        sessionDate={notesSessionDate || ""}
+        noteType={practiceNotesType}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={confirmDialog.handleCancel}
+        onConfirm={confirmDialog.handleConfirm}
+        title={confirmDialog.options.title}
+        message={confirmDialog.options.message}
+        confirmText={confirmDialog.options.confirmText}
+        cancelText={confirmDialog.options.cancelText}
+        variant={confirmDialog.options.variant}
+      />
     </>
   );
 }

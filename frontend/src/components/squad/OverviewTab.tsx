@@ -1,6 +1,22 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense, useEffect } from 'react';
 import { BarChart3, Trophy, TrendingUp, CalendarCheck, Lock } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { 
+  getSquadAttendanceStats,
+  getSquadSessionCount,
+  getSquadTotalMeters,
+  getSquadDistancePerWeek,
+  getSquadStrokeBreakdown,
+  getSquadActivityBreakdown,
+  type StrokeBreakdown,
+  type ActivityBreakdown
+} from '@/services/metricsService';
+import { 
+  getSquadAttendanceRankings, 
+  type SquadAttendanceData 
+} from '@/services/attendanceService';
+import { hasMetricsData } from '@/components/squad/SquadMetrics';
+import { hasAttendanceData } from '@/components/squad/attendance/SquadAttendanceTab';
 
 // Lazy load sub-tab components
 const SquadMetricsTab = lazy(() => import('@/components/squad/SquadMetrics'));
@@ -43,13 +59,79 @@ const SUB_TABS: Array<{
 export function OverviewTab({ squadId }: OverviewTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<OverviewSubTab>('metrics');
   const { hasPermission, loading } = usePermissions(squadId);
+  const [tabsWithData, setTabsWithData] = useState<Set<OverviewSubTab>>(new Set(['metrics', 'rankings', 'performance', 'attendance']));
+  const [checkingData, setCheckingData] = useState(true);
+
+  // Check which tabs have data
+  useEffect(() => {
+    if (!squadId) return;
+    
+    let mounted = true;
+    
+    (async () => {
+      try {
+        const availableTabs = new Set<OverviewSubTab>();
+        
+        // Always show rankings and performance tabs (these fetch their own data)
+        availableTabs.add('rankings');
+        availableTabs.add('performance');
+        
+        // Check metrics data
+        const [att, sessionCount, totalMeters, dist, strokeData, activityData] = await Promise.all([
+          getSquadAttendanceStats(squadId, {}),
+          getSquadSessionCount(squadId, {}),
+          getSquadTotalMeters(squadId, {}),
+          getSquadDistancePerWeek(squadId, {}),
+          getSquadStrokeBreakdown(squadId, {}),
+          getSquadActivityBreakdown(squadId, {})
+        ]);
+        
+        if (hasMetricsData(att, sessionCount, totalMeters, dist, strokeData, activityData)) {
+          availableTabs.add('metrics');
+        }
+        
+        // Check attendance data
+        const attendanceData = await getSquadAttendanceRankings(squadId);
+        if (hasAttendanceData(attendanceData)) {
+          availableTabs.add('attendance');
+        }
+        
+        if (!mounted) return;
+        
+        setTabsWithData(availableTabs);
+        
+        // If current active tab doesn't have data, switch to first available tab
+        if (!availableTabs.has(activeSubTab)) {
+          const firstAvailable = Array.from(availableTabs)[0];
+          if (firstAvailable) {
+            setActiveSubTab(firstAvailable);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking tab data:', error);
+        // On error, show all tabs
+        if (mounted) {
+          setTabsWithData(new Set(['metrics', 'rankings', 'performance', 'attendance']));
+        }
+      } finally {
+        if (mounted) setCheckingData(false);
+      }
+    })();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [squadId, activeSubTab]);
+
+  // Filter visible tabs
+  const visibleTabs = SUB_TABS.filter(tab => tabsWithData.has(tab.key));
 
   return (
     <div className="flex flex-col h-full bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Compact Sub-tab navigation */}
       <div className="shrink-0 px-6 py-3 border-b border-cyan-500/10 bg-slate-900/50 backdrop-blur-xl">
         <div className="flex gap-2 flex-wrap">
-          {SUB_TABS.map(({ key, icon: Icon, label }) => {
+          {visibleTabs.map(({ key, icon: Icon, label }) => {
             const isActive = activeSubTab === key;
             
             return (

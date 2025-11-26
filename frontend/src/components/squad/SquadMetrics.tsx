@@ -82,6 +82,25 @@ function presetRange(key: RangeKey) {
   return {};
 }
 
+// Helper function to check if metrics data exists
+export function hasMetricsData(
+  att: { present: number; late: number; absent: number } | null,
+  sessionCount: number,
+  totalMeters: number,
+  dist: { week: string; meters: number }[],
+  strokeData: StrokeBreakdown[],
+  activityData: ActivityBreakdown[]
+): boolean {
+  // Check if there's any meaningful data
+  const hasAttendance = att && (att.present > 0 || att.late > 0 || att.absent > 0);
+  const hasSessions = sessionCount > 0;
+  const hasDistance = totalMeters > 0 || dist.length > 0;
+  const hasStrokes = strokeData.length > 0;
+  const hasActivities = activityData.length > 0;
+  
+  return !!(hasAttendance || hasSessions || hasDistance || hasStrokes || hasActivities);
+}
+
 export default function SquadMetricsTab({ squadId }: { squadId: string }) {
   const [rangeKey, setRangeKey] = useState<RangeKey>("all_time");
   const init = presetRange("all_time");

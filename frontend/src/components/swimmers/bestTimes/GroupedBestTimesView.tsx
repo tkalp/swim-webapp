@@ -71,9 +71,9 @@ function labelActivity(a?: string) {
 
 function getActivityStyles(activity?: string) {
   const v = (activity ?? "").toLowerCase();
-  if (v === "kick") return "bg-gradient-to-br from-warning/20 to-warning/10 border border-warning/40 text-warning font-bold";
-  if (v === "pull") return "bg-gradient-to-br from-success/20 to-success/10 border border-success/40 text-success font-bold";
-  return "bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/40 text-primary font-bold";
+  if (v === "kick") return "bg-gradient-to-br from-orange-500/20 to-orange-500/10 border border-orange-500/40 text-orange-400 font-bold";
+  if (v === "pull") return "bg-gradient-to-br from-green-500/20 to-green-500/10 border border-green-500/40 text-green-400 font-bold";
+  return "bg-gradient-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/40 text-cyan-400 font-bold";
 }
 
 function TableView({
@@ -114,31 +114,31 @@ function TableView({
   });
 
   return (
-    <div className="bg-gradient-to-br from-background-elevated to-background-secondary/50 backdrop-blur-sm border border-border/60 rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border/50 bg-background-elevated/50">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Event</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Type</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Trend</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">SCM</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">LCM</th>
+            <tr className="border-b border-slate-700/50 bg-slate-800/50">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Event</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Trend</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SCM</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">LCM</th>
               {hasScyResults && (
-                <th className="text-left px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">SCY</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SCY</th>
               )}
-              <th className="text-right px-4 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Actions</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody>
             {groupedData.map((group) => (
               <>
-                <tr key={`header-${group.stroke}`} className="bg-background-secondary/30">
+                <tr key={`header-${group.stroke}`} className="bg-slate-800/30">
                   <td colSpan={hasScyResults ? 7 : 6} className="px-4 py-2">
                     <div className="flex items-center gap-2">
-                      <Activity size={14} className="text-primary" />
-                      <span className="text-sm font-semibold text-text-primary">{group.label}</span>
-                      <span className="text-xs text-text-tertiary">({group.events.length} events)</span>
+                      <Activity size={14} className="text-cyan-400" />
+                      <span className="text-sm font-semibold text-slate-100">{group.label}</span>
+                      <span className="text-xs text-slate-500">({group.events.length} events)</span>
                     </div>
                   </td>
                 </tr>
@@ -151,15 +151,15 @@ function TableView({
                   return (
                     <tr 
                       key={`${group.stroke}-${event.distance}-${event.activity}-${event.equipment}`}
-                      className="border-b border-border/30 hover:bg-background-elevated/50 transition-colors group"
+                      className="border-b border-slate-700/30 hover:bg-slate-800/50 transition-colors group"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="text-lg font-bold text-text-primary">{event.distance}</span>
-                          <span className="text-xs text-text-muted uppercase">
+                          <span className="text-lg font-bold text-slate-100">{event.distance}</span>
+                          <span className="text-xs text-slate-500 uppercase">
                             {anyItem.units === "yards" ? "yd" : "m"}
                           </span>
-                          <span className="text-sm text-text-secondary ml-1">{STROKE_LABEL[anyItem.stroke] ?? anyItem.stroke}</span>
+                          <span className="text-sm text-slate-400 ml-1">{STROKE_LABEL[anyItem.stroke] ?? anyItem.stroke}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -168,7 +168,7 @@ function TableView({
                             {labelActivity(event.activity)}
                           </span>
                           {event.equipment !== "none" && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-background-secondary border border-border/50 text-text-muted text-xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-800/50 border border-slate-700/50 text-slate-400 text-xs">
                               {event.equipment}
                             </span>
                           )}
@@ -178,7 +178,7 @@ function TableView({
                       {/* Trend Column */}
                       <td className="px-4 py-3">
                         {anyItem.recentTrend ? (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-background-secondary/50">
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-800/50">
                             <div className={`${
                               anyItem.recentTrend.improving 
                                 ? 'text-emerald-500' 
@@ -214,7 +214,7 @@ function TableView({
                             </div>
                           </div>
                         ) : (
-                          <span className="text-text-tertiary text-xs">—</span>
+                          <span className="text-slate-500 text-xs">—</span>
                         )}
                       </td>
                       
@@ -223,15 +223,15 @@ function TableView({
                         {scmItem ? (
                           <button
                             onClick={() => onCardPress?.(scmItem)}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg hover:from-primary/20 hover:to-accent/20 hover:border-primary/40 transition-all"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg hover:from-cyan-500/20 hover:to-blue-500/20 hover:border-cyan-500/40 transition-all"
                           >
-                            <Clock size={14} className="text-primary" />
-                            <span className="text-base font-bold text-primary">
+                            <Clock size={14} className="text-cyan-400" />
+                            <span className="text-base font-bold text-cyan-400">
                               {formatTime(scmItem.timeSeconds)}
                             </span>
                           </button>
                         ) : (
-                          <span className="text-text-tertiary text-sm">—</span>
+                          <span className="text-slate-500 text-sm">—</span>
                         )}
                       </td>
                       
@@ -240,15 +240,15 @@ function TableView({
                         {lcmItem ? (
                           <button
                             onClick={() => onCardPress?.(lcmItem)}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg hover:from-primary/20 hover:to-accent/20 hover:border-primary/40 transition-all"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg hover:from-cyan-500/20 hover:to-blue-500/20 hover:border-cyan-500/40 transition-all"
                           >
-                            <Clock size={14} className="text-primary" />
-                            <span className="text-base font-bold text-primary">
+                            <Clock size={14} className="text-cyan-400" />
+                            <span className="text-base font-bold text-cyan-400">
                               {formatTime(lcmItem.timeSeconds)}
                             </span>
                           </button>
                         ) : (
-                          <span className="text-text-tertiary text-sm">—</span>
+                          <span className="text-slate-500 text-sm">—</span>
                         )}
                       </td>
                       
@@ -258,15 +258,15 @@ function TableView({
                           {scyItem ? (
                             <button
                               onClick={() => onCardPress?.(scyItem)}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg hover:from-primary/20 hover:to-accent/20 hover:border-primary/40 transition-all"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg hover:from-cyan-500/20 hover:to-blue-500/20 hover:border-cyan-500/40 transition-all"
                             >
-                              <Clock size={14} className="text-primary" />
-                              <span className="text-base font-bold text-primary">
+                              <Clock size={14} className="text-cyan-400" />
+                              <span className="text-base font-bold text-cyan-400">
                                 {formatTime(scyItem.timeSeconds)}
                               </span>
                             </button>
                           ) : (
-                            <span className="text-text-tertiary text-sm">—</span>
+                            <span className="text-slate-500 text-sm">—</span>
                           )}
                         </td>
                       )}
@@ -278,7 +278,7 @@ function TableView({
                             {scmItem && onEditResult && (
                               <button
                                 onClick={() => onEditResult(scmItem)}
-                                className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
+                                className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
                                 title="Edit SCM result"
                               >
                                 <Edit2 size={16} />
@@ -287,7 +287,7 @@ function TableView({
                             {lcmItem && onEditResult && (
                               <button
                                 onClick={() => onEditResult(lcmItem)}
-                                className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
+                                className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
                                 title="Edit LCM result"
                               >
                                 <Edit2 size={16} />
@@ -296,7 +296,7 @@ function TableView({
                             {scyItem && onEditResult && (
                               <button
                                 onClick={() => onEditResult(scyItem)}
-                                className="p-2 rounded-lg bg-background-elevated border border-border/50 hover:border-accent/50 hover:bg-accent/10 text-text-muted hover:text-accent transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
+                                className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
                                 title="Edit SCY result"
                               >
                                 <Edit2 size={16} />
