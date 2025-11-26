@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, Navigate } from "react-router-dom";
 import { LogIn, AlertCircle } from "lucide-react";
-import { Input, Button } from '@/components/ui';
+import { Input, Button, Copyright } from '@/components/ui';
 import logo from '@/assets/logo.png';
 
 export default function Login() {
@@ -130,6 +130,9 @@ export default function Login() {
                 Need help? Contact your administrator
               </p>
             </div>
+
+            {/* Copyright */}
+            <Copyright />
           </div>
         </div>
       </div>

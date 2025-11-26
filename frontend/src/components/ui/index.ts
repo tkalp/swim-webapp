@@ -3,6 +3,7 @@ export { default as Avatar } from './Avatar';
 export { default as Badge } from './Badge';
 export * from './Breadcrumb';
 export { default as Button } from './Button';
+export * from './Copyright';
 export { default as CustomSelect } from './CustomSelect';
 export { default as DateInput } from './DateInput';
 export { default as Input } from './Input';
