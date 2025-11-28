@@ -24,6 +24,45 @@ import WorkoutBreakdownCharts from '@/components/workout/WorkoutBreakdownCharts'
 import { getWorkoutTags } from '@/services/workoutTagService';
 import type { WorkoutTag } from '@/types/workoutTags';
 
+// Helper to convert new versioned format to old ParsedWorkout format
+function normalizeJsonDescription(jsonDesc: any): { estimate: any } | null {
+  if (!jsonDesc) return null;
+  
+  // Check if it's the new versioned format
+  if ('version' in jsonDesc && 'analysis' in jsonDesc) {
+    const analysis = jsonDesc.analysis;
+    return {
+      estimate: {
+        totalDistance: analysis.total_meters,
+        totalMinutes: analysis.estimated_duration_minutes,
+        estimatedCalories: analysis.estimated_calories,
+        difficulty: analysis.classification?.toLowerCase() || 'moderate',
+        strokeBreakdown: {
+          freestyle: analysis.stroke_breakdown?.freestyle || 0,
+          backstroke: analysis.stroke_breakdown?.backstroke || 0,
+          breaststroke: analysis.stroke_breakdown?.breaststroke || 0,
+          butterfly: analysis.stroke_breakdown?.butterfly || 0,
+          individualMedley: analysis.stroke_breakdown?.IM || analysis.stroke_breakdown?.im || analysis.stroke_breakdown?.individualMedley || 0,
+          choice: analysis.stroke_breakdown?.choice || 0
+        },
+        activityBreakdown: {
+          swim: analysis.activity_breakdown?.swim || 0,
+          kick: analysis.activity_breakdown?.kick || 0,
+          pull: analysis.activity_breakdown?.pull || 0,
+          drill: analysis.activity_breakdown?.drill || 0
+        }
+      }
+    };
+  }
+  
+  // Already in old format
+  if ('estimate' in jsonDesc) {
+    return jsonDesc;
+  }
+  
+  return null;
+}
+
 export default function WorkoutViewPage() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
@@ -150,6 +189,8 @@ export default function WorkoutViewPage() {
     );
   }
 
+  const normalized = normalizeJsonDescription(workout.jsonDescription);
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Modern Header */}
@@ -181,10 +222,10 @@ export default function WorkoutViewPage() {
                         year: 'numeric' 
                       })}
                     </span>
-                    {workout.jsonDescription?.estimate?.difficulty && (
+                    {normalized?.estimate?.difficulty && (
                       <span className="flex items-center gap-1.5 px-2.5 py-1 bg-cyan-500/10 text-cyan-400 rounded-lg text-sm font-medium">
                         <TrendingUp size={14} />
-                        {workout.jsonDescription.estimate.difficulty}
+                        {normalized.estimate.difficulty}
                       </span>
                     )}
                     {tags.length > 0 && (
@@ -330,7 +371,7 @@ export default function WorkoutViewPage() {
           </div>
 
           {/* Workout Analysis */}
-          {workout.jsonDescription?.estimate && (
+          {normalized?.estimate && (
             <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-800/60 shadow-xl">
               <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-800/40">
                 <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
@@ -342,7 +383,7 @@ export default function WorkoutViewPage() {
                 </div>
               </div>
               <div className="max-h-[600px] overflow-y-auto">
-                <WorkoutBreakdownCharts estimate={workout.jsonDescription.estimate} />
+                <WorkoutBreakdownCharts estimate={normalized.estimate} />
               </div>
             </div>
           )}
