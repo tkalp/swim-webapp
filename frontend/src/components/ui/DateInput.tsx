@@ -15,8 +15,17 @@ type DateInputProps = {
 
 export default function DateInput({ value, onChange, placeholder, label }: DateInputProps) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Parse date string as local time, not UTC
+  const parseLocalDate = (dateStr: string): Date | undefined => {
+    if (!dateStr) return undefined;
+    // Split yyyy-MM-dd and create date in local timezone
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    value ? new Date(value) : undefined
+    value ? parseLocalDate(value) : undefined
   );
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);

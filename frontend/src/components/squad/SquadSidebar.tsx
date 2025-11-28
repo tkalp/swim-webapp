@@ -17,6 +17,7 @@ const SIDEBAR_ITEMS: Array<{
   { key: 'overview', icon: LayoutDashboard, label: 'Overview', description: 'Metrics, rankings & performance' },
   { key: 'team', icon: Users, label: 'Team', description: 'Swimmers & roster' },
   { key: 'training', icon: Calendar, label: 'Training', description: 'Schedule, sessions & calendar' },
+  { key: 'schedule', icon: Calendar, label: 'Calendar', description: 'Calendar events & planning' },
   { key: 'coaches', icon: UserCog, label: 'Coaches', description: 'Manage squad access' },
 ];
 

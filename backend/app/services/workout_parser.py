@@ -788,6 +788,11 @@ class WorkoutParser:
                     next_line = lines[i]
                     next_line_stripped = next_line.strip()
                     
+                    # Empty line ends the round block
+                    if not next_line_stripped:
+                        i += 1
+                        break
+                    
                     # Check for round assignment pattern (e.g., "Round 1 - Free", "Round 2 - IM")
                     round_assignment_match = re.match(r'^round\s+(\d+)\s*[-–:]\s*(.+)$', next_line_stripped, re.IGNORECASE)
                     if round_assignment_match:
@@ -809,17 +814,16 @@ class WorkoutParser:
                         break
                     
                     # Stop if we hit a line that looks like a new section
-                    # (no indentation and contains swimming content, not just descriptive text)
+                    # (no indentation and contains swimming content that's clearly a new main section)
+                    # But be more lenient - only break on strong indicators like section keywords or new round markers
                     if (next_line_stripped and 
                         not next_line.startswith(' ') and 
                         not next_line.startswith('\t') and
                         not next_line.startswith('-') and
                         # But NOT if it's a round assignment
                         not re.match(r'^round\s+\d+', next_line_stripped, re.IGNORECASE) and
-                        # Check if it's a swimming set (contains distance pattern)
-                        (re.search(r'\d+\s*x\s*\d+', next_line_stripped) or
-                         re.search(r'^\d+\s+\w+', next_line_stripped) or
-                         any(keyword in next_line_stripped.lower() for keyword in ['warmup', 'warm-up', 'cool', 'cooldown', 'cool-down', 'main', 'set']))):
+                        # Only break on strong section indicators (warmup, main set, etc.) - NOT on regular sets
+                        any(keyword in next_line_stripped.lower() for keyword in ['warmup', 'warm-up', 'cool', 'cooldown', 'cool-down', 'main set', 'pre-set'])):
                         break
                     
                     # Include the line if it's not empty and not a round assignment
@@ -838,19 +842,20 @@ class WorkoutParser:
                         
                         # Add each line in the block for this round, appending assignment if present
                         for block_line in block_lines:
+                            block_line_stripped = block_line.strip()
+                            
                             if assignment:
                                 # Append the assignment to each set line if it contains a set pattern
-                                block_line_stripped = block_line.strip()
                                 if re.search(r'\d+\s*x\s*\d+', block_line_stripped):
-                                    # This is a set line - append the assignment
-                                    # Preserve original indentation
-                                    indent = len(block_line) - len(block_line.lstrip())
-                                    indentation = block_line[:indent]
-                                    expanded_lines.append(f"{indentation}{block_line_stripped} {assignment}")
+                                    # This is a set line - append the assignment (no indentation)
+                                    expanded_lines.append(f"{block_line_stripped} {assignment}")
                                 else:
-                                    expanded_lines.append(block_line)
+                                    # Non-set line (notes, etc.) - keep as-is without indentation
+                                    expanded_lines.append(block_line_stripped)
                             else:
-                                expanded_lines.append(block_line)
+                                # No assignment - add stripped line (remove indentation)
+                                # This prevents lines from being interpreted as breakdowns later
+                                expanded_lines.append(block_line_stripped)
                 else:
                     # No block found, keep original line
                     expanded_lines.append(lines[i-1])

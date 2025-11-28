@@ -1,6 +1,6 @@
 // components/layout/GlobalNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home, Shield } from "lucide-react";
+import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home, Shield, Calendar } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, useEffect } from "react";
 import { NotificationBell } from '@/components/layout/NotificationBell';
@@ -233,6 +233,9 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
           </NavLink>
           <NavLink to="/workouts" icon={Dumbbell}>
             Workouts
+          </NavLink>
+          <NavLink to="/calendar" icon={Calendar}>
+            Calendar
           </NavLink>
           <NavLink to="/network" icon={Network}>
             Network

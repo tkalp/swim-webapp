@@ -10,7 +10,7 @@ import { useSquadDetails, useSwimmersBySquad, useSquadSchedules, useSquadSession
 import { useSquadStore } from '@/stores/squadStore'
 import { useSwimmerStore } from '@/stores/swimmerStore'
 
-export type TabKey = 'overview' | 'team' | 'training' | 'coaches'
+export type TabKey = 'overview' | 'team' | 'training' | 'coaches' | 'schedule'
 export type TrainingSubTab = 'schedule' | 'sessions' | 'calendar'
 
 /**

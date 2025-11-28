@@ -12,4 +12,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'), // <— maps "@" to /src
     },
   },
+  optimizeDeps: {
+    include: ['react-big-calendar'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/react-big-calendar/, /node_modules/],
+    },
+  },
 })

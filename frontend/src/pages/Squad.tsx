@@ -8,6 +8,7 @@ import { SquadSidebar, SquadMobileNav } from '@/components/squad/SquadSidebar'
 import { OverviewTab } from '@/components/squad/OverviewTab'
 import { TrainingTab } from '@/components/squad/TrainingTab'
 import { SquadCoachesTab } from '@/components/squad/SquadCoachesTab'
+import { ScheduleTab } from '@/components/squad/ScheduleTab'
 import { useSwimmerApi } from '@/hooks/api'
 import { useSquadDetails, useSwimmersBySquad, useSquadSchedules, useSquadSessions, useSquadEvents } from '@/hooks/useStores'
 import { useState, useEffect } from 'react'
@@ -16,7 +17,7 @@ import { useSquadStore } from '@/stores/squadStore'
 import { useSwimmerStore } from '@/stores/swimmerStore'
 import type { CreateSwimmerData, UpdateSwimmerData } from '@/services/swimmerService'
 
-export type TabKey = 'overview' | 'team' | 'training' | 'coaches'
+export type TabKey = 'overview' | 'team' | 'training' | 'schedule' | 'coaches'
 
 export default function SquadPage() {
   const { squadId } = useParams<{ squadId: string }>()
@@ -141,6 +142,7 @@ export default function SquadPage() {
       overview: 'Overview',
       team: 'Team',
       training: 'Training',
+      schedule: 'Schedule',
       coaches: 'Coaches'
     }
     return labels[tab]
@@ -196,6 +198,12 @@ export default function SquadPage() {
                   canManageSchedules={hasPermission('can_manage_schedules')}
                   canManageAttendance={hasPermission('can_manage_attendance')}
                   onRefresh={handleRefresh}
+                />
+              )}
+              {tab === 'schedule' && squadId && (
+                <ScheduleTab 
+                  squadId={squadId}
+                  canManage={hasPermission('can_manage_schedules')}
                 />
               )}
               {tab === 'coaches' && squadId && (
