@@ -97,6 +97,14 @@ OXYLABS_USERNAME=${oxylabs_username}
 OXYLABS_PASSWORD=${oxylabs_password}
 OXYLABS_COUNTRY=US
 SCRAPER_WORKERS=2
+
+# Celery Worker Configuration
+SCRAPER_MAX_WORKERS=${scraper_max_workers}
+
+# Auto-generation Configuration (Celery Beat)
+AUTO_GEN_DAYS_AHEAD=${auto_gen_days_ahead}
+AUTO_GEN_SCHEDULE_HOUR=${auto_gen_schedule_hour}
+AUTO_GEN_SCHEDULE_MINUTE=${auto_gen_schedule_minute}
 ENVFILE
 
 # Install Docker Compose v2
@@ -120,6 +128,10 @@ docker-compose ps
 # Show worker logs to verify it started
 echo "Worker service logs:"
 docker-compose logs worker --tail 50
+
+# Show celery-beat logs
+echo "Celery Beat scheduler logs:"
+docker-compose logs celery-beat --tail 50
 DEPLOYSCRIPT
 chmod +x /root/aquilus-webapp/deploy.sh
 

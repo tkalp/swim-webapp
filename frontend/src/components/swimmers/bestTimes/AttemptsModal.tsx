@@ -271,7 +271,7 @@ export default function AttemptsModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-9998 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div

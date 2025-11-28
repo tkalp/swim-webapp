@@ -93,11 +93,34 @@ export default function ScheduleFormModal({
 
     setLoading(true)
     try {
+      // Get device timezone for audit trail
+      const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Parse time strings and create UTC time strings (HH:MM:SS format)
+      const [startHours, startMinutes] = formData.start_time.split(':').map(Number);
+      const [endHours, endMinutes] = formData.end_time.split(':').map(Number);
+      
+      // Create date objects in LOCAL timezone first
+      const startLocal = new Date(
+        2000, 0, 1, startHours, startMinutes, 0
+      );
+      
+      const endLocal = new Date(
+        2000, 0, 1, endHours, endMinutes, 0
+      );
+      
+      // Extract UTC time from the ISO string (this properly converts from local to UTC)
+      const startTimeUTC = startLocal.toISOString().split('T')[1].split('.')[0];
+      const endTimeUTC = endLocal.toISOString().split('T')[1].split('.')[0];
+
       const data = {
         squad_id: squadId,
         day_of_week: formData.day_of_week,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
+        start_time: formData.start_time, // Keep for backward compatibility
+        end_time: formData.end_time, // Keep for backward compatibility
+        start_time_utc: startTimeUTC,
+        end_time_utc: endTimeUTC,
+        created_timezone: deviceTimezone,
         training_type: formData.training_type,
         active: formData.active,
         until: formData.until || null

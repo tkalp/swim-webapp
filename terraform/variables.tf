@@ -135,3 +135,27 @@ variable "mixpanel_token" {
   type        = string
   sensitive   = true
 }
+
+variable "scraper_max_workers" {
+  description = "Maximum number of parallel workers for swimrankings scraper"
+  type        = number
+  default     = 2
+}
+
+variable "auto_gen_days_ahead" {
+  description = "Number of days ahead to auto-generate training sessions"
+  type        = number
+  default     = 14
+}
+
+variable "auto_gen_schedule_hour" {
+  description = "Hour (UTC) to run auto-generation task (0-23)"
+  type        = number
+  default     = 0
+}
+
+variable "auto_gen_schedule_minute" {
+  description = "Minute to run auto-generation task (0-59)"
+  type        = number
+  default     = 0
+}

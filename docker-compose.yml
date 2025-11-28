@@ -93,8 +93,34 @@ services:
       - SCRAPER_MAX_WORKERS=${SCRAPER_MAX_WORKERS}
       - SCRAPER_MIN_DELAY=2.0
       - SCRAPER_MAX_DELAY=4.0
+      - AUTO_GEN_DAYS_AHEAD=${AUTO_GEN_DAYS_AHEAD}
+      - AUTO_GEN_SCHEDULE_HOUR=${AUTO_GEN_SCHEDULE_HOUR}
+      - AUTO_GEN_SCHEDULE_MINUTE=${AUTO_GEN_SCHEDULE_MINUTE}
     depends_on:
       - redis
+    restart: unless-stopped
+    networks:
+      - aquilus-network
+
+  # Celery Beat - Scheduler for periodic tasks
+  celery-beat:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    container_name: aquilus-celery-beat
+    command: celery -A worker.celery_app beat --loglevel=info
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - AUTO_GEN_DAYS_AHEAD=${AUTO_GEN_DAYS_AHEAD}
+      - AUTO_GEN_SCHEDULE_HOUR=${AUTO_GEN_SCHEDULE_HOUR}
+      - AUTO_GEN_SCHEDULE_MINUTE=${AUTO_GEN_SCHEDULE_MINUTE}
+    depends_on:
+      - redis
+      - worker
     restart: unless-stopped
     networks:
       - aquilus-network

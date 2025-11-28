@@ -87,7 +87,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-9999 flex items-center justify-center p-4 transition-all duration-300 ${
         isAnimating
           ? 'bg-black/60 backdrop-blur-md'
           : 'bg-black/0 backdrop-blur-none'

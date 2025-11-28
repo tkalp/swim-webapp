@@ -43,5 +43,5 @@ COPY worker /app/worker
 # Set Python path to include jobs directory
 ENV PYTHONPATH=/app:/app/jobs
 
-# Run Celery worker
-CMD ["celery", "-A", "worker.celery_app", "worker", "--loglevel=info", "--concurrency=1", "-Q", "sync"]
+# Run Celery worker - listen to both sync and celery (default) queues
+CMD ["celery", "-A", "worker.celery_app", "worker", "--loglevel=info", "--concurrency=1", "-Q", "sync,celery"]
