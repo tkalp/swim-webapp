@@ -74,7 +74,7 @@ export const AttendanceRankingsTable: React.FC<AttendanceRankingsTableProps> = (
           {sortedSwimmers.map((swimmer, index) => (
             <div
               key={swimmer.swimmer_id}
-              className="px-6 py-5 hover:bg-linear-to-r hover:from-slate-800/40 hover:to-slate-800/20 transition-all duration-300"
+              className="px-6 py-4 hover:bg-slate-800/20 transition-colors duration-200"
             >
               <div className="flex items-center gap-4">
                 {/* Rank Avatar */}
@@ -86,65 +86,32 @@ export const AttendanceRankingsTable: React.FC<AttendanceRankingsTableProps> = (
                   </div>
                 </div>
 
-                {/* Swimmer Info & Stats */}
+                {/* Swimmer Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-3 gap-2">
-                    <h4 className="text-lg font-bold text-slate-100 truncate">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h4 className="text-base font-semibold text-slate-100 truncate">
                       {swimmer.swimmer_name}
                     </h4>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-slate-500 font-medium">
-                        {swimmer.total_sessions} sessions
-                      </span>
-                      <span className={`text-2xl sm:text-3xl font-bold ${getPercentageColor(swimmer.present_percentage)}`}>
-                        {swimmer.present_percentage.toFixed(1)}%
-                      </span>
+                    <span className={`text-xl font-bold shrink-0 ${getPercentageColor(swimmer.present_percentage)}`}>
+                      {swimmer.present_percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  
+                  {/* Compact Progress Bar */}
+                  <div className="mt-2">
+                    <div className="h-2 bg-slate-800/60 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-linear-to-r ${getProgressBarColor(swimmer.present_percentage)} rounded-full transition-all duration-700`}
+                        style={{ width: `${swimmer.present_percentage}%` }}
+                      />
                     </div>
                   </div>
 
-                  {/* Attendance Progress Bar */}
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-xs text-slate-500 mb-2 font-medium">
-                        <span>Attendance Rate</span>
-                        <span>{swimmer.present} / {swimmer.total_sessions} present</span>
-                      </div>
-                      <div className="h-3 bg-slate-800/80 rounded-full overflow-hidden shadow-inner">
-                        <div
-                          className={`h-full bg-linear-to-r ${getProgressBarColor(swimmer.present_percentage)} rounded-full transition-all duration-700 shadow-lg`}
-                          style={{ width: `${swimmer.present_percentage}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Breakdown Stats */}
-                    <div className="flex flex-wrap gap-4 sm:gap-6 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-sm shadow-green-400/50"></div>
-                        <span className="text-slate-500 font-medium">Present:</span>
-                        <span className="font-bold text-slate-100">
-                          {swimmer.present} <span className="text-slate-500 font-normal">({swimmer.present_percentage.toFixed(0)}%)</span>
-                        </span>
-                      </div>
-                      {swimmer.late > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-sm shadow-yellow-400/50"></div>
-                          <span className="text-slate-500 font-medium">Late:</span>
-                          <span className="font-bold text-slate-100">
-                            {swimmer.late} <span className="text-slate-500 font-normal">({swimmer.late_percentage.toFixed(0)}%)</span>
-                          </span>
-                        </div>
-                      )}
-                      {swimmer.absent > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 shadow-sm shadow-red-400/50"></div>
-                          <span className="text-slate-500 font-medium">Absent:</span>
-                          <span className="font-bold text-slate-100">
-                            {swimmer.absent} <span className="text-slate-500 font-normal">({swimmer.absent_percentage.toFixed(0)}%)</span>
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                  {/* Minimal Stats */}
+                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                    <span className="font-medium">{swimmer.present} / {swimmer.total_sessions} present</span>
+                    {swimmer.late > 0 && <span>{swimmer.late} late</span>}
+                    {swimmer.absent > 0 && <span>{swimmer.absent} absent</span>}
                   </div>
                 </div>
               </div>

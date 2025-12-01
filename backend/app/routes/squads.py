@@ -80,6 +80,7 @@ async def get_squad_performance(
             .in_('swimmer_id', swimmer_ids)\
             .gte('performed_on', start_date)\
             .lte('performed_on', end_date)\
+            .eq("activity", "swim")\
             .order('performed_on', desc=False)\
             .execute()
         
@@ -161,7 +162,8 @@ async def get_squad_performance(
                     continue
                 
                 # Calculate improvement (negative = faster = better)
-                improvement = ((latest_time - first_time) / first_time) * 100
+                # Compare first time to best time (not latest)
+                improvement = ((best_time - first_time) / first_time) * 100
                 
                 # Count PRs (personal records) - number of times swimmer beat their previous best
                 best_so_far = float('inf')

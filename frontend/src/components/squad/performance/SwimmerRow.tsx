@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { SwimmerPerformance } from '@/services/metricsService';
 import { getSwimmerInitials } from '@/components/squad/performance/utils';
 import { EventCard } from '@/components/squad/performance/EventCard';
-import { EventProgressModal } from '@/components/squad/performance/EventProgressModal';
+import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
+import type { EventQuery } from '@/services/workoutResultService';
 
 interface SwimmerRowProps {
   swimmer: SwimmerPerformance;
@@ -17,14 +18,38 @@ export const SwimmerRow: React.FC<SwimmerRowProps> = ({
   onToggle,
 }) => {
   const isImproving = swimmer.avg_improvement_pct < 0;
-  const [selectedEventIndex, setSelectedEventIndex] = useState<number | null>(null);
+  const [selectedEventQuery, setSelectedEventQuery] = useState<EventQuery | null>(null);
 
   const handleEventClick = (index: number) => {
-    setSelectedEventIndex(index);
+    const event = swimmer.events[index];
+    
+    // Parse event key to build EventQuery
+    // Event key format: "{distance}M_{stroke}_{activity}_{result_units}_{equipment?}"
+    const parts = event.event.split('_');
+    const distanceStr = parts[0]; // e.g., "100M"
+    const distance = parseInt(distanceStr.replace('M', ''));
+    const stroke = parts[1] || 'free';
+    const activity = parts[2] || 'swim';
+    const resultUnits = (parts[3] || 'SCM') as 'SCM' | 'LCM';
+    const equipment = parts[4] || 'none';
+    
+    const eventQuery: EventQuery = {
+      swimmerId: swimmer.swimmer_id,
+      distance,
+      stroke,
+      activity,
+      equipment,
+      units: 'meters',
+      resultUnits
+    };
+    
+    console.log('[DEBUG] Opening event modal with query:', eventQuery);
+    setSelectedEventQuery(eventQuery);
   };
 
   const handleCloseModal = () => {
-    setSelectedEventIndex(null);
+    console.log('[DEBUG] Closing event modal');
+    setSelectedEventQuery(null);
   };
 
   return (
@@ -105,13 +130,16 @@ export const SwimmerRow: React.FC<SwimmerRowProps> = ({
         </tr>
       )}
 
-      {/* Event Progress Modal */}
-      {selectedEventIndex !== null && (
-        <EventProgressModal
-          event={swimmer.events[selectedEventIndex]}
-          swimmerName={swimmer.swimmer_name}
-          onClose={handleCloseModal}
-        />
+      {/* Event Attempts Modal */}
+      {selectedEventQuery && (
+        <>
+          <AttemptsModal
+            open={!!selectedEventQuery}
+            onClose={handleCloseModal}
+            query={selectedEventQuery}
+            canManageResults={false}
+          />
+        </>
       )}
     </React.Fragment>
   );
