@@ -1,7 +1,3 @@
-"""
-Celery application for worker service
-"""
-
 import os
 from celery import Celery
 from celery.schedules import crontab
@@ -40,16 +36,4 @@ celery_app.conf.update(
     task_ignore_result=False,  # Must store results for callbacks to work
 )
 
-# Celery Beat schedule for periodic tasks
-celery_app.conf.beat_schedule = {
-    'auto-generate-training-sessions': {
-        'task': 'worker.sync_tasks.auto_generate_sessions_task',
-        'schedule': crontab(hour=AUTO_GEN_SCHEDULE_HOUR, minute=AUTO_GEN_SCHEDULE_MINUTE),  # Daily at midnight UTC
-        'kwargs': {
-            'days_ahead': AUTO_GEN_DAYS_AHEAD,
-        },
-        'options': {
-            'expires': 3600,  # Task expires after 1 hour if not executed
-        }
-    },
-}
+# ============================================================================

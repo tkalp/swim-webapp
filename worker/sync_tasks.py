@@ -315,9 +315,28 @@ def update_bulk_sync_progress(
         print("=" * 100)
 
 
+"""
+================================================================================
+DEPRECATED: AUTO-GENERATE SESSIONS TASK
+================================================================================
+This task has been replaced by on-demand virtual session generation.
+
+Sessions are now calculated on-the-fly from training_schedules and materialized
+only when needed (workout assignment, attendance taking).
+
+See: backend/app/routes/training_sessions.py
+- GET /training-sessions/virtual - Fetches materialized + virtual sessions
+- POST /training-sessions/materialize - Converts virtual to real session
+
+This task is kept for reference only and should not be enabled.
+================================================================================
+"""
+
 @celery_app.task(bind=True, name='worker.sync_tasks.auto_generate_sessions_task')
 def auto_generate_sessions_task(self, days_ahead: int = 14, squad_id: Optional[str] = None) -> dict:
     """
+    DEPRECATED - DO NOT USE
+    
     Celery task to automatically generate training sessions from schedules for all active squads
     
     This task:
@@ -334,6 +353,12 @@ def auto_generate_sessions_task(self, days_ahead: int = 14, squad_id: Optional[s
     Returns:
         Dictionary with generation statistics
     """
+    return {
+        'success': False,
+        'error': 'This task is deprecated. Use virtual session endpoints instead.',
+        'squads_processed': 0,
+        'sessions_generated': 0
+    }
     try:
         print("\n" + "=" * 100)
         print("🔄 AUTO-GENERATE SESSIONS TASK STARTED")
