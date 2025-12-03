@@ -80,7 +80,7 @@ export default function GroupedBestTimesView({
       canManageResults={canManageResults} 
       onCardPress={onCardPress} 
       onEditResult={onEditResult}
-      hasStandardsEnabled={hasStandardsEnabled}
+      hasStandardsEnabled={hasStandardsEnabled as boolean}
       showStandards={showStandards}
       setShowStandards={setShowStandards}
       selectedStandardsSetId={selectedStandardsSetId}
@@ -170,7 +170,7 @@ function TableView({
               {hasStandardsEnabled && (
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <button
-                    onClick={() => setShowStandards(!showStandards)}
+                    onClick={() => setShowStandards?.(!showStandards)}
                     className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
                   >
                     {showStandards ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -327,7 +327,7 @@ function TableView({
                         <td className="px-4 py-3">
                           {scmItem && event.activity?.toLowerCase() === 'swim' && (
                             <StandardsCell
-                              standardsSetId={selectedStandardsSetId}
+                              standardsSetId={selectedStandardsSetId!}
                               distance={event.distance}
                               stroke={anyItem.stroke}
                               timeSeconds={scmItem.timeSeconds}
@@ -338,7 +338,7 @@ function TableView({
                           )}
                           {lcmItem && !scmItem && event.activity?.toLowerCase() === 'swim' && (
                             <StandardsCell
-                              standardsSetId={selectedStandardsSetId}
+                              standardsSetId={selectedStandardsSetId!}
                               distance={event.distance}
                               stroke={anyItem.stroke}
                               timeSeconds={lcmItem.timeSeconds}

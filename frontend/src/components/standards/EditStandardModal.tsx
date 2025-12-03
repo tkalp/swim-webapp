@@ -160,7 +160,7 @@ export const EditStandardModal: React.FC<EditStandardModalProps> = ({
             </label>
             <select
               value={formData.stroke}
-              onChange={(e) => setFormData({ ...formData, stroke: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, stroke: e.target.value as typeof formData.stroke })}
               className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50"
               required
             >
@@ -216,7 +216,7 @@ export const EditStandardModal: React.FC<EditStandardModalProps> = ({
               <button
                 key={gender.value}
                 type="button"
-                onClick={() => setFormData({ ...formData, gender: gender.value })}
+                onClick={() => setFormData({ ...formData, gender: gender.value as typeof formData.gender})}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   formData.gender === gender.value
                     ? 'bg-cyan-500/20 text-cyan-400 border-2 border-cyan-500/50'
@@ -288,7 +288,7 @@ export const EditStandardModal: React.FC<EditStandardModalProps> = ({
               </label>
               <select
                 value={formData.activity}
-                onChange={(e) => setFormData({ ...formData, activity: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, activity: e.target.value as typeof formData.activity })}
                 className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50"
               >
                 <option value="swim">Swim</option>
@@ -304,7 +304,7 @@ export const EditStandardModal: React.FC<EditStandardModalProps> = ({
               </label>
               <select
                 value={formData.equipment}
-                onChange={(e) => setFormData({ ...formData, equipment: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, equipment: e.target.value as typeof formData.equipment })}
                 className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50"
               >
                 <option value="none">None</option>
