@@ -1,8 +1,10 @@
 // components/swimmer/bestTimes/GroupedBestTimesView.tsx
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { BestTimeResult } from '@/services/workoutResultService';
 import { formatTime } from '@/utils/timeUtils';
-import { Clock, Activity, Edit2, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { Clock, Activity, Edit2, TrendingDown, TrendingUp, Minus, Eye, EyeOff } from "lucide-react";
+import { StandardsCell } from '@/components/swimmers/timeStandards';
+import { calculateSwimmerAge } from '@/services/swimmerStandards';
 
 const STROKE_ORDER = ["free", "back", "breast", "fly", "im"] as const;
 const STROKE_LABEL: Record<string, string> = {
@@ -25,13 +27,26 @@ export default function GroupedBestTimesView({
   canManageResults = true,
   onCardPress,
   onEditResult,
+  selectedStandardsSetId,
+  swimmerDateOfBirth,
+  swimmerSex,
+  hasTimeStandards = false,
 }: {
   bestTimes: BestTimeResult[];
   sortBy: "time" | "event" | "date";
   canManageResults?: boolean;
   onCardPress?: (item: BestTimeResult) => void;
   onEditResult?: (item: BestTimeResult) => void;
+  selectedStandardsSetId?: string | null;
+  swimmerDateOfBirth?: string;
+  swimmerSex?: string;
+  hasTimeStandards?: boolean;
 }) {
+  const [showStandards, setShowStandards] = useState(true);
+  
+  const swimmerAge = swimmerDateOfBirth ? calculateSwimmerAge(swimmerDateOfBirth) : undefined;
+  const hasStandardsEnabled = hasTimeStandards && selectedStandardsSetId && swimmerAge !== undefined && swimmerSex;
+
   const groups = useMemo(() => {
     const map = new Map<string, BestTimeResult[]>();
     bestTimes.forEach((r) => {
@@ -59,7 +74,20 @@ export default function GroupedBestTimesView({
       .map((k) => ({ stroke: k, label: STROKE_LABEL[k], items: map.get(k)! }));
   }, [bestTimes, sortBy]);
 
-  return <TableView groups={groups} canManageResults={canManageResults} onCardPress={onCardPress} onEditResult={onEditResult} />;
+  return (
+    <TableView 
+      groups={groups} 
+      canManageResults={canManageResults} 
+      onCardPress={onCardPress} 
+      onEditResult={onEditResult}
+      hasStandardsEnabled={hasStandardsEnabled}
+      showStandards={showStandards}
+      setShowStandards={setShowStandards}
+      selectedStandardsSetId={selectedStandardsSetId}
+      swimmerAge={swimmerAge}
+      swimmerSex={swimmerSex}
+    />
+  );
 }
 
 function labelActivity(a?: string) {
@@ -81,11 +109,23 @@ function TableView({
   canManageResults = true,
   onCardPress,
   onEditResult,
+  hasStandardsEnabled,
+  showStandards,
+  setShowStandards,
+  selectedStandardsSetId,
+  swimmerAge,
+  swimmerSex,
 }: {
   groups: StrokeGroup[];
   canManageResults?: boolean;
   onCardPress?: (item: BestTimeResult) => void;
   onEditResult?: (item: BestTimeResult) => void;
+  hasStandardsEnabled?: boolean;
+  showStandards?: boolean;
+  setShowStandards?: (show: boolean) => void;
+  selectedStandardsSetId?: string | null;
+  swimmerAge?: number;
+  swimmerSex?: string;
 }) {
   // Check if we have any SCY results
   const hasScyResults = groups.some(g => g.items.some(item => item.resultUnits === 'SCY'));
@@ -127,6 +167,17 @@ function TableView({
               {hasScyResults && (
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SCY</th>
               )}
+              {hasStandardsEnabled && (
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <button
+                    onClick={() => setShowStandards(!showStandards)}
+                    className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+                  >
+                    {showStandards ? <Eye size={14} /> : <EyeOff size={14} />}
+                    <span>Standards</span>
+                  </button>
+                </th>
+              )}
               <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -134,7 +185,7 @@ function TableView({
             {groupedData.map((group) => (
               <>
                 <tr key={`header-${group.stroke}`} className="bg-slate-800/30">
-                  <td colSpan={hasScyResults ? 7 : 6} className="px-4 py-2">
+                  <td colSpan={hasScyResults ? (hasStandardsEnabled ? 8 : 7) : (hasStandardsEnabled ? 7 : 6)} className="px-4 py-2">
                     <div className="flex items-center gap-2">
                       <Activity size={14} className="text-cyan-400" />
                       <span className="text-sm font-semibold text-slate-100">{group.label}</span>
@@ -266,6 +317,37 @@ function TableView({
                               </span>
                             </button>
                           ) : (
+                            <span className="text-slate-500 text-sm">—</span>
+                          )}
+                        </td>
+                      )}
+                      
+                      {/* Standards Column (conditional) */}
+                      {hasStandardsEnabled && showStandards && swimmerAge && (
+                        <td className="px-4 py-3">
+                          {scmItem && event.activity?.toLowerCase() === 'swim' && (
+                            <StandardsCell
+                              standardsSetId={selectedStandardsSetId}
+                              distance={event.distance}
+                              stroke={anyItem.stroke}
+                              timeSeconds={scmItem.timeSeconds}
+                              resultUnits="SCM"
+                              swimmerAge={swimmerAge}
+                              swimmerSex={swimmerSex}
+                            />
+                          )}
+                          {lcmItem && !scmItem && event.activity?.toLowerCase() === 'swim' && (
+                            <StandardsCell
+                              standardsSetId={selectedStandardsSetId}
+                              distance={event.distance}
+                              stroke={anyItem.stroke}
+                              timeSeconds={lcmItem.timeSeconds}
+                              resultUnits="LCM"
+                              swimmerAge={swimmerAge}
+                              swimmerSex={swimmerSex}
+                            />
+                          )}
+                          {((!scmItem && !lcmItem) || event.activity?.toLowerCase() !== 'swim') && (
                             <span className="text-slate-500 text-sm">—</span>
                           )}
                         </td>

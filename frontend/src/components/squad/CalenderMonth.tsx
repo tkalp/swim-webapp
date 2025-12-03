@@ -76,17 +76,23 @@ export default function CalendarMonth({ events, canManage = true }: { events: Ev
             {c.day && (
               <>
                 <div className="num">{c.day}</div>
-                {c.items?.map((e, idx) => (
-                  <div key={idx} className="evt" title={e.name || e.event_type || 'Event'}>
-                    <div style={{ fontWeight: 600, marginBottom: '0.125rem' }}>
-                      {new Date(e.start_date).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
+                {c.items?.map((e, idx) => {
+                  const eventTime = new Date(e.start_date).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  });
+                  const eventName = e.name || e.event_type || 'Event';
+                  const tooltipText = `${eventTime} - ${eventName}`;
+                  
+                  return (
+                    <div key={`${e.id}-${idx}`} className="evt" title={tooltipText}>
+                      <div style={{ fontWeight: 600, marginBottom: '0.125rem' }}>
+                        {eventTime}
+                      </div>
+                      <div>{eventName}</div>
                     </div>
-                    <div>{e.name || e.event_type || 'Event'}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </>
             )}
           </div>

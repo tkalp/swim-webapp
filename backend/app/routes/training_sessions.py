@@ -70,13 +70,19 @@ async def get_virtual_sessions(
         
         materialized_sessions = materialized_response.data or []
         
-        # Create lookup for materialized sessions by (squad_id, start_date)
+        # Create lookup for materialized sessions
+        # We need to match based on the LOCAL date + time since schedules are in local time
+        # Key format: "squad_id_YYYY-MM-DD_HH:MM" in local time
         materialized_lookup = {}
         for session in materialized_sessions:
-            # Use date portion only for matching
-            session_date = session['start_date'][:10]  # Extract YYYY-MM-DD
+            session_start = datetime.fromisoformat(session['start_date'].replace('Z', '+00:00'))
+            
+            session_date = session_start.date().isoformat()
             key = f"{session['squad_id']}_{session_date}"
-            materialized_lookup[key] = session
+            
+            if key not in materialized_lookup:
+                materialized_lookup[key] = []
+            materialized_lookup[key].append(session)
         
         # Fetch active schedules for squad
         schedules_response = supabase.table('training_schedules')\
@@ -108,41 +114,56 @@ async def get_virtual_sessions(
             # Find schedules for this day
             for schedule in schedules:
                 if schedule['day_of_week'] == day_of_week:
-                    # Check if already materialized
-                    lookup_key = f"{squad_id}_{current_date.isoformat()}"
+                    # Get timezone from schedule
+                    tz_name = schedule.get('created_timezone', 'America/Denver')
+                    local_tz = pytz.timezone(tz_name)
                     
-                    if lookup_key not in materialized_lookup:
-                        # Create virtual session
-                        # Use UTC time values if available
-                        if schedule.get('start_time_utc') and schedule.get('end_time_utc'):
-                            start_time_parts = schedule['start_time_utc'].split(':')
-                            end_time_parts = schedule['end_time_utc'].split(':')
-                        else:
-                            # Fallback to old format
-                            start_time_parts = schedule['start_time'].split(':')
-                            end_time_parts = schedule['end_time'].split(':')
-                        
-                        # Create session datetime
-                        session_start = datetime(
-                            current_date.year,
-                            current_date.month,
-                            current_date.day,
-                            int(start_time_parts[0]),
-                            int(start_time_parts[1]),
-                            0,
-                            tzinfo=pytz.UTC
-                        )
-                        
-                        session_end = datetime(
-                            current_date.year,
-                            current_date.month,
-                            current_date.day,
-                            int(end_time_parts[0]),
-                            int(end_time_parts[1]),
-                            0,
-                            tzinfo=pytz.UTC
-                        )
-                        
+                    # Create naive local datetime for this day + local start time
+                    local_start_parts = schedule['start_time'].split(':')
+                    local_end_parts = schedule['end_time'].split(':')
+                    
+                    naive_local_start = datetime(
+                        current_date.year,
+                        current_date.month,
+                        current_date.day,
+                        int(local_start_parts[0]),
+                        int(local_start_parts[1]),
+                        0
+                    )
+                    
+                    naive_local_end = datetime(
+                        current_date.year,
+                        current_date.month,
+                        current_date.day,
+                        int(local_end_parts[0]),
+                        int(local_end_parts[1]),
+                        0
+                    )
+                    
+                    # Localize to the timezone and convert to UTC
+                    session_start = local_tz.localize(naive_local_start).astimezone(pytz.UTC)
+                    session_end = local_tz.localize(naive_local_end).astimezone(pytz.UTC)
+                    
+                    # Handle cases where end time is past midnight (next day in local time)
+                    if session_end <= session_start:
+                        session_end += timedelta(days=1)
+                    
+                    # Check if this session time already exists in materialized sessions
+                    # Use the UTC date for lookup
+                    utc_date = session_start.date().isoformat()
+                    lookup_key = f"{squad_id}_{utc_date}"
+                    
+                    # Check if already materialized by comparing times
+                    already_materialized = False
+                    if lookup_key in materialized_lookup:
+                        for mat_session in materialized_lookup[lookup_key]:
+                            mat_start = datetime.fromisoformat(mat_session['start_date'].replace('Z', '+00:00'))
+                            # If start times match within 1 minute, consider it the same session
+                            if abs((mat_start - session_start).total_seconds()) < 60:
+                                already_materialized = True
+                                break
+                    
+                    if not already_materialized:
                         virtual_session = {
                             'id': f"virtual_{squad_id}_{session_start.isoformat()}",  # Temporary ID
                             'squad_id': squad_id,

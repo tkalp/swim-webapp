@@ -8,7 +8,7 @@ type Props = {
   onClose: () => void
   title: string | React.ReactNode
   children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl'
   closeOnEscape?: boolean
   closeOnBackdrop?: boolean
   showCloseButton?: boolean
@@ -80,7 +80,9 @@ export default function Modal({
     md: 'max-w-md',
     lg: 'max-w-lg',
     xl: 'max-w-xl',
-    '2xl': 'max-w-2xl'
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl'
   }
 
   if (!isVisible) return null

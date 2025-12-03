@@ -27,6 +27,9 @@ export interface EventSummary {
   activity?: string
   stroke?: string
   result_units?: string
+  consistency_score?: number
+  weighted_improvement_pct?: number
+  trend_velocity_per_day?: number
   timeline: EventTimeline[]
 }
 
@@ -38,17 +41,31 @@ export interface SwimmerPerformance {
   personal_records: number
   avg_improvement_pct: number
   best_improvement_pct: number
+  consistency_score?: number
+  weighted_improvement_pct?: number
+  trend_velocity_per_day?: number
   events: EventSummary[]
 }
 
 export interface SquadSummary {
   total_swimmers: number
   avg_improvement: number
+  avg_consistency_score?: number
+  // NEW: Robust weighted improvement metrics
+  median_weighted_improvement?: number
+  swimmers_improving_count?: number
+  swimmers_stable_count?: number
+  swimmers_regressing_count?: number
+  percent_improving?: number
+  // DEPRECATED: Use median_weighted_improvement instead
+  avg_weighted_improvement?: number
+  avg_trend_velocity_per_day?: number
   total_prs: number
   most_improved: {
     swimmer_id: string
     swimmer_name: string
     improvement_pct: number
+    consistency_score?: number
   } | null
 }
 

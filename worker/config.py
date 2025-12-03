@@ -17,7 +17,7 @@ class WorkerConfig:
     REDIS_URL: str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Scraper configuration
-    MAX_WORKERS: int = 2
+    MAX_WORKERS: int = int(os.getenv('MAX_WORKERS', '8'))  # Increased from 2: network I/O bound, safe to parallelize
     MIN_DELAY: float = float(os.getenv('SCRAPER_MIN_DELAY', '0.1'))
     MAX_DELAY: float = float(os.getenv('SCRAPER_MAX_DELAY', '0.5'))
     BASE_RETRY_DELAY: float = float(os.getenv('SCRAPER_RETRY_DELAY', '1.0'))
@@ -25,7 +25,11 @@ class WorkerConfig:
     
     # Pipeline configuration
     PIPELINE_QUEUE_SIZE: int = int(os.getenv('PIPELINE_QUEUE_SIZE', '3'))  # Max events in queue
-    SPLIT_BATCH_SIZE: int = int(os.getenv('SPLIT_BATCH_SIZE', '5'))  # Splits per batch
+    SPLIT_BATCH_SIZE: int = int(os.getenv('SPLIT_BATCH_SIZE', '3'))  # Splits per batch - reduced from 5 for better concurrency (network-bound, not CPU-bound)
+    SPLITS_MAX_WORKERS: int = int(os.getenv('SPLITS_MAX_WORKERS', '8'))  # Max concurrent split fetches (increased from 2, network I/O bound)
+    GLOBAL_SPLITS_SEMAPHORE_SIZE: int = int(os.getenv('GLOBAL_SPLITS_SEMAPHORE_SIZE', '16'))  # Global concurrent splits across all events (optimization #1)
+    RESULT_BATCH_SIZE: int = int(os.getenv('RESULT_BATCH_SIZE', '50'))  # Results per existence check query
+    EVENT_BATCH_SIZE: int = int(os.getenv('EVENT_BATCH_SIZE', '5'))  # Events per parallel batch fetch
     
     # Task configuration
     TASK_SOFT_TIME_LIMIT: int = int(os.getenv('TASK_SOFT_TIME_LIMIT', '3600'))
@@ -48,6 +52,11 @@ class WorkerConfig:
     # Default 48h balances avoiding duplicate work vs catching meet corrections
     # Use 24h for aggressive updates, 72h for lenient
     SYNC_FRESHNESS_HOURS: int = int(os.getenv('SYNC_FRESHNESS_HOURS', '48'))
+    
+    # Splits configuration
+    # Set to true to completely skip fetching splits from SwimRankings
+    # Useful for testing, development, or when splits data is not needed
+    SKIP_SPLITS: bool = os.getenv('SKIP_SPLITS', 'false').lower() == 'true'
     
     @classmethod
     def get_proxy_config(cls) -> dict:
@@ -83,6 +92,12 @@ class WorkerConfig:
             raise ValueError("SUPABASE_URL environment variable is required")
         if not cls.SUPABASE_SERVICE_ROLE_KEY:
             raise ValueError("SUPABASE_SERVICE_ROLE_KEY environment variable is required")
+        
+        # Log configuration status
+        import logging
+        logger = logging.getLogger('config')
+        if cls.SKIP_SPLITS:
+            logger.info("⚠️  SKIP_SPLITS is enabled - race splits will NOT be fetched")
     
     @classmethod
     def get_max_workers(cls, override: Optional[int] = None) -> int:

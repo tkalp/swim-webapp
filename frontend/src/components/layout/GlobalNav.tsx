@@ -1,11 +1,12 @@
 // components/layout/GlobalNav.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home, Shield, Calendar } from "lucide-react";
+import { Users, Dumbbell, Sparkles, Plus, Search, LogOut, User, Settings, Network, Home, Shield, Calendar, Target } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, useEffect } from "react";
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { SwimmerSearchBar } from '@/components/swimmers/SwimmerSearchBar';
 import logo from '@/assets/logo.png';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 interface NavLinkProps {
   to: string;
@@ -186,6 +187,8 @@ interface GlobalNavProps {
 }
 
 export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
+  const { hasTimeStandards } = useFeatureFlags();
+  
   return (
     <header className="sticky top-0 z-100 bg-slate-950/80 backdrop-blur-2xl border-b border-slate-800/50 shadow-2xl">
       <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6">
@@ -208,6 +211,11 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
             <NavLink to="/workouts" icon={Dumbbell}>
               Workouts
             </NavLink>
+            {hasTimeStandards && (
+              <NavLink to="/time-standards" icon={Target}>
+                Standards
+              </NavLink>
+            )}
             <NavLink to="/network" icon={Network}>
               Network
             </NavLink>
@@ -234,6 +242,11 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
           <NavLink to="/workouts" icon={Dumbbell}>
             Workouts
           </NavLink>
+          {hasTimeStandards && (
+            <NavLink to="/time-standards" icon={Target}>
+              Standards
+            </NavLink>
+          )}
           <NavLink to="/calendar" icon={Calendar}>
             Calendar
           </NavLink>

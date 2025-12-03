@@ -6,6 +6,7 @@ type ChartDataPoint = {
   i: number;
   date: string;
   seconds: number;
+  otherTimes?: number[];
 };
 
 type AttemptsChartProps = {
@@ -13,23 +14,32 @@ type AttemptsChartProps = {
 };
 
 // Custom tooltip component for better interaction
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
+    const point = payload[0].payload as ChartDataPoint;
     const time = payload[0].value;
+    const hasOtherTimes = point.otherTimes && point.otherTimes.length > 0;
 
-        return (
-      <div className="bg-linear-to-br from-slate-900/98 to-slate-800/98 backdrop-blur-xl border-2 border-cyan-500/30 rounded-2xl p-4 shadow-2xl">
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingDown size={16} className="text-cyan-400" />
-        </div>
-        <p className="text-white/90 text-xs mb-2 font-medium">
-          {label}
+    return (
+      <div className="bg-slate-900/95 backdrop-blur-sm border border-cyan-500/30 rounded-lg px-3 py-2 shadow-xl">
+        <p className="text-cyan-400 text-xs font-medium mb-1">
+          {point.date}
         </p>
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            {formatTime(time)}
-          </span>
-        </div>
+        <p className="text-white font-bold text-lg font-mono mb-1">
+          {formatTime(time)}
+        </p>
+        {hasOtherTimes && (
+          <div className="pt-1 border-t border-slate-700/50 mt-1">
+            <p className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">
+              Also swam:
+            </p>
+            {point.otherTimes!.map((otherTime, idx) => (
+              <p key={idx} className="text-slate-400 text-sm font-mono">
+                {formatTime(otherTime)}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
     );
   }

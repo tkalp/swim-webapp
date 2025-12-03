@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense, useEffect } from 'react';
-import { BarChart3, Trophy, TrendingUp, CalendarCheck, Lock } from 'lucide-react';
+import { BarChart3, Trophy, TrendingUp, CalendarCheck, Lock, Target } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { 
   getSquadAttendanceStats,
   getSquadSessionCount,
@@ -23,6 +24,7 @@ const SquadMetricsTab = lazy(() => import('@/components/squad/SquadMetrics'));
 const SquadRankings = lazy(() => import('@/components/squad/SquadRankings'));
 const SquadPerformanceTab = lazy(() => import('@/components/squad/performance').then(m => ({ default: m.SquadPerformanceTab })));
 const SquadAttendanceTab = lazy(() => import('@/components/squad/attendance'));
+const SquadQualifiers = lazy(() => import('@/components/squad/qualifiers'));
 
 // Loading skeleton component
 function TabSkeleton() {
@@ -43,24 +45,27 @@ interface OverviewTabProps {
   squadId: string;
 }
 
-type OverviewSubTab = 'metrics' | 'rankings' | 'performance' | 'attendance';
-
-const SUB_TABS: Array<{
-  key: OverviewSubTab;
-  icon: React.ElementType;
-  label: string;
-}> = [
-  { key: 'metrics', icon: BarChart3, label: 'Metrics' },
-  { key: 'rankings', icon: Trophy, label: 'Rankings' },
-  { key: 'performance', icon: TrendingUp, label: 'Performance' },
-  { key: 'attendance', icon: CalendarCheck, label: 'Attendance' },
-];
+type OverviewSubTab = 'metrics' | 'rankings' | 'qualifiers' | 'performance' | 'attendance';
 
 export function OverviewTab({ squadId }: OverviewTabProps) {
+  const { hasQualifiers } = useFeatureFlags();
   const [activeSubTab, setActiveSubTab] = useState<OverviewSubTab>('metrics');
   const { hasPermission, loading } = usePermissions(squadId);
   const [tabsWithData, setTabsWithData] = useState<Set<OverviewSubTab>>(new Set(['metrics', 'rankings', 'performance', 'attendance']));
   const [checkingData, setCheckingData] = useState(true);
+
+  // Build sub-tabs array based on feature flags
+  const SUB_TABS: Array<{
+    key: OverviewSubTab;
+    icon: React.ElementType;
+    label: string;
+  }> = [
+    { key: 'metrics', icon: BarChart3, label: 'Metrics' },
+    { key: 'rankings', icon: Trophy, label: 'Rankings' },
+    ...(hasQualifiers ? [{ key: 'qualifiers' as OverviewSubTab, icon: Target, label: 'Qualifiers' }] : []),
+    { key: 'performance', icon: TrendingUp, label: 'Performance' },
+    { key: 'attendance', icon: CalendarCheck, label: 'Attendance' },
+  ];
 
   // Check which tabs have data
   useEffect(() => {
@@ -75,6 +80,11 @@ export function OverviewTab({ squadId }: OverviewTabProps) {
         // Always show rankings and performance tabs (these fetch their own data)
         availableTabs.add('rankings');
         availableTabs.add('performance');
+        
+        // Add qualifiers if feature is enabled
+        if (hasQualifiers) {
+          availableTabs.add('qualifiers');
+        }
         
         // Check metrics data
         const [att, sessionCount, totalMeters, dist, strokeData, activityData] = await Promise.all([
@@ -203,6 +213,7 @@ export function OverviewTab({ squadId }: OverviewTabProps) {
           <Suspense fallback={<TabSkeleton />}>
             {activeSubTab === 'metrics' && <SquadMetricsTab squadId={squadId} />}
             {activeSubTab === 'rankings' && <SquadRankings squadId={squadId} />}
+            {activeSubTab === 'qualifiers' && <SquadQualifiers squadId={squadId} />}
             {activeSubTab === 'performance' && <SquadPerformanceTab squadId={squadId} />}
             {activeSubTab === 'attendance' && <SquadAttendanceTab squadId={squadId} />}
           </Suspense>

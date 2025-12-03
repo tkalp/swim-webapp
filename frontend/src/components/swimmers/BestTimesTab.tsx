@@ -1,4 +1,3 @@
-// components/swimmer/BestTimesTab.tsx
 import { useEffect, useMemo, useState } from "react";
 import {
   getSwimmerBestTimes,
@@ -12,6 +11,7 @@ import type { Option } from '@/components/ui/CustomSelect';
 import CustomSelect from '@/components/ui/CustomSelect';
 import { supabase } from '@/lib/supabase';
 import { Activity, TrendingUp, Filter, RotateCcw, Plus } from "lucide-react";
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 type SortOption = "time" | "event" | "date";
 type Filters = { activity?: string; resultUnits?: string; stroke?: string; distance?: number };
@@ -19,9 +19,12 @@ type Filters = { activity?: string; resultUnits?: string; stroke?: string; dista
 type Swimmer = {
   first_name?: string;
   last_name?: string;
+  date_of_birth?: string;
+  sex?: string;
 };
 
 export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: { swimmerId: string; swimmer?: Swimmer; canManageResults?: boolean }) {
+  const { hasTimeStandards } = useFeatureFlags();
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [allBest, setAllBest] = useState<BestTimeResult[]>([]);
@@ -370,6 +373,10 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
             canManageResults={canManageResults}
             onCardPress={onCardPress}
             onEditResult={onEditResult}
+            selectedStandardsSetId={null}
+            swimmerDateOfBirth={swimmer?.date_of_birth}
+            swimmerSex={swimmer?.sex}
+            hasTimeStandards={hasTimeStandards}
           />
         </div>
       )}

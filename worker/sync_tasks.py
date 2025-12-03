@@ -3,6 +3,8 @@ Celery tasks for SwimRankings data synchronization and training session auto-gen
 """
 
 import asyncio
+import time
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from celery import Task
@@ -11,10 +13,12 @@ import pytz
 from worker.database import get_supabase_client
 from worker.celery_app import celery_app
 from worker.services.database_service import DatabaseService
-from worker.services.sync_service import SwimmerSyncService
 from worker.services.bulk_sync_service import BulkSyncService
 from worker.scrapers.swimrankings_scraper import SwimRankingsScraper
+from worker.sync.orchestrator import SyncOrchestrator
 from worker.models import SyncStatusUpdate
+
+logger = logging.getLogger('sync_tasks')
 
 
 class SyncTask(Task):
@@ -53,7 +57,7 @@ def sync_swimmer_task(
     limit_events: Optional[int] = None
 ) -> dict:
     """
-    Celery task to sync SwimRankings data for a single swimmer
+    Celery task to sync SwimRankings data for a single swimmer using 3-mode architecture
     
     Args:
         swimmer_id: Database swimmer ID
@@ -64,19 +68,24 @@ def sync_swimmer_task(
     Returns:
         Dictionary with sync statistics
     """
+    task_start = time.time()
+    
     # Initialize services
     supabase = get_supabase_client()
     db_service = DatabaseService(supabase)
     scraper = SwimRankingsScraper()
-    sync_service = SwimmerSyncService(db_service, scraper)
+    orchestrator = SyncOrchestrator(db_service, scraper)
     
-    # Run the async sync function
-    result = asyncio.run(sync_service.sync_swimmer(
+    # Run the async sync function using new 3-mode architecture
+    result = asyncio.run(orchestrator.sync_swimmer(
         swimmer_id=swimmer_id,
         external_link_id=external_link_id,
         external_id=external_id,
         limit_events=limit_events
     ))
+    
+    task_elapsed = time.time() - task_start
+    logger.info(f"sync_swimmer_task completed in {task_elapsed:.2f}s for swimmer {swimmer_id}")
     
     # Convert SyncResult to dict for Celery
     return {
@@ -107,6 +116,9 @@ def bulk_sync_all_swimmers_task(
     Returns:
         Dictionary with job_id and summary
     """
+    bulk_start_time = time.time()
+    logger.info(f"Starting bulk sync of all swimmers (force_update={force_update})")
+    
     try:
         # Initialize services
         supabase = get_supabase_client()
@@ -131,10 +143,10 @@ def bulk_sync_all_swimmers_task(
         # Update status to in_progress
         bulk_sync_service.update_job_status(job_id, 'in_progress')
         
-        # Initialize sync services once
+        # Initialize sync services once (new 3-mode architecture)
         db_service = DatabaseService(supabase)
         scraper = SwimRankingsScraper()
-        sync_service = SwimmerSyncService(db_service, scraper)
+        orchestrator = SyncOrchestrator(db_service, scraper)
         
         # Sync swimmers sequentially (concurrency=1 anyway)
         for link in swimmer_links:
@@ -146,8 +158,8 @@ def bulk_sync_all_swimmers_task(
             swimmer_name = f"{link['swimmers']['first_name']} {link['swimmers']['last_name']}"
             
             try:
-                # Sync swimmer directly
-                sync_result = asyncio.run(sync_service.sync_swimmer(
+                # Sync swimmer using 3-mode architecture
+                sync_result = asyncio.run(orchestrator.sync_swimmer(
                     swimmer_id=swimmer_id,
                     external_link_id=external_link_id,
                     external_id=external_id,
@@ -211,12 +223,17 @@ def bulk_sync_all_swimmers_task(
         succeeded_count = job_status['swimmers_succeeded'] if job_status else 0
         failed_count = job_status['swimmers_failed'] if job_status else 0
         
+        # Calculate elapsed time
+        bulk_elapsed = time.time() - bulk_start_time
+        logger.info(f"bulk_sync_all_swimmers_task completed in {bulk_elapsed:.2f}s (job_id={job_id}, succeeded={succeeded_count}, failed={failed_count})")
+        
         print("\n" + "=" * 100)
         print("🎉 BULK SYNC JOB COMPLETED")
         print(f"   Job ID: {job_id}")
         print(f"   Total Swimmers: {total_swimmers}")
         print(f"   ✅ Succeeded: {succeeded_count}")
         print(f"   ❌ Failed: {failed_count}")
+        print(f"   ⏱️  Elapsed Time: {bulk_elapsed:.2f}s")
         print("=" * 100 + "\n")
         
         return {
@@ -314,237 +331,3 @@ def update_bulk_sync_progress(
         print(f"   Error: {e}")
         print("=" * 100)
 
-
-"""
-================================================================================
-DEPRECATED: AUTO-GENERATE SESSIONS TASK
-================================================================================
-This task has been replaced by on-demand virtual session generation.
-
-Sessions are now calculated on-the-fly from training_schedules and materialized
-only when needed (workout assignment, attendance taking).
-
-See: backend/app/routes/training_sessions.py
-- GET /training-sessions/virtual - Fetches materialized + virtual sessions
-- POST /training-sessions/materialize - Converts virtual to real session
-
-This task is kept for reference only and should not be enabled.
-================================================================================
-"""
-
-@celery_app.task(bind=True, name='worker.sync_tasks.auto_generate_sessions_task')
-def auto_generate_sessions_task(self, days_ahead: int = 14, squad_id: Optional[str] = None) -> dict:
-    """
-    DEPRECATED - DO NOT USE
-    
-    Celery task to automatically generate training sessions from schedules for all active squads
-    
-    This task:
-    1. Queries all active training schedules (or for specific squad if provided)
-    2. Uses UTC timestamps stored in start_time_utc and end_time_utc columns
-    3. Groups schedules by squad
-    4. Generates sessions for the next N days (default: 14)
-    5. Uses upsert with ignoreDuplicates to avoid overwriting existing sessions
-    
-    Args:
-        days_ahead: Number of days ahead to generate sessions (default: 14)
-        squad_id: Optional squad ID to limit generation to specific squad (default: None for all)
-    
-    Returns:
-        Dictionary with generation statistics
-    """
-    return {
-        'success': False,
-        'error': 'This task is deprecated. Use virtual session endpoints instead.',
-        'squads_processed': 0,
-        'sessions_generated': 0
-    }
-    try:
-        print("\n" + "=" * 100)
-        print("🔄 AUTO-GENERATE SESSIONS TASK STARTED")
-        print(f"   Days Ahead: {days_ahead}")
-        if squad_id:
-            print(f"   Limited to Squad: {squad_id}")
-        print(f"   Started At: {datetime.utcnow().isoformat()}")
-        print("=" * 100)
-        
-        # Initialize Supabase client
-        supabase = get_supabase_client()
-        
-        # Get active training schedules (no need to join squads for timezone anymore)
-        query = supabase.table('training_schedules')\
-            .select('*')\
-            .eq('active', True)
-        
-        if squad_id:
-            query = query.eq('squad_id', squad_id)
-        
-        response = query.execute()
-        
-        schedules = response.data
-        
-        if not schedules:
-            print("ℹ️  No active training schedules found")
-            return {
-                'success': True,
-                'squads_processed': 0,
-                'sessions_generated': 0,
-                'message': 'No active schedules found'
-            }
-        
-        # Group schedules by squad_id
-        squads_schedules = {}
-        
-        for schedule in schedules:
-            squad_id_key = schedule['squad_id']
-            
-            if squad_id_key not in squads_schedules:
-                squads_schedules[squad_id_key] = []
-            
-            squads_schedules[squad_id_key].append(schedule)
-        
-        total_sessions_generated = 0
-        squads_processed = 0
-        errors = []
-        
-        # Calculate date range in UTC
-        now_utc = datetime.utcnow()
-        start_date = now_utc.date()
-        end_date = start_date + timedelta(days=days_ahead)
-        
-        # Process each squad
-        for squad_id_key, squad_schedules in squads_schedules.items():
-            try:
-                print(f"\n📅 Processing Squad ID: {squad_id_key}")
-                print(f"   Schedules Count: {len(squad_schedules)}")
-                
-                sessions_to_create = []
-                
-                # Generate sessions for each day in the range
-                current_date = start_date
-                while current_date <= end_date:
-                    day_of_week = current_date.strftime('%A')
-                    
-                    # Find schedule(s) for this day
-                    for schedule in squad_schedules:
-                        if schedule['day_of_week'] == day_of_week:
-                            # Use UTC time values if available, otherwise fall back to old format
-                            if schedule.get('start_time_utc') and schedule.get('end_time_utc'):
-                                # Parse UTC time string (format: "HH:MM:SS")
-                                start_time_parts = schedule['start_time_utc'].split(':')
-                                end_time_parts = schedule['end_time_utc'].split(':')
-                                
-                                # Create session datetime with current date + UTC time from schedule
-                                utc_session_start = datetime(
-                                    current_date.year,
-                                    current_date.month,
-                                    current_date.day,
-                                    int(start_time_parts[0]),
-                                    int(start_time_parts[1]),
-                                    0,
-                                    tzinfo=pytz.UTC
-                                )
-                                
-                                utc_session_end = datetime(
-                                    current_date.year,
-                                    current_date.month,
-                                    current_date.day,
-                                    int(end_time_parts[0]),
-                                    int(end_time_parts[1]),
-                                    0,
-                                    tzinfo=pytz.UTC
-                                )
-                            else:
-                                # Fallback: use old start_time/end_time format (will be removed after migration)
-                                # Assume times are in UTC for backward compatibility
-                                start_time_parts = schedule['start_time'].split(':')
-                                end_time_parts = schedule['end_time'].split(':')
-                                
-                                utc_session_start = datetime(
-                                    current_date.year,
-                                    current_date.month,
-                                    current_date.day,
-                                    int(start_time_parts[0]),
-                                    int(start_time_parts[1]),
-                                    0,
-                                    tzinfo=pytz.UTC
-                                )
-                                
-                                utc_session_end = datetime(
-                                    current_date.year,
-                                    current_date.month,
-                                    current_date.day,
-                                    int(end_time_parts[0]),
-                                    int(end_time_parts[1]),
-                                    0,
-                                    tzinfo=pytz.UTC
-                                )
-                            
-                            sessions_to_create.append({
-                                'squad_id': squad_id_key,
-                                'start_date': utc_session_start.isoformat(),
-                                'end_date': utc_session_end.isoformat(),
-                                'workout_id': None,
-                                'training_type': schedule['training_type']
-                            })
-                    
-                    current_date += timedelta(days=1)
-                
-                # Upsert sessions (will ignore duplicates based on squad_id, start_date unique constraint)
-                if sessions_to_create:
-                    result = supabase.table('training_sessions')\
-                        .upsert(
-                            sessions_to_create,
-                            on_conflict='squad_id,start_date',
-                            ignore_duplicates=True
-                        )\
-                        .execute()
-                    
-                    # Count actual insertions (note: Supabase may not return inserted count with ignoreDuplicates)
-                    sessions_count = len(sessions_to_create)
-                    total_sessions_generated += sessions_count
-                    
-                    print(f"   ✅ Generated {sessions_count} session(s)")
-                else:
-                    print(f"   ℹ️  No sessions to generate for this squad")
-                
-                squads_processed += 1
-                
-            except Exception as squad_error:
-                error_msg = f"Squad {squad_id_key}: {str(squad_error)}"
-                errors.append(error_msg)
-                print(f"   ❌ Error: {squad_error}")
-        
-        # Final summary
-        print("\n" + "=" * 100)
-        print("✅ AUTO-GENERATE SESSIONS TASK COMPLETED")
-        print(f"   Squads Processed: {squads_processed}/{len(squads_schedules)}")
-        print(f"   Sessions Generated: {total_sessions_generated}")
-        print(f"   Errors: {len(errors)}")
-        print(f"   Completed At: {datetime.utcnow().isoformat()}")
-        print("=" * 100 + "\n")
-        
-        return {
-            'success': len(errors) == 0,
-            'squads_processed': squads_processed,
-            'total_squads': len(squads_schedules),
-            'sessions_generated': total_sessions_generated,
-            'errors': errors,
-            'days_ahead': days_ahead,
-            'start_date': start_date.isoformat(),
-            'end_date': end_date.isoformat()
-        }
-        
-    except Exception as e:
-        error_msg = f"Task failed: {str(e)}"
-        print("\n" + "=" * 100)
-        print("❌ AUTO-GENERATE SESSIONS TASK FAILED")
-        print(f"   Error: {error_msg}")
-        print("=" * 100 + "\n")
-        
-        return {
-            'success': False,
-            'error': error_msg,
-            'squads_processed': 0,
-            'sessions_generated': 0
-        }

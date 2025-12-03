@@ -5,11 +5,25 @@ Domain models and types for worker service
 from dataclasses import dataclass, field
 from typing import Optional, List, Literal
 from datetime import datetime
+from enum import Enum
 
 # Type definitions
 SyncStatus = Literal['pending', 'in_progress', 'completed', 'failed', 'cancelled']
 StrokeType = Literal['free', 'back', 'breast', 'fly', 'im']
 CourseType = Literal['LCM', 'SCM']
+
+
+class SyncMode(Enum):
+    """
+    Sync mode enum representing which data pattern an event matches
+    
+    NO_HISTORY: Event completely missing from database, needs full sync
+    PARTIAL_HISTORY: Event has some stale results, needs incremental sync + splits
+    FULL_HISTORY: Event has fresh data, skip entirely
+    """
+    NO_HISTORY = "no_history"
+    PARTIAL_HISTORY = "partial_history"
+    FULL_HISTORY = "full_history"
 
 
 @dataclass

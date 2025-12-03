@@ -18,6 +18,7 @@ import WorkoutsLibraryPage from './pages/WorkoutsLibrary';
 import CoachNetworkPage from './pages/CoachNetwork';
 import AdminSyncPage from './pages/AdminSyncPage';
 import CalendarPage from './pages/Calendar';
+import TimeStandards from './pages/TimeStandards';
 import { analytics } from './lib/mixpanel';
 
 export default function App() {
@@ -143,6 +144,14 @@ export default function App() {
             </GlobalLayout>
           }
           path="/admin/sync"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <TimeStandards />
+            </GlobalLayout>
+          }
+          path="/time-standards"
         />
       </Route>
       <Route path="/login" element={<Login />} />

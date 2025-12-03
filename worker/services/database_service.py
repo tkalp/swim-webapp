@@ -222,6 +222,68 @@ class DatabaseService:
         
         return recent_results, stale_event_keys, all_event_keys
     
+    def get_swimmer_most_recent_result_per_event(
+        self,
+        swimmer_id: str
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Get the MOST RECENT result for each event (not all old results)
+        Used for smart comparison: check if most recent external result matches most recent DB result
+        If they match (same time, date), skip the entire event
+        
+        Args:
+            swimmer_id: Database swimmer ID
+            
+        Returns:
+            Dictionary mapping event_key to most recent result metadata:
+            {
+                '100_free_LCM': {
+                    'swimrankings_result_id': 'sr_123',
+                    'created_at': '2025-12-01T10:30:00',
+                    'time_result': '51.23',
+                    'performed_on': '2025-11-30',
+                    'distance': 100,
+                    'stroke': 'free',
+                    'result_units': 'LCM'
+                },
+                ...
+            }
+        """
+        # Get all swim results with SwimRankings ID (ordered by created_at DESC)
+        result = self.supabase.table('workout_result').select(
+            'id, swimrankings_result_id, created_at, time_result, performed_on, distance, stroke, result_units'
+        ).eq('swimmer_id', swimmer_id).eq(
+            'activity', 'swim'
+        ).not_.is_(
+            'swimrankings_result_id', 'null'
+        ).order('created_at', desc=True).execute()
+        
+        if not result.data:
+            return {}
+        
+        # Group by event key and keep only the first (most recent)
+        most_recent_per_event = {}
+        
+        for row in result.data:
+            event_key = f"{row['distance']}_{row['stroke']}_{row['result_units']}"
+            
+            # Skip if we already have the most recent for this event
+            if event_key in most_recent_per_event:
+                continue
+            
+            # Store the most recent result for this event
+            most_recent_per_event[event_key] = {
+                'swimrankings_result_id': row['swimrankings_result_id'],
+                'created_at': row['created_at'],
+                'time_result': row['time_result'],
+                'performed_on': row['performed_on'],
+                'distance': row['distance'],
+                'stroke': row['stroke'],
+                'result_units': row['result_units']
+            }
+        
+        return most_recent_per_event
+    
     def get_existing_result_count(
         self, 
         swimmer_id: str, 
@@ -291,6 +353,27 @@ class DatabaseService:
         
         return result.data if result.data else []
     
+    @staticmethod
+    def _seconds_to_interval(seconds: float) -> str:
+        """
+        Convert seconds (float) to PostgreSQL interval format
+        
+        Args:
+            seconds: Time in seconds (e.g., 28.70)
+            
+        Returns:
+            Interval string in MM:SS.MS or HH:MM:SS.MS format
+        """
+        if seconds < 0:
+            seconds = 0
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = seconds % 60
+        if hours > 0:
+            return f"{hours:02d}:{minutes:02d}:{secs:06.3f}"
+        else:
+            return f"{minutes:02d}:{secs:06.3f}"
+    
     def bulk_insert_workout_results_with_splits(
         self,
         results: List[WorkoutResult],
@@ -327,31 +410,35 @@ class DatabaseService:
         for sr_id, splits in splits_map.items():
             workout_result_id = sr_id_to_db_id.get(sr_id)
             if not workout_result_id:
+                import logging
+                logger = logging.getLogger('database_service')
+                logger.debug(f"No database ID found for swimrankings_result_id {sr_id}, skipping {len(splits)} splits")
                 continue
             
             for split in splits:
                 all_splits.append({
                     'workout_result_id': workout_result_id,
                     'split_distance': split.split_distance,
-                    'split_time': split.split_time,
-                    'cumulative_time': split.cumulative_time,
+                    'split_time': self._seconds_to_interval(split.split_time),
+                    'cumulative_time': self._seconds_to_interval(split.cumulative_time),
                     'split_order': split.split_order
                 })
         
         # Insert all splits in one operation
         if all_splits:
-            self.supabase.table('race_splits').insert(all_splits).execute()
+            import logging
+            logger = logging.getLogger('database_service')
+            try:
+                result = self.supabase.table('race_splits').insert(all_splits).execute()
+                logger.info(f"Successfully inserted {len(all_splits)} race splits")
+                return inserted_results
+            except Exception as e:
+                logger.error(f"Error inserting {len(all_splits)} race splits: {e}", exc_info=True)
+                # Still return inserted results even if splits fail
+                return inserted_results
         
-        # Deduplicate any duplicates that may have been created
-        # This handles cases where fallback IDs vary due to location formatting differences
-        if inserted_results and len(inserted_results) > 0:
-            swimmer_id = inserted_results[0].get('swimmer_id')
-            if swimmer_id:
-                deleted_count = self.deduplicate_swimmer_results(swimmer_id)
-                if deleted_count > 0:
-                    import logging
-                    logger = logging.getLogger('database_service')
-                    logger.info(f"Removed {deleted_count} duplicate results for swimmer {swimmer_id}")
+        # NOTE: Deduplication moved to be batched at end of sync via _finalize_sync()
+        # instead of calling after every insert (which caused 100+ RPC calls during sync)
         
         return inserted_results
     
@@ -444,16 +531,22 @@ class DatabaseService:
             {
                 'workout_result_id': workout_result_id,
                 'split_distance': split.split_distance,
-                'split_time': split.split_time,
-                'cumulative_time': split.cumulative_time,
+                'split_time': self._seconds_to_interval(split.split_time),
+                'cumulative_time': self._seconds_to_interval(split.cumulative_time),
                 'split_order': split.split_order
             }
             for split in splits
         ]
         
-        self.supabase.table('race_splits').insert(
-            splits_data
-        ).execute()
+        import logging
+        logger = logging.getLogger('database_service')
+        try:
+            self.supabase.table('race_splits').insert(
+                splits_data
+            ).execute()
+            logger.info(f"Inserted {len(splits_data)} splits for result {workout_result_id}")
+        except Exception as e:
+            logger.error(f"Error inserting splits for {workout_result_id}: {e}", exc_info=True)
     
     def bulk_insert_splits_for_multiple_results(
         self,
@@ -474,15 +567,21 @@ class DatabaseService:
                 all_splits.append({
                     'workout_result_id': workout_result_id,
                     'split_distance': split.split_distance,
-                    'split_time': split.split_time,
-                    'cumulative_time': split.cumulative_time,
+                    'split_time': self._seconds_to_interval(split.split_time),
+                    'cumulative_time': self._seconds_to_interval(split.cumulative_time),
                     'split_order': split.split_order
                 })
         
         if all_splits:
-            self.supabase.table('race_splits').insert(
-                all_splits
-            ).execute()
+            import logging
+            logger = logging.getLogger('database_service')
+            try:
+                self.supabase.table('race_splits').insert(
+                    all_splits
+                ).execute()
+                logger.info(f"Inserted {len(all_splits)} splits for {len(splits_map)} results")
+            except Exception as e:
+                logger.error(f"Error inserting {len(all_splits)} splits: {e}", exc_info=True)
     
     def update_stale_results_timestamp(
         self,
@@ -543,7 +642,7 @@ class DatabaseService:
             'events_checked'
         ).eq('id', external_link_id).maybe_single().execute()
         
-        if not result.data or not result.data.get('events_checked'):
+        if result is None or not result.data or not result.data.get('events_checked'):
             return {}
         
         return result.data['events_checked']

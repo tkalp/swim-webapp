@@ -3,10 +3,12 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from datetime import datetime, timedelta
 from collections import defaultdict
+import statistics
 
 from app.infrastructure.database import get_supabase_client
 from app.middleware.auth import get_current_user_id
 from app.utils import logger, log_error
+from app.services.performance_service import PerformanceService
 
 router = APIRouter(prefix="/squads", tags=["squads"])
 
@@ -183,6 +185,21 @@ async def get_squad_performance(
                 # Get activity and stroke from first attempt (they're all the same for this event)
                 first_attempt = sorted_attempts[0]
                 
+                # Calculate per-event consistency (how stable are the times in this event)
+                attempt_times = [a['time_seconds'] for a in sorted_attempts]
+                event_consistency = PerformanceService.calculate_per_event_consistency(attempt_times)
+                
+                # Calculate weighted improvement for this event
+                event_weighted_improvement = PerformanceService.calculate_weighted_improvement(
+                    [{'date': a['date'], 'time': a['time_seconds']} for a in sorted_attempts],
+                    first_time
+                )
+                
+                # Calculate trend velocity for this event
+                event_trend_velocity = PerformanceService.calculate_trend_velocity(
+                    [{'date': a['date'], 'time': a['time_seconds']} for a in sorted_attempts]
+                )
+                
                 events_summary.append({
                     'event': event_key,
                     'attempts': len(sorted_attempts),
@@ -194,6 +211,9 @@ async def get_squad_performance(
                     'activity': first_attempt['activity'],
                     'stroke': first_attempt['stroke'],
                     'result_units': first_attempt['result_units'],
+                    'consistency_score': event_consistency,
+                    'weighted_improvement_pct': event_weighted_improvement,
+                    'trend_velocity_per_day': event_trend_velocity,
                     'timeline': [{'date': a['date'], 'time': a['time_seconds']} for a in sorted_attempts]
                 })
             
@@ -201,6 +221,18 @@ async def get_squad_performance(
             avg_improvement = sum(swimmer_improvements) / len(swimmer_improvements) if swimmer_improvements else 0
             # Find best improvement (most negative value = biggest improvement)
             best_improvement = min(swimmer_improvements) if swimmer_improvements else 0
+            
+            # Calculate swimmer-level consistency as average of event-level consistency scores
+            event_consistency_scores = [e.get('consistency_score', 0) for e in events_summary if e.get('consistency_score') is not None]
+            swimmer_consistency = sum(event_consistency_scores) / len(event_consistency_scores) if event_consistency_scores else 0
+            
+            # Calculate swimmer-level weighted improvement as median of event-level weighted improvements
+            event_weighted_improvements = [e.get('weighted_improvement_pct', 0) for e in events_summary if e.get('weighted_improvement_pct') is not None]
+            overall_weighted_improvement = statistics.median(event_weighted_improvements) if event_weighted_improvements else 0
+            
+            # Calculate swimmer-level trend velocity as median of event-level trend velocities
+            event_trend_velocities = [e.get('trend_velocity_per_day', 0) for e in events_summary if e.get('trend_velocity_per_day') is not None]
+            overall_trend_velocity = statistics.median(event_trend_velocities) if event_trend_velocities else 0
             
             swimmers_performance.append({
                 'swimmer_id': swimmer_id,
@@ -210,6 +242,9 @@ async def get_squad_performance(
                 'personal_records': swimmer_prs,
                 'avg_improvement_pct': avg_improvement,
                 'best_improvement_pct': best_improvement,
+                'consistency_score': swimmer_consistency,
+                'weighted_improvement_pct': overall_weighted_improvement,
+                'trend_velocity_per_day': overall_trend_velocity,
                 'events': events_summary
             })
             
@@ -223,11 +258,39 @@ async def get_squad_performance(
         # Sort by improvement (most negative = most improved)
         swimmers_performance.sort(key=lambda x: x['avg_improvement_pct'], reverse=False)
         
-        # Calculate squad summary
+        # Calculate squad summary metrics
         squad_avg_improvement = -total_improvement / improvement_count if improvement_count > 0 else 0
         most_improved = swimmers_performance[0] if swimmers_performance else None
         
-        logger.info(f"Squad performance calculated | swimmers={len(swimmers_performance)} | avg_improvement={squad_avg_improvement:.2f}%")
+        # Calculate squad-level consistency and trend
+        squad_consistencies = [s['consistency_score'] for s in swimmers_performance if s.get('consistency_score', 0) > 0]
+        squad_avg_consistency = sum(squad_consistencies) / len(squad_consistencies) if squad_consistencies else 0
+        
+        # NEW: Improved weighted improvement aggregation with outlier protection
+        # Cap individual values at ±100% before aggregation to prevent extreme outliers
+        def cap_improvement(value: float, cap: float = 100.0) -> float:
+            if value is None:
+                return 0.0
+            return max(-cap, min(cap, value))
+        
+        capped_weighted_improvements = [cap_improvement(s['weighted_improvement_pct']) for s in swimmers_performance]
+        
+        # Use median instead of mean (more robust to outliers)
+        squad_median_weighted_improvement = statistics.median(capped_weighted_improvements) if capped_weighted_improvements else 0
+        
+        # Calculate improvement distribution for actionable insights
+        swimmers_improving = sum(1 for w in capped_weighted_improvements if w < -1)  # Improving by >1%
+        swimmers_stable = sum(1 for w in capped_weighted_improvements if -1 <= w <= 1)  # Stable ±1%
+        swimmers_regressing = sum(1 for w in capped_weighted_improvements if w > 1)  # Regressing by >1%
+        
+        # Calculate percentage improving
+        total_analyzed = len(capped_weighted_improvements)
+        percent_improving = (swimmers_improving / total_analyzed * 100) if total_analyzed > 0 else 0
+        
+        squad_trend_velocities = [s['trend_velocity_per_day'] for s in swimmers_performance if s.get('trend_velocity_per_day') is not None]
+        squad_avg_trend_velocity = sum(squad_trend_velocities) / len(squad_trend_velocities) if squad_trend_velocities else 0
+        
+        logger.info(f"Squad performance calculated | swimmers={len(swimmers_performance)} | avg_improvement={squad_avg_improvement:.2f}% | consistency={squad_avg_consistency:.1f} | improving={swimmers_improving}/{total_analyzed}")
         
         return {
             "squad": squad_info,
@@ -239,11 +302,21 @@ async def get_squad_performance(
             "summary": {
                 "total_swimmers": len(swimmers_performance),
                 "avg_improvement": squad_avg_improvement,
+                "avg_consistency_score": round(squad_avg_consistency, 2),
+                # NEW: Robust weighted improvement metric (median with ±100% caps)
+                "median_weighted_improvement": round(squad_median_weighted_improvement, 2),
+                # NEW: Distribution metrics for actionable insights
+                "swimmers_improving_count": swimmers_improving,
+                "swimmers_stable_count": swimmers_stable,
+                "swimmers_regressing_count": swimmers_regressing,
+                "percent_improving": round(percent_improving, 1),
+                "avg_trend_velocity_per_day": round(squad_avg_trend_velocity, 4),
                 "total_prs": total_prs,
                 "most_improved": {
                     "swimmer_id": most_improved['swimmer_id'],
                     "swimmer_name": most_improved['swimmer_name'],
-                    "improvement_pct": most_improved['avg_improvement_pct']
+                    "improvement_pct": most_improved['avg_improvement_pct'],
+                    "consistency_score": most_improved.get('consistency_score', 0)
                 } if most_improved else None
             }
         }

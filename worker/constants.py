@@ -67,8 +67,39 @@ def get_all_events() -> List[str]:
 
 
 def get_stroke_enum(stroke_name: str) -> Optional[str]:
-    """Get stroke enum from stroke name"""
-    return STROKE_NAME_TO_ENUM.get(stroke_name)
+    """Get stroke enum from stroke name
+    
+    Args:
+        stroke_name: Stroke name (e.g., 'Freestyle', 'freestyle', 'Backstroke')
+        
+    Returns:
+        Stroke enum value: 'free', 'back', 'breast', 'fly', 'im'
+        Defaults to 'free' if stroke not recognized
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Accept both capitalized and lowercase versions
+    if not stroke_name:
+        logger.warning("get_stroke_enum called with empty stroke_name, defaulting to 'free'")
+        return 'free'
+    
+    # Try exact match first
+    result = STROKE_NAME_TO_ENUM.get(stroke_name)
+    if result:
+        logger.debug(f"get_stroke_enum('{stroke_name}') -> '{result}' (exact match)")
+        return result
+    
+    # Try capitalized version (capitalize first letter of each word for compound names)
+    capitalized = ' '.join(word.capitalize() for word in stroke_name.split())
+    result = STROKE_NAME_TO_ENUM.get(capitalized)
+    if result:
+        logger.debug(f"get_stroke_enum('{stroke_name}') -> '{result}' (capitalized match: '{capitalized}')")
+        return result
+    
+    # Default to freestyle if not found
+    logger.warning(f"get_stroke_enum('{stroke_name}') -> 'free' (not found, using default)")
+    return 'free'
 
 
 def get_all_event_keys() -> set:

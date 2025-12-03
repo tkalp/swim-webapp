@@ -21,19 +21,22 @@ logger = logging.getLogger('swimrankings_scraper')
 class SwimRankingsScraper(BaseScraper):
     """Service for scraping SwimRankings.net"""
     
-    def __init__(self, max_workers: Optional[int] = None, fetch_mode: Optional[str] = None):
+    def __init__(self, max_workers: Optional[int] = None, fetch_mode: Optional[str] = None, global_splits_semaphore: Optional[asyncio.Semaphore] = None):
         """
         Initialize SwimRankings scraper
         
         Args:
             max_workers: Maximum parallel workers for split fetching
             fetch_mode: Fetch mode ('curl', 'httpx', 'playwright'). Defaults to config.
+            global_splits_semaphore: Optional global semaphore for parallel splits across events (optimization #1)
         """
         super().__init__(max_workers)
         self.base_url = WorkerConfig.SWIMRANKINGS_BASE_URL
         self.parser = SwimRankingsParser()
         self.fetcher: BaseFetcher = FetcherFactory.create(mode=fetch_mode)
-        logger.info(f"SwimRankingsScraper initialized with {self.fetcher.get_name()} fetcher")
+        self.global_splits_semaphore = global_splits_semaphore
+        logger.info(f"SwimRankingsScraper initialized with {self.fetcher.get_name()} fetcher" + 
+                   (" (global splits semaphore enabled)" if global_splits_semaphore else ""))
     
     async def fetch_event_attempts(
         self,
@@ -126,52 +129,68 @@ class SwimRankingsScraper(BaseScraper):
                     for attempt in attempts
                 ]
             else:
-                # Fetch splits for all attempts in parallel with semaphore for rate limiting
-                logger.info(f"Fetching splits for {len(attempts)} attempt(s) using {self.MAX_WORKERS} parallel workers...")
-                semaphore = asyncio.Semaphore(self.MAX_WORKERS)
+                # Check global SKIP_SPLITS flag
+                from worker.config import WorkerConfig
                 
-                async def fetch_splits_with_semaphore(idx: int, attempt: AttemptData) -> ResultWithSplits:
-                    """Fetch splits for a single attempt with rate limiting"""
-                    async with semaphore:
-                        # Check for cancellation before fetching each split
-                        if check_cancellation_fn and await check_cancellation_fn():
-                            logger.info(f"[{idx}/{len(attempts)}] Sync cancelled, stopping splits fetch")
-                            raise asyncio.CancelledError("Sync cancelled by user")
-                        
-                        logger.info(f"[{idx}/{len(attempts)}] Processing attempt: {attempt.time} on {attempt.date} at {attempt.location}")
-                        
-                        result = ResultWithSplits(
+                if WorkerConfig.SKIP_SPLITS:
+                    logger.info(f"SKIP_SPLITS enabled: skipping splits fetch for {len(attempts)} attempt(s)")
+                    all_results = [
+                        ResultWithSplits(
                             attempt=attempt,
                             reaction_time=None,
                             splits=[],
-                            has_splits_available=None
+                            has_splits_available=False
                         )
-                        
-                        if attempt.result_id:
-                            # Note: Rate limiting removed for concurrent split fetching
-                            # Concurrency controlled by semaphore in sync_service
+                        for attempt in attempts
+                    ]
+                else:
+                    # Fetch splits for all attempts in parallel with semaphore for rate limiting
+                    logger.info(f"Fetching splits for {len(attempts)} attempt(s) using {self.MAX_WORKERS} parallel workers...")
+                    # Optimization #1: Use global semaphore if provided (parallel across events), otherwise local (per-event)
+                    semaphore = self.global_splits_semaphore if self.global_splits_semaphore else asyncio.Semaphore(self.MAX_WORKERS)
+                    
+                    async def fetch_splits_with_semaphore(idx: int, attempt: AttemptData) -> ResultWithSplits:
+                        """Fetch splits for a single attempt with rate limiting"""
+                        async with semaphore:
+                            # Check for cancellation before fetching each split
+                            if check_cancellation_fn and await check_cancellation_fn():
+                                logger.info(f"[{idx}/{len(attempts)}] Sync cancelled, stopping splits fetch")
+                                raise asyncio.CancelledError("Sync cancelled by user")
                             
-                            logger.info(f"[{idx}/{len(attempts)}] Fetching splits for result_id={attempt.result_id}")
-                            splits_data = await self._fetch_splits(attempt.result_id)
-                            result.reaction_time = splits_data.get('reaction_time')
-                            result.splits = splits_data.get('splits', [])
+                            logger.info(f"[{idx}/{len(attempts)}] Processing attempt: {attempt.time} on {attempt.date} at {attempt.location}")
                             
-                            # Mark availability based on whether splits were found
-                            result.has_splits_available = len(result.splits) > 0
+                            result = ResultWithSplits(
+                                attempt=attempt,
+                                reaction_time=None,
+                                splits=[],
+                                has_splits_available=None
+                            )
                             
-                            if result.splits:
-                                logger.info(f"[{idx}/{len(attempts)}] Found {len(result.splits)} split(s)" + 
-                                          (f" (reaction time: {result.reaction_time}s)" if result.reaction_time else ""))
+                            if attempt.result_id:
+                                # Note: Rate limiting removed for concurrent split fetching
+                                # Concurrency controlled by semaphore in sync_service
+                                
+                                logger.info(f"[{idx}/{len(attempts)}] Fetching splits for result_id={attempt.result_id}")
+                                splits_data = await self._fetch_splits(attempt.result_id)
+                                result.reaction_time = splits_data.get('reaction_time')
+                                result.splits = splits_data.get('splits', [])
+                                
+                                # Mark availability based on whether splits were found
+                                result.has_splits_available = len(result.splits) > 0
+                                
+                                if result.splits:
+                                    logger.info(f"[{idx}/{len(attempts)}] Found {len(result.splits)} split(s)" + 
+                                              (f" (reaction time: {result.reaction_time}s)" if result.reaction_time else ""))
+                                else:
+                                    logger.debug(f"[{idx}/{len(attempts)}] No splits found for this result")
                             else:
-                                logger.debug(f"[{idx}/{len(attempts)}] No splits found for this result")
-                        else:
-                            logger.debug(f"[{idx}/{len(attempts)}] No result_id available, skipping splits fetch")
-                        
-                        return result
-                
-                # Fetch all splits in parallel
-                tasks = [fetch_splits_with_semaphore(idx + 1, attempt) for idx, attempt in enumerate(attempts)]
-                all_results = await asyncio.gather(*tasks)
+                                logger.debug(f"[{idx}/{len(attempts)}] No result_id available, skipping splits fetch")
+                            
+                            return result
+                    
+                    # Fetch all splits in parallel
+                    tasks = [fetch_splits_with_semaphore(idx + 1, attempt) for idx, attempt in enumerate(attempts)]
+                    all_results = await asyncio.gather(*tasks)
             
             # Count results without result_id for logging
             skipped_no_result_id = sum(1 for r in all_results if not r.attempt.result_id)

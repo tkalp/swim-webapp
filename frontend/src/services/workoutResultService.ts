@@ -29,6 +29,9 @@ export type SwimmerRanking = {
   activity: ActivityType
   pace: number // seconds per 100m/y
   result_count: number
+  date_of_birth?: string
+  sex?: string
+  result_units: string
 }
 
 /**
@@ -41,10 +44,10 @@ export async function getSquadRankings(
   distance: number,
   resultUnits: string
 ): Promise<SwimmerRanking[]> {
-  // First get all swimmers in the squad
+  // First get all swimmers in the squad with demographics for standards
   const { data: swimmers, error: swimmersError } = await supabase
     .from('swimmers')
-    .select('id, first_name, last_name')
+    .select('id, first_name, last_name, date_of_birth, sex')
     .eq('squad_id', squadId)
 
   if (swimmersError) {
@@ -117,7 +120,10 @@ export async function getSquadRankings(
         stroke,
         activity,
         pace,
-        result_count: data.count
+        result_count: data.count,
+        date_of_birth: swimmer.date_of_birth,
+        sex: swimmer.sex,
+        result_units: resultUnits
       })
     }
   })
