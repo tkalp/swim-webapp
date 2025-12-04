@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
-import { 
-  getSquadPerformance, 
-  SquadPerformanceData,
-} from '@/services/metricsService';
+import { useSquadPerformance } from '@/hooks/useSquadPerformance';
 import { SquadSummaryStats } from '@/components/squad-analytics/SquadSummaryStats';
 import { SquadPageHeader } from '../SquadPageHeader';
 import { PerformanceHeader } from '@/components/squad/performance/PerformanceHeader';
@@ -16,33 +13,17 @@ interface SquadPerformanceTabProps {
 
 const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) => {
   const [dateRange, setDateRange] = useState(getDefaultDateRange());
-  const [data, setData] = useState<SquadPerformanceData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [expandedSwimmerId, setExpandedSwimmerId] = useState<string | null>(null);
 
-  // Fetch performance data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+  // Use cached query for performance data
+  const { 
+    data, 
+    isLoading: loading, 
+    error: queryError,
+    refetch 
+  } = useSquadPerformance(squadId, dateRange.start, dateRange.end);
 
-      try {
-        const result = await getSquadPerformance(
-          squadId,
-          dateRange.start,
-          dateRange.end
-        );
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load performance data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [squadId, dateRange]);
+  const error = queryError ? String(queryError) : null;
 
   const handleDateChange = useCallback((field: 'start' | 'end', value: string) => {
     setDateRange(prev => ({ ...prev, [field]: value }));

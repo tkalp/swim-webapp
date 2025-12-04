@@ -151,16 +151,28 @@ function ProfileMenu() {
             </button>
             
             {isAdmin && (
-              <button
-                onClick={() => {
-                  navigate("/admin/sync");
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-orange-500/10 hover:text-orange-400 transition-colors rounded-lg mx-1"
-              >
-                <Shield size={16} className="text-orange-400" />
-                <span className="text-sm font-medium">Admin Sync</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigate("/admin/sync");
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-orange-500/10 hover:text-orange-400 transition-colors rounded-lg mx-1"
+                >
+                  <Shield size={16} className="text-orange-400" />
+                  <span className="text-sm font-medium">Admin Sync</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/admin/beta-waitlist");
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-slate-200 hover:bg-purple-500/10 hover:text-purple-400 transition-colors rounded-lg mx-1"
+                >
+                  <Users size={16} className="text-purple-400" />
+                  <span className="text-sm font-medium">Beta Testers</span>
+                </button>
+              </>
             )}
             
             <div className="my-1 mx-3 border-t border-slate-700/50"></div>

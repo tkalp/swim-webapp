@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import ProtectedRoute from './routes/ProtectedRoute';
+import AdminRoute from './routes/AdminRoute';
 import { GlobalLayout } from './components/layout/GlobalLayout';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -19,10 +20,17 @@ import CoachNetworkPage from './pages/CoachNetwork';
 import AdminSyncPage from './pages/AdminSyncPage';
 import CalendarPage from './pages/Calendar';
 import TimeStandards from './pages/TimeStandards';
+import LandingPage from './pages/LandingPage';
+import BetaAccessPage from './pages/BetaAccessPage';
+import AdminBetaWaitlist from './pages/AdminBetaWaitlist';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { analytics } from './lib/mixpanel';
+import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
   const location = useLocation();
+  const { user } = useAuth();
 
   // Track page views
   useEffect(() => {
@@ -31,8 +39,17 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={user ? <Navigate to="/squads" replace /> : <LandingPage />} />
+      <Route path="/beta-access" element={<BetaAccessPage />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      
+      {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Navigate to="/squads" replace />} />
         <Route
           element={
             <GlobalLayout>
@@ -140,6 +157,18 @@ export default function App() {
         <Route
           element={
             <GlobalLayout>
+              <TimeStandards />
+            </GlobalLayout>
+          }
+          path="/time-standards"
+        />
+      </Route>
+
+      {/* Admin Routes - Require admin role */}
+      <Route element={<AdminRoute />}>
+        <Route
+          element={
+            <GlobalLayout>
               <AdminSyncPage />
             </GlobalLayout>
           }
@@ -148,15 +177,12 @@ export default function App() {
         <Route
           element={
             <GlobalLayout>
-              <TimeStandards />
+              <AdminBetaWaitlist />
             </GlobalLayout>
           }
-          path="/time-standards"
+          path="/admin/beta-waitlist"
         />
       </Route>
-      <Route path="/login" element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
     </Routes>
   );
 }

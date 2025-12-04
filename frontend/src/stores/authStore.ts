@@ -4,15 +4,28 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { analytics } from '@/lib/mixpanel'
 
+interface CoachProfile {
+  id: string
+  user_id: string
+  role: string | null
+  is_coach: boolean
+  name?: string
+  email?: string
+}
+
 interface AuthState {
   // State
   session: Session | null
   user: User | null
   loading: boolean
+  coachProfile: CoachProfile | null
+  coachLoading: boolean
   
   // Actions
   setSession: (session: Session | null) => void
   setLoading: (loading: boolean) => void
+  setCoachProfile: (profile: CoachProfile | null) => void
+  fetchCoachProfile: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error?: Error }>
   signOut: () => Promise<void>
   sendPasswordResetEmail: (email: string) => Promise<{ error?: Error }>
@@ -27,6 +40,8 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       user: null,
       loading: true,
+      coachProfile: null,
+      coachLoading: false,
 
       // Actions
       setSession: (session) => set({ 
@@ -35,6 +50,37 @@ export const useAuthStore = create<AuthState>()(
       }),
 
       setLoading: (loading) => set({ loading }),
+
+      setCoachProfile: (profile) => set({ coachProfile: profile }),
+
+      fetchCoachProfile: async () => {
+        const { session } = get()
+        if (!session) {
+          set({ coachProfile: null, coachLoading: false })
+          return
+        }
+
+        try {
+          set({ coachLoading: true })
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/coaches/me`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            const profile = await response.json()
+            set({ coachProfile: profile, coachLoading: false })
+          } else {
+            console.error('Failed to fetch coach profile:', response.statusText)
+            set({ coachProfile: null, coachLoading: false })
+          }
+        } catch (error) {
+          console.error('Error fetching coach profile:', error)
+          set({ coachProfile: null, coachLoading: false })
+        }
+      },
 
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -48,7 +94,7 @@ export const useAuthStore = create<AuthState>()(
         analytics.track('User Signed Out')
         analytics.reset()
         await supabase.auth.signOut()
-        set({ session: null, user: null })
+        set({ session: null, user: null, coachProfile: null })
       },
 
       sendPasswordResetEmail: async (email) => {
@@ -67,6 +113,11 @@ export const useAuthStore = create<AuthState>()(
         // Get initial session
         supabase.auth.getSession().then(({ data }) => {
           set({ session: data.session ?? null, loading: false })
+          
+          // Fetch coach profile if session exists
+          if (data.session) {
+            get().fetchCoachProfile()
+          }
         })
 
         // Subscribe to auth changes
@@ -80,8 +131,12 @@ export const useAuthStore = create<AuthState>()(
               email: session.user.email,
               created_at: session.user.created_at,
             })
+            
+            // Fetch coach profile on sign in
+            get().fetchCoachProfile()
           } else {
             analytics.reset()
+            set({ coachProfile: null })
           }
         })
       },

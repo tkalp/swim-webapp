@@ -3,9 +3,11 @@ import type { RangeKey } from '@/types/stats';
 
 export function startOfWeek(d = new Date()) {
   const n = new Date(d);
-  const day = n.getDay(); // 0 = Sun
+  const day = n.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
   n.setHours(0, 0, 0, 0);
-  n.setDate(n.getDate() - day);
+  // Adjust to Monday: if Sunday (0), go back 6 days; otherwise go back (day - 1) days
+  const offset = day === 0 ? 6 : day - 1;
+  n.setDate(n.getDate() - offset);
   return n;
 }
 export function endOfWeek(d = new Date()) {

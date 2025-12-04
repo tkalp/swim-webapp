@@ -2,10 +2,22 @@ import { createContext, useContext } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { useAuthStore } from '@/stores/authStore'
 
+type CoachProfile = {
+  id: string
+  user_id: string
+  role: string | null
+  is_coach: boolean
+  name?: string
+  email?: string
+}
+
 type AuthContextValue = {
   session: Session | null
   user: User | null
   loading: boolean
+  coachProfile: CoachProfile | null
+  coachLoading: boolean
+  isAdmin: boolean
   signIn: (email: string, password: string) => Promise<{ error?: Error }>
   signOut: () => Promise<void>
   sendPasswordResetEmail: (email: string) => Promise<{ error?: Error }>
@@ -19,15 +31,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const session = useAuthStore(state => state.session)
   const user = useAuthStore(state => state.user)
   const loading = useAuthStore(state => state.loading)
+  const coachProfile = useAuthStore(state => state.coachProfile)
+  const coachLoading = useAuthStore(state => state.coachLoading)
   const signIn = useAuthStore(state => state.signIn)
   const signOut = useAuthStore(state => state.signOut)
   const sendPasswordResetEmail = useAuthStore(state => state.sendPasswordResetEmail)
   const updatePassword = useAuthStore(state => state.updatePassword)
 
+  // Compute isAdmin from coach profile
+  const isAdmin = coachProfile?.role === 'admin'
+
   const value: AuthContextValue = {
     session,
     user,
     loading,
+    coachProfile,
+    coachLoading,
+    isAdmin,
     signIn,
     signOut,
     sendPasswordResetEmail,

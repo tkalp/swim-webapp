@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
-import { 
-  getSquadAttendanceRankings, 
-  SquadAttendanceData,
-} from '@/services/attendanceService';
+import { useSquadAttendance } from '@/hooks/useSquadAttendance';
+import { SquadAttendanceData } from '@/services/attendanceService';
 import { SquadPageHeader } from '../SquadPageHeader';
 import { AttendanceHeader } from '@/components/squad/attendance/AttendanceHeader';
 import { AttendanceStats } from '@/components/squad/attendance/AttendanceStats';
@@ -29,32 +27,16 @@ interface SquadAttendanceTabProps {
 
 const SquadAttendanceTab: React.FC<SquadAttendanceTabProps> = ({ squadId }) => {
   const [dateRange, setDateRange] = useState(getDefaultDateRange());
-  const [data, setData] = useState<SquadAttendanceData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch attendance data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+  // Use cached query for attendance data
+  const { 
+    data, 
+    isLoading: loading, 
+    error: queryError,
+    refetch 
+  } = useSquadAttendance(squadId, dateRange.start, dateRange.end);
 
-      try {
-        const result = await getSquadAttendanceRankings(
-          squadId,
-          dateRange.start,
-          dateRange.end
-        );
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load attendance data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [squadId, dateRange]);
+  const error = queryError ? String(queryError) : null;
 
   const handleDateChange = useCallback((field: 'start' | 'end', value: string) => {
     setDateRange(prev => ({ ...prev, [field]: value }));

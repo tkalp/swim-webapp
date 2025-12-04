@@ -1,6 +1,6 @@
 # backend/app/routes/squads.py
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
+from typing import Optional, List, Dict
 from datetime import datetime, timedelta
 from collections import defaultdict
 import statistics
@@ -11,6 +11,522 @@ from app.utils import logger, log_error
 from app.services.performance_service import PerformanceService
 
 router = APIRouter(prefix="/squads", tags=["squads"])
+
+
+def get_sessions_with_workouts(supabase, squad_id: str, start_date: Optional[str], end_date: Optional[str]):
+    """
+    Helper function to fetch sessions with workout data in a single query.
+    Returns sessions with embedded workout_template data.
+    """
+    query = supabase.table('training_sessions')\
+        .select('id, start_date, workout_id, workout_template!left(id, total_meters, json_description)')\
+        .eq('squad_id', squad_id)
+    
+    if start_date:
+        query = query.gte('start_date', start_date)
+    if end_date:
+        query = query.lte('start_date', end_date)
+    
+    return query.execute()
+
+
+def get_iso_week(date_obj: datetime) -> tuple[int, int]:
+    """
+    Get ISO week year and week number for a date.
+    ISO weeks start on Monday, and week 1 contains the first Thursday.
+    """
+    # Ensure we're working with naive datetime (strip timezone if present)
+    if date_obj.tzinfo is not None:
+        date_obj = date_obj.replace(tzinfo=None)
+    
+    # Find the Thursday of the current week
+    day_of_week = date_obj.weekday()  # Monday = 0
+    thursday = date_obj + timedelta(days=(3 - day_of_week))
+    
+    # Week 1 is the week containing the first Thursday
+    year = thursday.year
+    jan4 = datetime(year, 1, 4)
+    jan4_weekday = jan4.weekday()
+    
+    # Get Monday of week 1
+    week1_monday = jan4 - timedelta(days=jan4_weekday)
+    
+    # Calculate week number
+    days_diff = (date_obj - week1_monday).days
+    week_num = (days_diff // 7) + 1
+    
+    return (year, week_num)
+
+
+def format_week_label(year: int, week: int) -> str:
+    """Convert ISO week to display label like 'Jan 6–12, 2025'"""
+    # Find January 4th (always in week 1)
+    jan4 = datetime(year, 1, 4)
+    jan4_weekday = jan4.weekday()
+    
+    # Get Monday of week 1
+    week1_monday = jan4 - timedelta(days=jan4_weekday)
+    
+    # Add weeks to get target week's Monday
+    target_monday = week1_monday + timedelta(weeks=(week - 1))
+    target_sunday = target_monday + timedelta(days=6)
+    
+    # Format as "Jan 6–12, 2025" or "Dec 30 – Jan 5, 2025"
+    if target_monday.month == target_sunday.month:
+        return f"{target_monday.strftime('%b')} {target_monday.day}–{target_sunday.day}, {target_monday.year}"
+    else:
+        return f"{target_monday.strftime('%b %d')} – {target_sunday.strftime('%b %d')}, {target_monday.year}"
+
+
+@router.get("/{squad_id}/metrics/session-count")
+async def get_squad_session_count(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get total number of training sessions for a squad in a date range."""
+    try:
+        supabase = get_supabase_client()
+        
+        query = supabase.table('training_sessions')\
+            .select('id', count='exact')\
+            .eq('squad_id', squad_id)
+        
+        if start_date:
+            query = query.gte('start_date', start_date)
+        if end_date:
+            query = query.lte('start_date', end_date)
+        
+        result = query.execute()
+        return {"count": result.count or 0}
+        
+    except Exception as e:
+        logger.error(f"Error fetching session count: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{squad_id}/metrics/total-meters")
+async def get_squad_total_meters(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get total meters swum across all sessions in a date range."""
+    try:
+        supabase = get_supabase_client()
+        sessions = get_sessions_with_workouts(supabase, squad_id, start_date, end_date)
+        
+        if not sessions.data:
+            return {"total_meters": 0}
+        
+        # Sum meters from joined workout data
+        total = 0
+        for session in sessions.data:
+            workout = session.get('workout_template')
+            if workout and isinstance(workout, dict):
+                total += workout.get('total_meters', 0) or 0
+        
+        return {"total_meters": total}
+        
+    except Exception as e:
+        logger.error(f"Error fetching total meters: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{squad_id}/metrics/attendance-stats")
+async def get_squad_attendance_stats(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get attendance breakdown (present/late/absent counts)."""
+    try:
+        supabase = get_supabase_client()
+        
+        # Get sessions in date range
+        session_query = supabase.table('training_sessions')\
+            .select('id')\
+            .eq('squad_id', squad_id)
+        
+        if start_date:
+            session_query = session_query.gte('start_date', start_date)
+        if end_date:
+            session_query = session_query.lte('start_date', end_date)
+        
+        sessions = session_query.execute()
+        
+        if not sessions.data:
+            return {"present": 0, "late": 0, "absent": 0}
+        
+        session_ids = [s['id'] for s in sessions.data]
+        
+        # Get attendance records
+        attendance = supabase.table('training_attendance')\
+            .select('status')\
+            .in_('training_session_id', session_ids)\
+            .execute()
+        
+        counts = {"present": 0, "late": 0, "absent": 0}
+        
+        for record in attendance.data:
+            status = (record.get('status') or '').lower()
+            if status == 'present':
+                counts['present'] += 1
+            elif status == 'late':
+                counts['late'] += 1
+            elif status == 'absent':
+                counts['absent'] += 1
+        
+        return counts
+        
+    except Exception as e:
+        logger.error(f"Error fetching attendance stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{squad_id}/metrics/distance-per-week")
+async def get_squad_distance_per_week(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get weekly distance breakdown using ISO weeks (Monday-Sunday)."""
+    try:
+        supabase = get_supabase_client()
+        sessions = get_sessions_with_workouts(supabase, squad_id, start_date, end_date)
+        
+        if not sessions.data:
+            return {"weeks": []}
+        
+        # Parse date range boundaries for filtering
+        # Handle both date strings with and without time components
+        filter_start = None
+        filter_end = None
+        if start_date:
+            # Parse and extract just the date part (ignore time/timezone)
+            date_str = start_date.replace('Z', '').split('T')[0]
+            filter_start = datetime.fromisoformat(date_str)
+        if end_date:
+            # Parse and extract just the date part (ignore time/timezone)
+            date_str = end_date.replace('Z', '').split('T')[0]
+            filter_end = datetime.fromisoformat(date_str)
+        
+        # Group by ISO week
+        week_totals = defaultdict(int)
+        
+        for session in sessions.data:
+            workout = session.get('workout_template')
+            if not workout or not isinstance(workout, dict):
+                continue
+            
+            meters = workout.get('total_meters', 0) or 0
+            # Parse date and strip timezone for ISO week calculation
+            session_date_str = session['start_date'].replace('Z', '').replace('+00:00', '')
+            session_date = datetime.fromisoformat(session_date_str.split('+')[0].split('T')[0])
+            
+            # Skip sessions outside the date range (exclusive end date)
+            if filter_start and session_date < filter_start:
+                continue
+            if filter_end and session_date > filter_end:
+                continue
+            
+            year, week = get_iso_week(session_date)
+            week_key = f"{year}-W{week:02d}"
+            week_totals[week_key] += meters
+        
+        # Convert to list with formatted labels
+        # For small date ranges (≤ 8 days), only show the week with the most days in the range
+        result = []
+        
+        # Calculate if this is a small date range
+        date_range_days = 0
+        if filter_start and filter_end:
+            date_range_days = (filter_end - filter_start).days + 1
+        
+        # For ranges of 8 days or less, find which week has the most overlap
+        if date_range_days > 0 and date_range_days <= 8:
+            # Calculate overlap for each week
+            week_overlaps = {}
+            for week_key in week_totals.keys():
+                year, week = int(week_key.split('-W')[0]), int(week_key.split('-W')[1])
+                jan4 = datetime(year, 1, 4)
+                jan4_weekday = jan4.weekday()
+                week1_monday = jan4 - timedelta(days=jan4_weekday)
+                week_monday = week1_monday + timedelta(weeks=(week - 1))
+                week_sunday = week_monday + timedelta(days=6)
+                
+                # Calculate how many days of this week are in the filter range
+                overlap_start = max(week_monday, filter_start)
+                overlap_end = min(week_sunday, filter_end)
+                overlap_days = (overlap_end - overlap_start).days + 1 if overlap_end >= overlap_start else 0
+                week_overlaps[week_key] = overlap_days
+            
+            # Only include the week with maximum overlap
+            if week_overlaps:
+                best_week = max(week_overlaps.items(), key=lambda x: x[1])[0]
+                year, week = int(best_week.split('-W')[0]), int(best_week.split('-W')[1])
+                label = format_week_label(year, week)
+                result.append({
+                    "week": label,
+                    "meters": week_totals[best_week]
+                })
+        else:
+            # For longer ranges, include all weeks that overlap
+            for week_key in sorted(week_totals.keys()):
+                year, week = int(week_key.split('-W')[0]), int(week_key.split('-W')[1])
+                jan4 = datetime(year, 1, 4)
+                jan4_weekday = jan4.weekday()
+                week1_monday = jan4 - timedelta(days=jan4_weekday)
+                week_monday = week1_monday + timedelta(weeks=(week - 1))
+                week_sunday = week_monday + timedelta(days=6)
+                
+                # Include weeks that overlap with the date range
+                if filter_end and week_monday > filter_end:
+                    continue
+                if filter_start and week_sunday < filter_start:
+                    continue
+                
+                label = format_week_label(year, week)
+                result.append({
+                    "week": label,
+                    "meters": week_totals[week_key]
+                })
+        
+        return {"weeks": result}
+        
+    except Exception as e:
+        logger.error(f"Error fetching distance per week: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{squad_id}/metrics/distance-per-day")
+async def get_squad_distance_per_day(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    timezone_offset: Optional[int] = None,  # offset in minutes from UTC
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get daily distance breakdown.
+    
+    Args:
+        timezone_offset: Browser timezone offset in minutes (e.g., -300 for EST/UTC-5)
+                        Used to group sessions by local date instead of UTC date
+    """
+    try:
+        supabase = get_supabase_client()
+        sessions = get_sessions_with_workouts(supabase, squad_id, start_date, end_date)
+        
+        if not sessions.data:
+            return {"days": []}
+        
+        # Parse date range boundaries for filtering (keep full timestamp for accurate comparison)
+        filter_start = None
+        filter_end = None
+        if start_date:
+            filter_start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        if end_date:
+            filter_end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        
+        # Calculate timezone adjustment (default to UTC if not provided)
+        tz_delta = timedelta(minutes=-(timezone_offset or 0))
+        
+        # Group by day
+        day_totals = defaultdict(int)
+        
+        for session in sessions.data:
+            workout = session.get('workout_template')
+            if not workout or not isinstance(workout, dict):
+                continue
+            
+            meters = workout.get('total_meters', 0) or 0
+            # Parse the full timestamp (UTC)
+            session_datetime_utc = datetime.fromisoformat(session['start_date'].replace('Z', '+00:00'))
+            
+            # Skip sessions outside the date range (compare full timestamps)
+            if filter_start and session_datetime_utc < filter_start:
+                continue
+            if filter_end and session_datetime_utc > filter_end:
+                continue
+            
+            # Convert to local time for grouping by day
+            session_datetime_local = session_datetime_utc + tz_delta
+            
+            # Extract local date for grouping
+            day_key = session_datetime_local.strftime('%Y-%m-%d')
+            day_totals[day_key] += meters
+        
+        # Convert to list with formatted labels
+        result = []
+        for day_key in sorted(day_totals.keys()):
+            day_date = datetime.fromisoformat(day_key)
+            # Format as "Mon 12/4" or "Mon, Dec 4"
+            label = day_date.strftime('%a %m/%d')
+            result.append({
+                "day": label,
+                "meters": day_totals[day_key]
+            })
+        
+        return {"days": result}
+        
+    except Exception as e:
+        logger.error(f"Error fetching distance per day: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{squad_id}/metrics/stroke-breakdown")
+async def get_squad_stroke_breakdown(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get breakdown of meters by stroke type."""
+    try:
+        supabase = get_supabase_client()
+        sessions = get_sessions_with_workouts(supabase, squad_id, start_date, end_date)
+        
+        if not sessions.data:
+            return {"strokes": []}
+        
+        stroke_totals = defaultdict(int)
+        
+        # Parse JSON descriptions to get stroke breakdown
+        for session in sessions.data:
+            workout = session.get('workout_template')
+            if not workout or not isinstance(workout, dict):
+                continue
+                
+            json_desc = workout.get('json_description')
+            if not json_desc:
+                continue
+            
+            try:
+                # Check if it's the new versioned format
+                if 'version' in json_desc and 'analysis' in json_desc:
+                    breakdown = json_desc['analysis'].get('stroke_breakdown', {})
+                # Check if it's the old estimate format
+                elif 'estimate' in json_desc:
+                    breakdown = json_desc['estimate'].get('strokeBreakdown', {})
+                else:
+                    continue
+                
+                # Aggregate stroke totals
+                for stroke, meters in breakdown.items():
+                    # Skip total key
+                    if stroke.lower() == 'total':
+                        continue
+                    if isinstance(meters, (int, float)) and meters > 0:
+                        # Normalize stroke names
+                        stroke_key = stroke.lower().replace('_', ' ')
+                        if stroke_key in ['im', 'individual medley', 'individualmedley']:
+                            stroke_key = 'individual medley'
+                        stroke_totals[stroke_key] += meters
+            except Exception as e:
+                logger.warning(f"Error parsing workout JSON: {e}")
+                continue
+        
+        # Color mapping
+        stroke_colors = {
+            'freestyle': '#06B6D4',  # Vibrant cyan
+            'backstroke': '#8B5CF6',  # Vibrant purple
+            'breaststroke': '#10B981',  # Vibrant emerald
+            'butterfly': '#F59E0B',  # Vibrant amber
+            'individual medley': '#EC4899',  # Vibrant pink
+            'choice': '#A78BFA'  # Light purple
+        }
+        
+        result = [
+            {
+                "stroke": stroke.title().replace('Individual medley', 'Individual Medley'),
+                "meters": meters,
+                "color": stroke_colors.get(stroke, '#A78BFA')
+            }
+            for stroke, meters in sorted(stroke_totals.items(), key=lambda x: -x[1])
+        ]
+        
+        return {"strokes": result}
+        
+    except Exception as e:
+        logger.error(f"Error fetching stroke breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{squad_id}/metrics/activity-breakdown")
+async def get_squad_activity_breakdown(
+    squad_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get breakdown of meters by activity type (swim/kick/pull/drill)."""
+    try:
+        supabase = get_supabase_client()
+        sessions = get_sessions_with_workouts(supabase, squad_id, start_date, end_date)
+        
+        if not sessions.data:
+            return {"activities": []}
+        
+        activity_totals = defaultdict(int)
+        
+        # Parse JSON descriptions to get activity breakdown
+        for session in sessions.data:
+            workout = session.get('workout_template')
+            if not workout or not isinstance(workout, dict):
+                continue
+                
+            json_desc = workout.get('json_description')
+            if not json_desc:
+                continue
+            
+            try:
+                # Check if it's the new versioned format
+                if 'version' in json_desc and 'analysis' in json_desc:
+                    breakdown = json_desc['analysis'].get('activity_breakdown', {})
+                # Check if it's the old estimate format
+                elif 'estimate' in json_desc:
+                    breakdown = json_desc['estimate'].get('activityBreakdown', {})
+                else:
+                    continue
+                
+                # Aggregate activity totals
+                for activity, meters in breakdown.items():
+                    # Skip total key
+                    if activity.lower() == 'total':
+                        continue
+                    if isinstance(meters, (int, float)) and meters > 0:
+                        activity_totals[activity.lower()] += meters
+            except Exception as e:
+                logger.warning(f"Error parsing workout JSON: {e}")
+                continue
+        
+        # Color mapping
+        activity_colors = {
+            'swim': '#22D3EE',
+            'kick': '#EF4444',
+            'pull': '#10B981',
+            'drill': '#F59E0B'
+        }
+        
+        result = [
+            {
+                "activity": activity.title(),
+                "meters": meters,
+                "color": activity_colors.get(activity, '#6B7280')
+            }
+            for activity, meters in sorted(activity_totals.items(), key=lambda x: -x[1])
+        ]
+        
+        return {"activities": result}
+        
+    except Exception as e:
+        logger.error(f"Error fetching activity breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{squad_id}/performance")

@@ -152,36 +152,39 @@ export function QualifiersTable({ swimmers, events, getStandardTime, formatTime 
                   className={`group border-b border-slate-700/30 hover:bg-linear-to-r hover:${tierConfig.colors} transition-all duration-300`}
                 >
                   {/* Swimmer Name */}
-                  <td className="px-4 py-3 sticky left-0 bg-slate-900/95 group-hover:bg-linear-to-r group-hover:from-slate-800/95 group-hover:via-slate-900/95 group-hover:to-slate-900/95 z-10 transition-all duration-300">
-                    <div className="flex items-center gap-3">
-                      <div className={`relative w-10 h-10 rounded-full bg-linear-to-br ${tierConfig.colors} flex items-center justify-center border-2 ${tierConfig.borderColor} group-hover:scale-110 transition-all duration-300 shadow-lg`}>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 sticky left-0 bg-slate-900/95 group-hover:bg-linear-to-r group-hover:from-slate-800/95 group-hover:via-slate-900/95 group-hover:to-slate-900/95 z-10 transition-all duration-300">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className={`relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-linear-to-br ${tierConfig.colors} flex items-center justify-center border-2 ${tierConfig.borderColor} group-hover:scale-110 transition-all duration-300 shadow-lg shrink-0`}>
                         <span className={`text-xs font-bold ${tierConfig.textColor}`}>
                           {sq.swimmer.first_name[0]}{sq.swimmer.last_name[0]}
                         </span>
                         {tierConfig.showStar && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                          <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
                             <span className="text-xs text-white">★</span>
                           </div>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className={`text-sm font-semibold ${tierConfig.textColor} transition-colors`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                          <p className={`text-xs sm:text-sm font-semibold ${tierConfig.textColor} transition-colors truncate`}>
                             {sq.swimmer.first_name} {sq.swimmer.last_name}
                           </p>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tierConfig.badgeBg} ${tierConfig.textColor} border ${tierConfig.borderColor}`}>
+                          <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium ${tierConfig.badgeBg} ${tierConfig.textColor} border ${tierConfig.borderColor} whitespace-nowrap`}>
                             {tierConfig.label}
+                          </span>
+                          <span className="sm:hidden text-xs text-slate-500 font-medium">
+                            ({sq.age})
                           </span>
                         </div>
                         <div className="mt-1">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <div className="flex-1 h-1 sm:h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
                               <div 
                                 className={`h-full bg-linear-to-r ${tierConfig.progressBar} transition-all duration-500`}
                                 style={{ width: `${qualificationPercentage}%` }}
                               />
                             </div>
-                            <span className="text-xs text-slate-500 font-medium min-w-12 text-right">
+                            <span className="text-xs text-slate-500 font-medium min-w-8 sm:min-w-12 text-right">
                               {qualificationPercentage.toFixed(0)}%
                             </span>
                           </div>
@@ -194,7 +197,7 @@ export function QualifiersTable({ swimmers, events, getStandardTime, formatTime 
                   </td>
 
                 {/* Age */}
-                <td className="px-2 py-3 text-center">
+                <td className="hidden sm:table-cell px-2 py-3 text-center">
                   <span className="text-sm text-slate-400">{sq.age}</span>
                 </td>
 
@@ -216,7 +219,7 @@ export function QualifiersTable({ swimmers, events, getStandardTime, formatTime 
                   }
 
                   return (
-                    <td key={key} className="px-2 py-3">
+                    <td key={key} className="px-1 sm:px-2 py-2 sm:py-3">
                       <QualificationCell
                         swimmerBestTime={bestTime?.timeSeconds ?? null}
                         standardTime={standardTime ?? 0}

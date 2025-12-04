@@ -1,14 +1,13 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  getSquadRankings, 
-  getAvailableDistances, 
   formatTime,
   type StrokeType, 
   type ActivityType, 
   type SwimmerRanking,
   type EventQuery
 } from '@/services/workoutResultService';
+import { useAvailableDistances, useSquadRankings } from '@/hooks/useSquadRankings';
 import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
 import { Trophy, Medal, Award, Timer, Eye, EyeOff, Clock, ExternalLink } from "lucide-react";
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
@@ -35,93 +34,54 @@ export default function SquadRankings({ squadId }: Props) {
   const navigate = useNavigate();
   const [stroke, setStroke] = useState<StrokeType>("free");
   const [activity, setActivity] = useState<ActivityType>("swim");
-  const [availableDistances, setAvailableDistances] = useState<number[]>([]);
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
-  const [scmRankings, setScmRankings] = useState<SwimmerRanking[]>([]);
-  const [lcmRankings, setLcmRankings] = useState<SwimmerRanking[]>([]);
-  const [scyRankings, setScyRankings] = useState<SwimmerRanking[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [attemptsModalOpen, setAttemptsModalOpen] = useState(false);
   const [selectedEventQuery, setSelectedEventQuery] = useState<EventQuery | null>(null);
 
-  // Load available distances when stroke/activity changes (check SCM as primary)
+  // Use cached queries for distances
+  const { 
+    data: availableDistances = [], 
+    isLoading: distancesLoading,
+    error: distancesError 
+  } = useAvailableDistances(squadId, stroke, activity, 'SCM');
+
+  // Use cached queries for rankings (all pool types)
+  const { 
+    data: scmRankings = [], 
+    isLoading: scmLoading,
+    refetch: refetchScm
+  } = useSquadRankings(squadId, stroke, activity, selectedDistance, 'SCM');
+  
+  const { 
+    data: lcmRankings = [], 
+    isLoading: lcmLoading,
+    refetch: refetchLcm
+  } = useSquadRankings(squadId, stroke, activity, selectedDistance, 'LCM');
+  
+  const { 
+    data: scyRankings = [], 
+    isLoading: scyLoading,
+    refetch: refetchScy
+  } = useSquadRankings(squadId, stroke, activity, selectedDistance, 'SCY');
+
+  const loading = scmLoading || lcmLoading || scyLoading;
+  const error = distancesError ? String(distancesError) : '';
+
+  // Refetch all rankings
+  const refetchAll = () => {
+    refetchScm();
+    refetchLcm();
+    refetchScy();
+  };
+
+  // Auto-select first distance when available distances change
   useEffect(() => {
-    let mounted = true;
-
-    const loadDistances = async () => {
-      try {
-        const distances = await getAvailableDistances(squadId, stroke, activity, 'SCM');
-        if (mounted) {
-          setAvailableDistances(distances);
-          // Auto-select first distance if available
-          if (distances.length > 0) {
-            setSelectedDistance(distances[0]);
-          } else {
-            setSelectedDistance(null);
-            setScmRankings([]);
-            setLcmRankings([]);
-            setScyRankings([]);
-          }
-        }
-      } catch (e: any) {
-        if (mounted) {
-          setError(e.message || "Failed to load distances");
-        }
-      }
-    };
-
-    loadDistances();
-
-    return () => {
-      mounted = false;
-    };
-  }, [squadId, stroke, activity]);
-
-  // Load rankings for all pool types when distance changes
-  useEffect(() => {
-    if (!selectedDistance) {
-      setScmRankings([]);
-      setLcmRankings([]);
-      setScyRankings([]);
-      return;
+    if (availableDistances.length > 0 && !selectedDistance) {
+      setSelectedDistance(availableDistances[0]);
+    } else if (availableDistances.length === 0) {
+      setSelectedDistance(null);
     }
-
-    let mounted = true;
-
-    const loadRankings = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        // Fetch all three pool types in parallel
-        const [scmData, lcmData, scyData] = await Promise.all([
-          getSquadRankings(squadId, stroke, activity, selectedDistance, 'SCM').catch(() => []),
-          getSquadRankings(squadId, stroke, activity, selectedDistance, 'LCM').catch(() => []),
-          getSquadRankings(squadId, stroke, activity, selectedDistance, 'SCY').catch(() => [])
-        ]);
-        
-        if (mounted) {
-          setScmRankings(scmData);
-          setLcmRankings(lcmData);
-          setScyRankings(scyData);
-        }
-      } catch (e: any) {
-        if (mounted) {
-          setError(e.message || "Failed to load rankings");
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadRankings();
-
-    return () => {
-      mounted = false;
-    };
-  }, [squadId, stroke, activity, selectedDistance]);
+  }, [availableDistances, selectedDistance]);
 
   // Combine rankings from all pool types to create unified swimmer list
   const combinedRankings = useMemo(() => {

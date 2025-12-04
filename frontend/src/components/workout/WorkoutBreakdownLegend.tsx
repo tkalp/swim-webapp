@@ -2,19 +2,19 @@
 import { Info } from 'lucide-react';
 
 const STROKE_COLORS: Record<string, string> = {
-  freestyle: '#22D3EE',
-  backstroke: '#8B5CF6', 
-  breaststroke: '#10B981',
-  butterfly: '#F59E0B',
-  individualMedley: '#EF4444',
-  choice: '#6B7280'
+  freestyle: '#06B6D4', // Vibrant cyan
+  backstroke: '#8B5CF6', // Vibrant purple
+  breaststroke: '#10B981', // Vibrant emerald
+  butterfly: '#F59E0B', // Vibrant amber
+  individualMedley: '#EC4899', // Vibrant pink
+  choice: '#A78BFA' // Light purple
 };
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  swim: '#22D3EE',
-  kick: '#EF4444',
-  pull: '#10B981', 
-  drill: '#F59E0B'
+  swim: '#06B6D4', // Vibrant cyan
+  kick: '#F97316', // Vibrant orange
+  pull: '#10B981', // Vibrant emerald
+  drill: '#FBBF24' // Vibrant yellow
 };
 
 const STROKE_LABELS: Record<string, string> = {

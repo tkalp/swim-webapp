@@ -230,16 +230,16 @@ export default function SquadQualifiersTab({ squadId }: Props) {
 
   if (!selectedStandardsSetId) {
     return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-transparent bg-linear-to-r from-violet-400 to-fuchsia-400 bg-clip-text">Qualifiers</h1>
-          <p className="text-slate-400 text-sm mt-1 font-medium">View swimmer qualification status for selected time standards</p>
+      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-linear-to-r from-violet-400 to-fuchsia-400 bg-clip-text">Qualifiers</h1>
+          <p className="text-slate-400 text-xs sm:text-sm mt-1 font-medium">View swimmer qualification status for selected time standards</p>
         </div>
         <StandardsSelector
           selectedSetId={selectedStandardsSetId}
           onSetChange={setSelectedStandardsSetId}
         />
-        <div className="p-8 text-center bg-slate-900/50 rounded-lg border border-slate-700/50 mt-6">
+        <div className="p-6 sm:p-8 text-center bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4 sm:mt-6">
           <Target size={48} className="mx-auto mb-4 text-slate-600" />
           <p className="text-slate-400">Select a time standards set to view qualifications</p>
         </div>
@@ -251,13 +251,13 @@ export default function SquadQualifiersTab({ squadId }: Props) {
   const totalClose = swimmerQualifications.reduce((sum, sq) => sum + sq.closeCount, 0);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-transparent bg-linear-to-r from-violet-400 to-fuchsia-400 bg-clip-text">Qualifiers</h1>
-        <p className="text-slate-400 text-sm mt-1 font-medium">View swimmer qualification status for selected time standards</p>
+    <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-linear-to-r from-violet-400 to-fuchsia-400 bg-clip-text">Qualifiers</h1>
+        <p className="text-slate-400 text-xs sm:text-sm mt-1 font-medium">View swimmer qualification status for selected time standards</p>
       </div>
 
-      <div className="flex items-end gap-6 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-6">
         <StandardsSelector
           selectedSetId={selectedStandardsSetId}
           onSetChange={setSelectedStandardsSetId}

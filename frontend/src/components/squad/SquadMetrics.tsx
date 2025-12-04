@@ -1,20 +1,13 @@
-import { useEffect, useState } from "react";
-import {
-  getSquadAttendanceStats,
-  getSquadDistancePerWeek,
-  getSquadStrokeBreakdown,
-  getSquadActivityBreakdown,
-  getSquadSessionCount,
-  getSquadTotalMeters,
-  type StrokeBreakdown,
-  type ActivityBreakdown,
-} from '@/services/metricsService';
+import { useState } from "react";
+import { useSquadMetrics } from '@/hooks/useSquadMetrics';
+import { useSquadDistancePerDay } from '@/hooks/useSquadMetrics';
+import type { StrokeBreakdown, ActivityBreakdown } from '@/services/metricsService';
 
 import DistancePerWeekChart from '@/components/charts/WeeklyDistanceChart';
 import BreakdownChart from '@/components/charts/BreakdownChart';
 import DateInput from '@/components/ui/DateInput';
 import { SquadTabHeader } from '@/components/squad/SquadTabHeader';
-import { Waves, Zap, Calendar, TrendingUp, Users, Check, Activity } from "lucide-react";
+import { Waves, Zap, Calendar, TrendingUp, Users, Check, Activity, RefreshCw } from "lucide-react";
 
 export type RangeKey =
   | "this_week"
@@ -26,9 +19,11 @@ export type RangeKey =
 
 function startOfWeek(d = new Date()) {
   const n = new Date(d);
-  const day = n.getDay();
+  const day = n.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
   n.setHours(0, 0, 0, 0);
-  n.setDate(n.getDate() - day);
+  // Adjust to Monday: if Sunday (0), go back 6 days; otherwise go back (day - 1) days
+  const offset = day === 0 ? 6 : day - 1;
+  n.setDate(n.getDate() - offset);
   return n;
 }
 
@@ -36,8 +31,12 @@ function endOfWeek(d = new Date()) {
   const s = startOfWeek(d);
   const e = new Date(s);
   e.setDate(s.getDate() + 6);
-  e.setHours(23, 59, 59, 999);
-  return e;
+  // Set to end of day: 23:59:59 in UTC to avoid timezone conversion issues
+  // We'll create a new date with UTC values to ensure it's the right day
+  const year = e.getFullYear();
+  const month = e.getMonth();
+  const date = e.getDate();
+  return new Date(Date.UTC(year, month, date, 23, 59, 59, 999));
 }
 
 function startOfMonth(d = new Date()) {
@@ -45,7 +44,13 @@ function startOfMonth(d = new Date()) {
 }
 
 function endOfMonth(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+  // Get the last day of the month
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const year = lastDay.getFullYear();
+  const month = lastDay.getMonth();
+  const date = lastDay.getDate();
+  // Set to end of day in UTC to avoid timezone issues
+  return new Date(Date.UTC(year, month, date, 23, 59, 59, 999));
 }
 
 function shiftMonth(d = new Date(), delta = 0) {
@@ -61,9 +66,12 @@ function presetRange(key: RangeKey) {
     };
   if (key === "last_week") {
     const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    const weekStart = startOfWeek(last);
+    const weekEnd = endOfWeek(last);
+    // Ensure we're getting the correct Sunday, not crossing into next week
     return {
-      from: startOfWeek(last).toISOString(),
-      to: endOfWeek(last).toISOString(),
+      from: weekStart.toISOString(),
+      to: weekEnd.toISOString(),
     };
   }
   if (key === "this_month")
@@ -107,50 +115,33 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
   const [from, setFrom] = useState<string | undefined>(init.from);
   const [to, setTo] = useState<string | undefined>(init.to);
 
-  const [att, setAtt] = useState<{
-    present: number;
-    late: number;
-    absent: number;
-  } | null>(null);
-  const [sessionCount, setSessionCount] = useState<number>(0);
-  const [totalMeters, setTotalMeters] = useState<number>(0);
-  const [dist, setDist] = useState<{ week: string; meters: number }[]>([]);
-  const [strokeData, setStrokeData] = useState<StrokeBreakdown[]>([]);
-  const [activityData, setActivityData] = useState<ActivityBreakdown[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+  // Determine if this is a single week view (This Week or Last Week)
+  const isSingleWeekView = rangeKey === 'this_week' || rangeKey === 'last_week';
 
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    (async () => {
-      try {
-        const [a, d, s, ac, sc, tm] = await Promise.all([
-          getSquadAttendanceStats(squadId, { from, to }),
-          getSquadDistancePerWeek(squadId, { from, to }),
-          getSquadStrokeBreakdown(squadId, { from, to }),
-          getSquadActivityBreakdown(squadId, { from, to }),
-          getSquadSessionCount(squadId, { from, to }),
-          getSquadTotalMeters(squadId, { from, to }),
-        ]);
-        if (!mounted) return;
-        setAtt(a);
-        setDist(d);
-        setStrokeData(s);
-        setActivityData(ac);
-        setSessionCount(sc);
-        setTotalMeters(tm);
-        setErr("");
-      } catch (e: any) {
-        if (mounted) setErr(e.message ?? "Failed to load squad metrics");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [squadId, from, to]);
+  // Fetch daily distance for single week views
+  const dailyDistanceQuery = useSquadDistancePerDay(squadId, { from, to });
+  
+  // Use React Query hook - handles deduplication, caching, and loading states
+  const {
+    attendance: att,
+    distancePerWeek: weeklyDist,
+    strokeBreakdown: strokeData,
+    activityBreakdown: activityData,
+    sessionCount,
+    totalMeters,
+    isLoading: loading,
+    isFetching: weeklyFetching,
+    error,
+    refetchAll,
+  } = useSquadMetrics(squadId, { from, to });
+
+  // Use daily or weekly data based on view
+  const dist = isSingleWeekView 
+    ? (dailyDistanceQuery.data || []).map(d => ({ week: d.day, meters: d.meters }))
+    : weeklyDist;
+  
+  const isFetching = weeklyFetching || dailyDistanceQuery.isFetching;
+  const err = error?.message ?? "";
 
   const onQuick = (k: RangeKey) => {
     setRangeKey(k);
@@ -160,6 +151,14 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
   };
 
   const onApplyCustom = () => setRangeKey("custom");
+
+  // Combined refresh function for all queries
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchAll(),
+      ...(isSingleWeekView ? [dailyDistanceQuery.refetch()] : []),
+    ]);
+  };
 
   const attData = [
     { label: "Present", value: att?.present ?? 0, color: "#10B981" },
@@ -171,11 +170,26 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">
-      {/* Page Header */}
-      <SquadTabHeader
-        title="Squad Metrics"
-        subtitle="Overview of squad performance and activity"
-      />
+      {/* Page Header with Refresh Button */}
+      <div className="flex items-start justify-between mb-6">
+        <SquadTabHeader
+          title="Squad Metrics"
+          subtitle="Overview of squad performance and activity"
+        />
+        <button
+          onClick={handleRefresh}
+          disabled={isFetching}
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center gap-2 ${
+            isFetching
+              ? "bg-slate-800/60 text-slate-500 cursor-not-allowed"
+              : "bg-slate-800/60 text-slate-300 hover:bg-slate-700/50 hover:text-white hover:scale-105 border border-slate-700/40"
+          }`}
+          title="Refresh all metrics"
+        >
+          <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+          {isFetching ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
       {/* Date Range Selector */}
       <div className="mb-6">
         {/* Compact Date Range Selector */}
@@ -348,8 +362,12 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
                   <TrendingUp className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Weekly Distance</h3>
-                  <p className="text-xs text-slate-400">Training volume over time</p>
+                  <h3 className="text-lg font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                    {isSingleWeekView ? 'Daily Distance' : 'Weekly Distance'}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {isSingleWeekView ? 'Training volume by day' : 'Training volume over time'}
+                  </p>
                 </div>
               </div>
               <DistancePerWeekChart
