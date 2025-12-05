@@ -16,6 +16,7 @@ export type WorkoutTemplate = {
   json_description: any;
   created_at: string;
   create_by_coach: string;
+  visibility?: 'private' | 'network' | 'public';
 };
 
 /**
@@ -31,6 +32,7 @@ export type CreateWorkoutInput = {
   effort_level: number;
   create_by_coach: string;
   json_description?: any;
+  visibility?: 'private' | 'network' | 'public';
 };
 
 /**
@@ -45,6 +47,7 @@ export type UpdateWorkoutInput = Partial<{
   estimated_calories: number;
   effort_level: number;
   json_description: any;
+  visibility: 'private' | 'network' | 'public';
 }>;
 
 /**
@@ -85,6 +88,7 @@ export async function createWorkoutTemplate(
       effort_level: workout.effort_level,
       create_by_coach: workout.create_by_coach,
       json_description: workout.json_description || null,
+      visibility: workout.visibility || 'private',
     })
     .select("id")
     .single();

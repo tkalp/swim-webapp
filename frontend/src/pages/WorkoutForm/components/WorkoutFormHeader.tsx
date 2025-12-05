@@ -1,5 +1,5 @@
 // components/WorkoutFormHeader.tsx
-import { ArrowLeft, Save, FileText, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, FileText, CheckCircle, Lock, Users, Globe } from "lucide-react";
 import { Button } from '@/components/ui';
 
 type WorkoutFormHeaderProps = {
@@ -7,6 +7,8 @@ type WorkoutFormHeaderProps = {
   isValid: boolean;
   loading: boolean;
   success: boolean;
+  visibility: 'private' | 'network' | 'public';
+  onVisibilityChange: (visibility: 'private' | 'network' | 'public') => void;
   onCancel: () => void;
 };
 
@@ -14,9 +16,17 @@ export function WorkoutFormHeader({
   isEditMode, 
   isValid, 
   loading, 
-  success, 
+  success,
+  visibility,
+  onVisibilityChange,
   onCancel 
 }: WorkoutFormHeaderProps) {
+  const visibilityOptions = [
+    { value: 'private' as const, icon: Lock, label: 'Private' },
+    { value: 'network' as const, icon: Users, label: 'Network' },
+    { value: 'public' as const, icon: Globe, label: 'Public' },
+  ];
+
   return (
     <div className="shrink-0 bg-slate-900/50 backdrop-blur-sm border-b-2 border-cyan-500/20">
       <div className="max-w-[1800px] mx-auto px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 flex items-center justify-between gap-2 sm:gap-3">
@@ -42,20 +52,64 @@ export function WorkoutFormHeader({
           </div>
         </div>
 
-        <Button
-          type="submit"
-          form="workout-form"
-          variant="primary"
-          size="md"
-          icon={success ? <CheckCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Save size={16} className="sm:w-[18px] sm:h-[18px]" />}
-          loading={loading}
-          loadingText={isEditMode ? 'Updating...' : 'Saving...'}
-          disabled={!isValid}
-          className="touch-manipulation min-w-[80px] sm:min-w-[90px] px-3 sm:px-4 text-sm"
-        >
-          <span className="hidden sm:inline">{success ? (isEditMode ? 'Updated!' : 'Saved!') : (isEditMode ? 'Update' : 'Save')}</span>
-          <span className="sm:hidden">{success ? '✓' : (isEditMode ? 'Update' : 'Save')}</span>
-        </Button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Visibility Selector - Desktop */}
+          <div className="hidden md:flex items-center gap-1 bg-slate-800/60 rounded-lg p-1 border border-slate-700/50">
+            {visibilityOptions.map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onVisibilityChange(value)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                  visibility === value
+                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                    : 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/40'
+                }`}
+                title={label}
+              >
+                <Icon size={14} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+
+          <Button
+            type="submit"
+            form="workout-form"
+            variant="primary"
+            size="md"
+            icon={success ? <CheckCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Save size={16} className="sm:w-[18px] sm:h-[18px]" />}
+            loading={loading}
+            loadingText={isEditMode ? 'Updating...' : 'Saving...'}
+            disabled={!isValid}
+            className="touch-manipulation min-w-20 sm:min-w-[90px] px-3 sm:px-4 text-sm"
+          >
+            <span className="hidden sm:inline">{success ? (isEditMode ? 'Updated!' : 'Saved!') : (isEditMode ? 'Update' : 'Save')}</span>
+            <span className="sm:hidden">{success ? '✓' : (isEditMode ? 'Update' : 'Save')}</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Visibility Selector - Mobile */}
+      <div className="md:hidden max-w-[1800px] mx-auto px-2 pb-2 sm:px-3 sm:pb-3">
+        <div className="flex items-center gap-1 bg-slate-800/60 rounded-lg p-1 border border-slate-700/50">
+          {visibilityOptions.map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onVisibilityChange(value)}
+              className={`flex items-center justify-center gap-1.5 flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                visibility === value
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  : 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/40'
+              }`}
+              title={label}
+            >
+              <Icon size={14} />
+              <span className="text-xs">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

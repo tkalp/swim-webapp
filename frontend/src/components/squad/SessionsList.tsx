@@ -15,10 +15,12 @@ import {
   Users,
   Sparkles,
   ClipboardList,
+  Star,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DateInput from "@/components/ui/DateInput";
 import WorkoutMiniChart from "@/components/workout/WorkoutMiniChart";
+import RateWorkoutModal from "@/components/workouts/RateWorkoutModal";
 import AddEditSessionModal from "@/components/squad/sessions/AddEditSessionModal";
 import CreateFromScheduleModal from "@/components/squad/sessions/CreateFromScheduleModal";
 import AttendanceModal from "@/components/squad/sessions/AttendanceModal";
@@ -124,6 +126,12 @@ export default function SessionsList({
   >(null);
   const [notesSessionId, setNotesSessionId] = useState<string | null>(null);
   const [notesSessionDate, setNotesSessionDate] = useState<string | null>(null);
+  
+  // Rating modal state
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [ratingSessionId, setRatingSessionId] = useState<string | null>(null);
+  const [ratingWorkoutId, setRatingWorkoutId] = useState<string | null>(null);
+  const [ratingWorkoutName, setRatingWorkoutName] = useState<string>('');
 
   // Filter sessions by date range
   const filteredSessions = useMemo(() => {
@@ -612,6 +620,7 @@ export default function SessionsList({
               const duration = Math.round(
                 (endDate.getTime() - startDate.getTime()) / (1000 * 60)
               );
+              const isUpcoming = startDate > new Date();
 
               return (
                 <div
@@ -668,16 +677,32 @@ export default function SessionsList({
                               Workout Details
                             </span>
                           </div>
-                          <button
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-xs font-semibold group/btn"
-                            onClick={() => handleViewWorkout(s.workout_id!)}
-                          >
-                            <span>View Full Workout</span>
-                            <ChevronRight
-                              size={14}
-                              className="group-hover/btn:translate-x-0.5 transition-transform"
-                            />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {!isUpcoming && (
+                              <button
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-400 rounded-lg transition-all duration-200 text-xs font-medium"
+                                onClick={() => {
+                                  setRatingSessionId(s.id);
+                                  setRatingWorkoutId(s.workout_id!);
+                                  setRatingWorkoutName('Workout');
+                                  setRatingModalOpen(true);
+                                }}
+                              >
+                                <Star size={14} />
+                                <span>Rate Workout</span>
+                              </button>
+                            )}
+                            <button
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-xs font-medium group/btn"
+                              onClick={() => handleViewWorkout(s.workout_id!)}
+                            >
+                              <span>View Full</span>
+                              <ChevronRight
+                                size={14}
+                                className="group-hover/btn:translate-x-0.5 transition-transform"
+                              />
+                            </button>
+                          </div>
                         </div>
                         <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 min-h-[280px]">
                           <WorkoutMiniChart workoutId={s.workout_id} />
@@ -850,6 +875,29 @@ export default function SessionsList({
         sessionId={notesSessionId || ""}
         sessionDate={notesSessionDate || ""}
         noteType={practiceNotesType}
+      />
+
+      {/* Rate Workout Modal */}
+      <RateWorkoutModal
+        isOpen={ratingModalOpen}
+        onClose={() => {
+          setRatingModalOpen(false);
+          setRatingSessionId(null);
+          setRatingWorkoutId(null);
+          setRatingWorkoutName('');
+        }}
+        sessionId={ratingSessionId || ""}
+        workoutId={ratingWorkoutId || ""}
+        workoutName={ratingWorkoutName}
+        onRatingSubmitted={() => {
+          setRatingModalOpen(false);
+          setRatingSessionId(null);
+          setRatingWorkoutId(null);
+          setRatingWorkoutName('');
+          if (onRefresh) {
+            onRefresh();
+          }
+        }}
       />
 
       <ConfirmDialog

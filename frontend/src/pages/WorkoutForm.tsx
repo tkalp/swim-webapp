@@ -72,6 +72,8 @@ export default function WorkoutFormPage() {
         isValid={isValid}
         loading={loading}
         success={success}
+        visibility={formData.visibility}
+        onVisibilityChange={(visibility) => setFormData({ ...formData, visibility })}
         onCancel={handleCancel}
       />
 

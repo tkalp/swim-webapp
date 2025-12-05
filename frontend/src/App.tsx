@@ -16,6 +16,7 @@ import AICoachPage from './pages/AICoachPage';
 import WorkoutViewPage from './pages/WorkoutView';
 import WorkoutFormPage from './pages/WorkoutForm';
 import WorkoutsLibraryPage from './pages/WorkoutsLibrary';
+import DiscoverWorkoutsPage from './pages/DiscoverWorkouts';
 import CoachNetworkPage from './pages/CoachNetwork';
 import AdminSyncPage from './pages/AdminSyncPage';
 import CalendarPage from './pages/Calendar';
@@ -105,6 +106,14 @@ export default function App() {
             </GlobalLayout>
           }
           path="/workouts"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <DiscoverWorkoutsPage />
+            </GlobalLayout>
+          }
+          path="/workouts/discover"
         />
         <Route
           element={

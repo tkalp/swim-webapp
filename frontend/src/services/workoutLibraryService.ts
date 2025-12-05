@@ -2,6 +2,8 @@
 import { supabase } from '@/lib/supabase';
 import type { WorkoutTag } from '@/types/workoutTags';
 
+export type WorkoutVisibility = 'private' | 'network' | 'public';
+
 export type WorkoutTemplate = {
   id: string;
   name: string;
@@ -17,6 +19,14 @@ export type WorkoutTemplate = {
   last_used_at?: string;
   usage_count?: number;
   tags?: WorkoutTag[]; // NEW - workout tags
+  // Ratings & Sharing fields
+  effectiveness_rating?: number | null;
+  rating_count?: number;
+  times_used?: number;
+  visibility?: WorkoutVisibility;
+  clone_count?: number;
+  cloned_from_id?: string | null;
+  original_creator_id?: string | null;
 };
 
 /**

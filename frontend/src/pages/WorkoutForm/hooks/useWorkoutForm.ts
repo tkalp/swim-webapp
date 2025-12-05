@@ -16,6 +16,7 @@ export type WorkoutFormData = {
   effortLevel: number;
   jsonDescription: string | null;
   selectedTags: WorkoutTag[];
+  visibility: 'private' | 'network' | 'public';
 };
 
 export function useWorkoutForm() {
@@ -26,17 +27,19 @@ export function useWorkoutForm() {
   
   const isEditMode = !!workoutId;
   const sessionId = searchParams.get("sessionId");
+  const aiWorkout = searchParams.get("aiWorkout");
 
   const [formData, setFormData] = useState<WorkoutFormData>({
     name: "",
     description: "",
-    rawDescription: "",
+    rawDescription: aiWorkout || "",
     totalMeters: 0,
     estimatedTimeMinutes: 0,
     estimatedCalories: 0,
     effortLevel: 5,
     jsonDescription: null,
     selectedTags: [],
+    visibility: 'private',
   });
 
   const [loading, setLoading] = useState(false);
@@ -74,6 +77,7 @@ export function useWorkoutForm() {
           effortLevel: workout.effort_level ?? 5,
           jsonDescription: workout.json_description ? JSON.stringify(workout.json_description) : null,
           selectedTags: tags,
+          visibility: workout.visibility || 'private',
         });
       } catch (err: any) {
         if (mounted) {
@@ -136,6 +140,7 @@ export function useWorkoutForm() {
           estimated_calories: formData.estimatedCalories,
           effort_level: formData.effortLevel,
           json_description: formData.jsonDescription ? JSON.parse(formData.jsonDescription) : null,
+          visibility: formData.visibility,
         };
 
         await updateWorkoutTemplate(workoutId, updatedWorkout);
@@ -159,6 +164,7 @@ export function useWorkoutForm() {
           effort_level: formData.effortLevel,
           create_by_coach: user?.id || "",
           json_description: formData.jsonDescription ? JSON.parse(formData.jsonDescription) : null,
+          visibility: formData.visibility,
         };
         
 

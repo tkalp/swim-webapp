@@ -395,11 +395,23 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
                 </div>
               </div>
               <BreakdownChart
-                data={strokeData.map(item => ({
-                  name: item.stroke,
-                  value: item.meters,
-                  color: item.color
-                }))}
+                data={strokeData.map(item => {
+                  // Map stroke names to abbreviations
+                  const strokeMap: Record<string, string> = {
+                    'freestyle': 'Free',
+                    'backstroke': 'Back',
+                    'breaststroke': 'Breast',
+                    'butterfly': 'Fly',
+                    'individualMedley': 'IM',
+                    'IM': 'IM',
+                    'choice': 'Choice'
+                  };
+                  return {
+                    name: strokeMap[item.stroke] || item.stroke,
+                    value: item.meters,
+                    color: item.color
+                  };
+                })}
                 title=""
                 subtitle=""
                 icon={<Waves size={20} />}

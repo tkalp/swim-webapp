@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import {
   Dumbbell,
   Plus,
@@ -17,9 +18,13 @@ import {
   Users,
   Tag as TagIcon,
   X,
+  Share2,
+  Star,
 } from "lucide-react";
 import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
 import { WorkoutTag } from '@/components/workout/WorkoutTag';
+import WorkoutRatingStars from '@/components/workouts/WorkoutRatingStars';
+import WorkoutVisibilityBadge from '@/components/workouts/WorkoutVisibilityBadge';
 import {
   getCoachWorkouts,
   deleteWorkout,
@@ -27,11 +32,13 @@ import {
   type WorkoutTemplate,
 } from '@/services/workoutLibraryService';
 import { getCoachTags } from '@/services/workoutTagService';
+import { updateWorkoutVisibility, type WorkoutVisibility } from '@/services/workoutSharingService';
 import type { WorkoutTag as WorkoutTagType } from '@/types/workoutTags';
 
 export default function WorkoutsLibrary() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const coachId = user?.id;
 
   const [workouts, setWorkouts] = useState<WorkoutTemplate[]>([]);
@@ -195,7 +202,7 @@ export default function WorkoutsLibrary() {
   };
 
   const handleDeleteWorkout = async (workoutId: string, workoutName: string) => {
-    if (!confirm(`Are you sure you want to delete "${workoutName}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${workoutName}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -205,8 +212,24 @@ export default function WorkoutsLibrary() {
       setPage(0);
       setHasMore(true);
       loadWorkouts(0, true);
+      showToast('Workout deleted successfully', 'success');
     } catch (e: any) {
-      alert(e.message || "Failed to delete workout");
+      showToast(e.message || 'Failed to delete workout', 'error');
+    }
+  };
+
+  const handleChangeVisibility = async (workoutId: string, newVisibility: WorkoutVisibility) => {
+    try {
+      await updateWorkoutVisibility(workoutId, newVisibility);
+      
+      // Update local state
+      setWorkouts(prev => prev.map(w => 
+        w.id === workoutId ? { ...w, visibility: newVisibility } : w
+      ));
+      
+      showToast(`Workout visibility updated to ${newVisibility}`, 'success');
+    } catch (e: any) {
+      showToast(e.message || 'Failed to update visibility', 'error');
     }
   };
 
@@ -250,13 +273,22 @@ export default function WorkoutsLibrary() {
                 {totalCount} workout{totalCount !== 1 ? "s" : ""} in your library
               </p>
             </div>
-            <button
-              onClick={handleCreateWorkout}
-              className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-200"
-            >
-              <Plus size={18} />
-              Create Workout
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/workouts/discover')}
+                className="flex items-center gap-2 px-5 py-3 bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-xl font-semibold text-sm hover:bg-purple-500/30 hover:border-purple-500/60 transition-all duration-200"
+              >
+                <Star size={18} />
+                Discover
+              </button>
+              <button
+                onClick={handleCreateWorkout}
+                className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-200"
+              >
+                <Plus size={18} />
+                Create Workout
+              </button>
+            </div>
           </div>
         </div>
 
@@ -382,12 +414,15 @@ export default function WorkoutsLibrary() {
                     </h3>
                     <p className="text-xs text-slate-500">Created {formatDate(workout.created_at)}</p>
                   </div>
-                  <div
-                    className={`px-2 py-0.5 rounded-lg text-xs font-semibold border ${getEffortLevelBg(
-                      workout.effort_level
-                    )} ${getEffortLevelColor(workout.effort_level)}`}
-                  >
-                    Level {workout.effort_level}
+                  <div className="flex items-center gap-2">
+                    <WorkoutVisibilityBadge visibility={workout.visibility || 'private'} size="sm" />
+                    <div
+                      className={`px-2 py-0.5 rounded-lg text-xs font-semibold border ${getEffortLevelBg(
+                        workout.effort_level
+                      )} ${getEffortLevelColor(workout.effort_level)}`}
+                    >
+                      Level {workout.effort_level}
+                    </div>
                   </div>
                 </div>
 
@@ -430,14 +465,35 @@ export default function WorkoutsLibrary() {
                   </div>
                 </div>
 
-                {/* Usage Info */}
-                <div className="flex items-center gap-4 mb-2 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <Users size={14} />
-                    <span>
-                      Used {workout.usage_count || 0} time{workout.usage_count !== 1 ? "s" : ""}
-                    </span>
+                {/* Ratings & Usage Info */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <WorkoutRatingStars
+                    rating={workout.effectiveness_rating || null}
+                    ratingCount={workout.rating_count || 0}
+                    size="sm"
+                    showCount={true}
+                  />
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                    <Users size={12} />
+                    <span>{workout.times_used || 0} uses</span>
                   </div>
+                </div>
+
+                {/* Visibility Controls */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Share2 size={12} className="text-slate-400" />
+                    <span className="text-xs text-slate-400">Visibility:</span>
+                  </div>
+                  <select
+                    value={workout.visibility || 'private'}
+                    onChange={(e) => handleChangeVisibility(workout.id, e.target.value as WorkoutVisibility)}
+                    className="w-full bg-slate-800/50 border border-slate-700/40 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                  >
+                    <option value="private">Private - Only me</option>
+                    <option value="network">Network - Connected coaches</option>
+                    <option value="public">Public - Everyone</option>
+                  </select>
                 </div>
 
                 {/* Actions */}

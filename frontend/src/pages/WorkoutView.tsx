@@ -75,6 +75,10 @@ export default function WorkoutViewPage() {
 
   useEffect(() => {
     if (!workoutId) return;
+    
+    // Scroll to top when page loads
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
     let mounted = true;
     setLoading(true);
     
@@ -143,7 +147,7 @@ export default function WorkoutViewPage() {
       <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Loading workout...</p>
+          <p className="text-slate-400 text-lg font-medium">Loading workout...</p>
         </div>
       </div>
     );
@@ -293,100 +297,139 @@ export default function WorkoutViewPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Activity size={20} className="text-cyan-400" />
+        {/* Stats Grid - Minimal & Vibrant */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="group relative overflow-hidden rounded-xl bg-linear-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 p-4 hover:from-cyan-500/30 hover:to-cyan-600/20 hover:border-cyan-400/40 transition-all hover:scale-[1.02]">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-cyan-400/10 rounded-full blur-2xl group-hover:bg-cyan-400/20 transition-all" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity size={18} className="text-cyan-400" />
+                <span className="text-xs font-bold text-cyan-300 uppercase tracking-wide">Distance</span>
               </div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Distance</span>
+              <p className="text-3xl font-black text-white mb-0.5">
+                {workout.totalMeters.toLocaleString()}
+              </p>
+              <p className="text-xs text-cyan-200/70 font-medium">meters</p>
             </div>
-            <p className="text-3xl font-bold text-slate-100 mb-1">
-              {workout.totalMeters.toLocaleString()}
-            </p>
-            <p className="text-xs text-slate-400">meters</p>
           </div>
 
-          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-green-500/30 hover:shadow-lg hover:shadow-green-500/10 transition-all group">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Timer size={20} className="text-green-400" />
+          <div className="group relative overflow-hidden rounded-xl bg-linear-to-br from-green-500/20 to-green-600/10 border border-green-500/30 p-4 hover:from-green-500/30 hover:to-green-600/20 hover:border-green-400/40 transition-all hover:scale-[1.02]">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-green-400/10 rounded-full blur-2xl group-hover:bg-green-400/20 transition-all" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Timer size={18} className="text-green-400" />
+                <span className="text-xs font-bold text-green-300 uppercase tracking-wide">Duration</span>
               </div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Duration</span>
+              <p className="text-3xl font-black text-white mb-0.5">
+                {workout.estimatedTimeMinutes}
+              </p>
+              <p className="text-xs text-green-200/70 font-medium">minutes</p>
             </div>
-            <p className="text-3xl font-bold text-slate-100 mb-1">
-              {workout.estimatedTimeMinutes}
-            </p>
-            <p className="text-xs text-slate-400">minutes</p>
           </div>
 
-          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/10 transition-all group">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Flame size={20} className="text-orange-400" />
+          <div className="group relative overflow-hidden rounded-xl bg-linear-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/30 p-4 hover:from-orange-500/30 hover:to-orange-600/20 hover:border-orange-400/40 transition-all hover:scale-[1.02]">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-orange-400/10 rounded-full blur-2xl group-hover:bg-orange-400/20 transition-all" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Flame size={18} className="text-orange-400" />
+                <span className="text-xs font-bold text-orange-300 uppercase tracking-wide">Calories</span>
               </div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Calories</span>
+              <p className="text-3xl font-black text-white mb-0.5">
+                {workout.estimatedCalories.toLocaleString()}
+              </p>
+              <p className="text-xs text-orange-200/70 font-medium">kcal</p>
             </div>
-            <p className="text-3xl font-bold text-slate-100 mb-1">
-              {workout.estimatedCalories.toLocaleString()}
-            </p>
-            <p className="text-xs text-slate-400">kcal</p>
           </div>
 
-          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-800/60 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all group">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Zap size={20} className="text-purple-400" />
+          <div className="group relative overflow-hidden rounded-xl bg-linear-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 p-4 hover:from-purple-500/30 hover:to-purple-600/20 hover:border-purple-400/40 transition-all hover:scale-[1.02]">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-400/10 rounded-full blur-2xl group-hover:bg-purple-400/20 transition-all" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={18} className="text-purple-400" />
+                <span className="text-xs font-bold text-purple-300 uppercase tracking-wide">Effort</span>
               </div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Effort</span>
+              <p className="text-3xl font-black text-white mb-0.5">
+                {workout.effortLevel}<span className="text-xl text-purple-200/50">/10</span>
+              </p>
+              <p className="text-xs text-purple-200/70 font-medium">intensity</p>
             </div>
-            <p className="text-3xl font-bold text-slate-100 mb-1">
-              {workout.effortLevel}/10
-            </p>
-            <p className="text-xs text-slate-400">intensity</p>
           </div>
         </div>
 
-        {/* Main Content Grid */}
+        {/* Main Content - Enhanced Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Workout Description */}
-          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-800/60 shadow-xl">
-            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-800/40">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-                <FileText size={20} className="text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-100">Workout Plan</h2>
-                <p className="text-xs text-slate-400">Complete training session details</p>
-              </div>
-            </div>
-            <div className="bg-slate-800/30 rounded-xl p-5 border border-slate-700/30 max-h-[600px] overflow-y-auto">
-              <div className="prose prose-sm max-w-none">
-                <div className="text-base leading-loose whitespace-pre-wrap text-slate-100">
-                  {workout.rawDescription}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Workout Analysis */}
           {normalized?.estimate && (
-            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-800/60 shadow-xl">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-800/40">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                  <BarChart3 size={20} className="text-indigo-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-100">Workout Analysis</h2>
-                  <p className="text-xs text-slate-400">Breakdown by stroke and activity</p>
+            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 shadow-xl overflow-hidden">
+              <div className="bg-linear-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 px-6 py-5 border-b border-slate-800/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                    <BarChart3 size={24} className="text-indigo-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-100">Workout Analysis</h2>
+                    <p className="text-sm text-slate-400">Visual breakdown by stroke and activity type</p>
+                  </div>
                 </div>
               </div>
-              <div className="max-h-[600px] overflow-y-auto">
+              <div className="p-6">
                 <WorkoutBreakdownCharts estimate={normalized.estimate} />
               </div>
             </div>
           )}
+
+          {/* Workout Description - Enhanced Typography */}
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800/60 shadow-xl overflow-hidden group hover:border-blue-500/30 transition-all">
+            <div className="bg-linear-to-r from-blue-500/10 via-cyan-500/10 to-teal-500/10 px-6 py-5 border-b border-slate-800/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center shadow-lg shadow-blue-500/10 group-hover:shadow-blue-500/20 transition-all">
+                    <FileText size={24} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-100">Workout Plan</h2>
+                    <p className="text-sm text-slate-400">Complete training session details</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-xs font-bold text-blue-400">
+                      {workout.rawDescription.split('\n').filter((line: string) => line.trim()).length} lines
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="relative group/content">
+                {/* Decorative gradient overlay */}
+                <div className="absolute -inset-4 bg-linear-to-r from-blue-500/5 via-cyan-500/5 to-teal-500/5 rounded-2xl opacity-0 group-hover/content:opacity-100 transition-opacity blur-xl" />
+                
+                {/* Content container */}
+                <div className="relative bg-slate-800/60 rounded-xl p-6 border border-slate-700/40 backdrop-blur-sm hover:border-slate-600/60 transition-all h-[730px] overflow-y-auto">
+                  {/* Line numbers and content */}
+                  <div className="flex gap-4">
+                    {/* Line numbers */}
+                    <div className="flex flex-col text-right select-none opacity-40 group-hover/content:opacity-60 transition-opacity sticky top-0">
+                      {workout.rawDescription.split('\n').map((_, index) => (
+                        <div key={index} className="text-[13px] leading-[1.8] font-mono text-slate-500 tabular-nums">
+                          {index + 1}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Separator */}
+                    <div className="w-px bg-linear-to-b from-transparent via-slate-700/50 to-transparent opacity-50 group-hover/content:opacity-70 transition-opacity" />
+                    
+                    {/* Workout text */}
+                    <div className="flex-1 text-[15px] leading-[1.8] whitespace-pre-wrap text-slate-100 font-mono tracking-tight selection:bg-cyan-500/30">
+                      {workout.rawDescription}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 // components/ai-coach/WorkoutOutput.tsx
-import { Download, Copy } from 'lucide-react'
+import { Download, Copy, FileEdit } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import type { GeneratedWorkout } from '@/types/ai-coach/types'
 import logo from '@/assets/logo.png'
@@ -12,6 +13,16 @@ interface WorkoutOutputProps {
 }
 
 export default function WorkoutOutput({ workout, loading, onSave, onCopy }: WorkoutOutputProps) {
+  const navigate = useNavigate()
+
+  const handleCreateAsMyWorkout = () => {
+    if (!workout) return
+    
+    // Navigate to create workout page with the AI-generated workout pre-filled
+    const params = new URLSearchParams()
+    params.set('aiWorkout', workout.workout)
+    navigate(`/workouts/create?${params.toString()}`)
+  }
   if (loading) {
     return (
       <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-8 shadow-xl min-h-[600px] flex flex-col">
@@ -66,12 +77,20 @@ export default function WorkoutOutput({ workout, loading, onSave, onCopy }: Work
             <span>Copy</span>
           </button>
           <button 
-            className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1 active:translate-y-0" 
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900/50 hover:bg-slate-800/50 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-300 hover:text-cyan-400 text-sm font-medium transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10" 
             onClick={onSave}
-            aria-label="Save workout"
+            aria-label="Download workout"
           >
             <Download size={16} />
-            <span>Save</span>
+            <span>Download</span>
+          </button>
+          <button 
+            className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1 active:translate-y-0" 
+            onClick={handleCreateAsMyWorkout}
+            aria-label="Create Workout"
+          >
+            <FileEdit size={16} />
+            <span>Create Workout</span>
           </button>
         </div>
       </div>
