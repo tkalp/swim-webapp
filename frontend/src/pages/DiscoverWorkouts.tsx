@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Copy, TrendingUp } from 'lucide-react';
+import { Copy, TrendingUp, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { discoverWorkouts, cloneWorkout, type SharedWorkout } from '@/services/workoutSharingService';
 import { useToast } from '@/contexts/ToastContext';
 import WorkoutRatingStars from '@/components/workouts/WorkoutRatingStars';
 import WorkoutVisibilityBadge from '@/components/workouts/WorkoutVisibilityBadge';
+import WorkoutPreviewModal from '@/components/workouts/WorkoutPreviewModal';
 
 export default function DiscoverWorkoutsPage() {
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<SharedWorkout[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'rating' | 'popular' | 'recent'>('rating');
+  const [previewWorkout, setPreviewWorkout] = useState<SharedWorkout | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -36,6 +38,19 @@ export default function DiscoverWorkoutsPage() {
     } catch (error: any) {
       showToast(error.message, 'error');
     }
+  };
+
+  const handlePreview = (workout: SharedWorkout) => {
+    setPreviewWorkout(workout);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewWorkout(null);
+  };
+
+  const handleCloned = () => {
+    // Optionally refresh the list or update clone count
+    loadWorkouts();
   };
 
   return (
@@ -98,16 +113,36 @@ export default function DiscoverWorkoutsPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleClone(workout)}
-                  className="w-full bg-linear-to-r from-cyan-500 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2"
-                >
-                  <Copy className="w-4 h-4" />
-                  Clone to My Library
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePreview(workout)}
+                    className="flex-1 bg-slate-800 text-slate-200 px-4 py-2 rounded-lg font-semibold hover:bg-slate-700 transition-all flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-600"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => handleClone(workout)}
+                    className="flex-1 bg-linear-to-r from-cyan-500 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Clone
+                  </button>
+                </div>
               </div>
             ))}
           </div>
+        )}
+
+        {/* Preview Modal */}
+        {previewWorkout && (
+          <WorkoutPreviewModal
+            isOpen={!!previewWorkout}
+            onClose={handleClosePreview}
+            workoutId={previewWorkout.id}
+            workoutPreview={previewWorkout}
+            onCloned={handleCloned}
+          />
         )}
       </div>
     </div>
