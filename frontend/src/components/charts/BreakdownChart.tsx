@@ -9,11 +9,14 @@ type BreakdownData = {
   color: string;
 };
 
+type ChartSize = 'sm' | 'md' | 'lg';
+
 type Props = {
   data: BreakdownData[];
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
+  size?: ChartSize;
 };
 
 export default function BreakdownChart({
@@ -21,6 +24,7 @@ export default function BreakdownChart({
   title,
   subtitle,
   icon = <Activity size={20} />,
+  size = 'sm',
 }: Props) {
   const total = useMemo(
     () => data.reduce((s, d) => s + (d.value || 0), 0),
@@ -52,7 +56,7 @@ export default function BreakdownChart({
 
       {/* Chart */}
       {hasData ? (
-        <EnhancedPieChart data={dataWithPercentage} total={total} />
+        <EnhancedPieChart data={dataWithPercentage} total={total} size={size} />
       ) : (
         <div className="flex-1 flex items-center justify-center min-h-60">
           <div className="text-center text-text-muted">

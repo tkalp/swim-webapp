@@ -1,6 +1,7 @@
 // components/charts/EnhancedPieChart.tsx
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts';
 import { useState } from 'react';
+import React from 'react';
 
 export type ChartDataItem = {
   name: string;
@@ -9,12 +10,22 @@ export type ChartDataItem = {
   color: string;
 };
 
+type ChartSize = 'sm' | 'md' | 'lg';
+
 type EnhancedPieChartProps = {
   data: ChartDataItem[];
   total: number;
+  size?: ChartSize;
 };
 
-export function EnhancedPieChart({ data, total }: EnhancedPieChartProps) {
+const SIZE_CONFIG = {
+  sm: { height: 240, outerRadius: 85, innerRadius: 45 },
+  md: { height: 320, outerRadius: 115, innerRadius: 60 },
+  lg: { height: 400, outerRadius: 145, innerRadius: 75 },
+};
+
+export function EnhancedPieChart({ data, total, size = 'sm' }: EnhancedPieChartProps) {
+  const { height, outerRadius, innerRadius } = SIZE_CONFIG[size];
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -96,7 +107,7 @@ export function EnhancedPieChart({ data, total }: EnhancedPieChartProps) {
           startAngle={startAngle}
           endAngle={endAngle}
           fill={fill}
-          stroke="#0f172a"
+          stroke="rgba(255, 255, 255, 0.2)"
           strokeWidth={2}
         />
         <Sector
@@ -107,7 +118,7 @@ export function EnhancedPieChart({ data, total }: EnhancedPieChartProps) {
           innerRadius={outerRadius + 8}
           outerRadius={outerRadius + 10}
           fill={fill}
-          opacity={0.6}
+          opacity={0.5}
         />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" strokeWidth={2} />
         <circle cx={ex} cy={ey} r={3} fill={fill} stroke="none" />
@@ -144,14 +155,24 @@ export function EnhancedPieChart({ data, total }: EnhancedPieChartProps) {
       {/* Pie Chart */}
       <div className="flex items-center justify-center relative">
         <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-accent/5 rounded-full blur-xl" />
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={height}>
           <PieChart>
             <defs>
               {data.map((entry, index) => (
-                <linearGradient key={`gradient-${index}`} id={`gradient-chart-${index}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
-                  <stop offset="100%" stopColor={entry.color} stopOpacity={0.7} />
-                </linearGradient>
+                <React.Fragment key={`defs-${entry.name}-${index}`}>
+                  {/* Radial gradient for glassomorphic effect */}
+                  <radialGradient id={`gradient-chart-${entry.name.replace(/\s+/g, '-').toLowerCase()}`} cx="40%" cy="40%">
+                    <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                    <stop offset="30%" stopColor={entry.color} stopOpacity={0.98} />
+                    <stop offset="100%" stopColor={entry.color} stopOpacity={0.85} />
+                  </radialGradient>
+                  {/* Subtle shimmer overlay */}
+                  <linearGradient id={`shimmer-${entry.name.replace(/\s+/g, '-').toLowerCase()}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity={0.1} />
+                    <stop offset="50%" stopColor="#ffffff" stopOpacity={0.03} />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                  </linearGradient>
+                </React.Fragment>
               ))}
             </defs>
             <Pie
@@ -160,19 +181,19 @@ export function EnhancedPieChart({ data, total }: EnhancedPieChartProps) {
               cy="50%"
               labelLine={false}
               label={renderCustomLabel}
-              outerRadius={85}
-              innerRadius={45}
+              outerRadius={outerRadius}
+              innerRadius={innerRadius}
               dataKey="value"
-              strokeWidth={3}
-              stroke="#0f172a"
+              strokeWidth={2}
+              stroke="rgba(15, 23, 42, 0.4)"
               activeShape={renderActiveShape}
               onMouseEnter={(_, index) => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(undefined)}
             >
               {data.map((entry, index) => (
                 <Cell 
-                  key={`cell-${index}`} 
-                  fill={`url(#gradient-chart-${index})`}
+                  key={`cell-${entry.name}-${index}`} 
+                  fill={`url(#gradient-chart-${entry.name.replace(/\s+/g, '-').toLowerCase()})`}
                   className="transition-all duration-200 cursor-pointer hover:opacity-90"
                 />
               ))}

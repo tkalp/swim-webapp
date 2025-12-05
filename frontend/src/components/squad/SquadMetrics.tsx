@@ -415,6 +415,7 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
                 title=""
                 subtitle=""
                 icon={<Waves size={20} />}
+                size="lg"
               />
             </div>
           </div>
@@ -444,6 +445,7 @@ export default function SquadMetricsTab({ squadId }: { squadId: string }) {
                 title=""
                 subtitle=""
                 icon={<Zap size={20} />}
+                size="lg"
               />
             </div>
           </div>

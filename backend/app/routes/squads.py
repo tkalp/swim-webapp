@@ -433,19 +433,20 @@ async def get_squad_stroke_breakdown(
         
         # Color mapping
         stroke_colors = {
-            'freestyle': '#06B6D4',  # Vibrant cyan
-            'backstroke': '#8B5CF6',  # Vibrant purple
-            'breaststroke': '#10B981',  # Vibrant emerald
-            'butterfly': '#F59E0B',  # Vibrant amber
-            'individual medley': '#EC4899',  # Vibrant pink
-            'choice': '#A78BFA'  # Light purple
+            'freestyle': '#3B82F6',  # Brilliant blue
+            'backstroke': '#A855F7',  # Vivid purple
+            'breaststroke': '#10B981',  # Emerald green
+            'butterfly': '#F97316',  # Bright orange
+            'individual medley': '#EC4899',  # Hot pink
+            'choice': '#FBBF24',  # Golden yellow
+            'mixed': '#8B5CF6'  # Purple-violet
         }
         
         result = [
             {
                 "stroke": stroke.title().replace('Individual medley', 'Individual Medley'),
                 "meters": meters,
-                "color": stroke_colors.get(stroke, '#A78BFA')
+                "color": stroke_colors.get(stroke, '#FBBF24')  # Golden yellow fallback
             }
             for stroke, meters in sorted(stroke_totals.items(), key=lambda x: -x[1])
         ]
@@ -507,17 +508,18 @@ async def get_squad_activity_breakdown(
         
         # Color mapping
         activity_colors = {
-            'swim': '#22D3EE',
-            'kick': '#EF4444',
-            'pull': '#10B981',
-            'drill': '#F59E0B'
+            'swim': '#3B82F6',  # Brilliant blue
+            'kick': '#F97316',  # Bright orange
+            'pull': '#10B981',  # Emerald green
+            'drill': '#FBBF24',  # Golden yellow
+            'mixed': '#8B5CF6'  # Purple-violet
         }
         
         result = [
             {
                 "activity": activity.title(),
                 "meters": meters,
-                "color": activity_colors.get(activity, '#6B7280')
+                "color": activity_colors.get(activity, '#FBBF24')  # Golden yellow fallback
             }
             for activity, meters in sorted(activity_totals.items(), key=lambda x: -x[1])
         ]

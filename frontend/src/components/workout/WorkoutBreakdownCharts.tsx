@@ -1,6 +1,7 @@
 // components/workout/WorkoutBreakdownCharts.tsx
 import { Activity, Droplets } from 'lucide-react';
 import { EnhancedPieChart } from '../charts/EnhancedPieChart';
+import { Sector } from 'recharts';
 
 type EstimateData = {
   difficulty: string;
@@ -28,13 +29,14 @@ type WorkoutBreakdownChartsProps = {
 };
 
 const STROKE_COLORS: Record<string, string> = {
-  freestyle: '#06B6D4', // Vibrant cyan
-  backstroke: '#8B5CF6', // Vibrant purple 
-  breaststroke: '#10B981', // Vibrant emerald
-  butterfly: '#F59E0B', // Vibrant amber
-  individualMedley: '#EC4899', // Vibrant pink
+  freestyle: '#3B82F6', // Brilliant blue
+  backstroke: '#A855F7', // Vivid purple 
+  breaststroke: '#10B981', // Emerald green
+  butterfly: '#F97316', // Bright orange
+  individualMedley: '#EC4899', // Hot pink
   im: '#EC4899', // Handle both IM formats
-  choice: '#EAB308' // Vibrant yellow
+  choice: '#FBBF24', // Golden yellow
+  mixed: '#8B5CF6' // Purple-violet
 };
 
 const STROKE_LABELS: Record<string, string> = {
@@ -48,10 +50,11 @@ const STROKE_LABELS: Record<string, string> = {
 };
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  swim: '#06B6D4', // Vibrant cyan
-  kick: '#F97316', // Vibrant orange
-  pull: '#10B981', // Vibrant emerald
-  drill: '#FBBF24' // Vibrant yellow
+  swim: '#3B82F6', // Brilliant blue
+  kick: '#F97316', // Bright orange
+  pull: '#10B981', // Emerald green
+  drill: '#FBBF24', // Golden yellow
+  mixed: '#8B5CF6' // Purple-violet
 };
 
 export default function WorkoutBreakdownCharts({ estimate }: WorkoutBreakdownChartsProps) {

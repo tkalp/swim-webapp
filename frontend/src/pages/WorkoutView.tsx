@@ -411,7 +411,7 @@ export default function WorkoutViewPage() {
                   <div className="flex gap-4">
                     {/* Line numbers */}
                     <div className="flex flex-col text-right select-none opacity-40 group-hover/content:opacity-60 transition-opacity sticky top-0">
-                      {workout.rawDescription.split('\n').map((_, index) => (
+                      {workout.rawDescription.split('\n').map((_: string, index: number) => (
                         <div key={index} className="text-[13px] leading-[1.8] font-mono text-slate-500 tabular-nums">
                           {index + 1}
                         </div>
