@@ -9,6 +9,9 @@ if (isEnabled) {
     debug: import.meta.env.DEV,
     track_pageview: true,
     persistence: 'localStorage',
+    record_sessions_percent: 100, // Record 100% of sessions
+    record_block_selector: '[data-private]', // Block elements with data-private attribute
+    record_mask_text_selector: '[data-mask]', // Mask text in elements with data-mask attribute
   });
 } else {
   console.warn('Mixpanel token not found. Analytics will be disabled.');
