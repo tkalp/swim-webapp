@@ -153,6 +153,7 @@ export interface GenerateWorkoutTitleRequest {
   raw_description: string;
   total_meters?: number;
   effort_level?: number;
+  analysis?: any;  // Workout analysis data
 }
 
 export interface GenerateWorkoutTitleResponse {
@@ -169,6 +170,7 @@ export async function generateWorkoutTitle(
       raw_description: params.raw_description,
       total_meters: params.total_meters,
       effort_level: params.effort_level,
+      analysis: params.analysis,
     }),
   });
 

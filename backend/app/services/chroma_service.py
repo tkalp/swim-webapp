@@ -576,7 +576,8 @@ Description:"""
 def generate_workout_title(
     raw_description: str,
     total_meters: Optional[int] = None,
-    effort_level: Optional[int] = None
+    effort_level: Optional[int] = None,
+    analysis: Optional[dict] = None
 ) -> str:
     """
     Generate a concise, engaging title for a workout using Claude.
@@ -585,6 +586,7 @@ def generate_workout_title(
         raw_description: Full workout text
         total_meters: Total distance in meters (optional)
         effort_level: Effort level 1-10 (optional)
+        analysis: Workout analysis data with stroke/activity breakdowns (optional)
     
     Returns:
         A concise, engaging title (max 60 chars)
@@ -603,14 +605,36 @@ def generate_workout_title(
     try:
         client = Anthropic(api_key=api_key)
         
-        # Build context for the LLM
+        # Build context for the LLM with analysis insights
         context_parts = []
         if total_meters:
             context_parts.append(f"Total Distance: {total_meters}m")
         if effort_level:
             context_parts.append(f"Effort Level: {effort_level}/10")
-        context_parts.append(f"\nFull Workout:\n{raw_description}")
         
+        # Add analysis insights if available
+        if analysis:
+            # Stroke breakdown insights
+            stroke_breakdown = analysis.get('stroke_breakdown', {})
+            if stroke_breakdown:
+                context_parts.append("\nStroke Distribution:")
+                for stroke, meters in stroke_breakdown.items():
+                    if meters and meters > 0:
+                        context_parts.append(f"  - {stroke}: {meters}m")
+            
+            # Activity breakdown insights
+            activity_breakdown = analysis.get('activity_breakdown', {})
+            if activity_breakdown:
+                context_parts.append("\nActivity Distribution:")
+                for activity, meters in activity_breakdown.items():
+                    if meters and meters > 0:
+                        context_parts.append(f"  - {activity}: {meters}m")
+            
+            # Other metadata
+            if analysis.get('classification'):
+                context_parts.append(f"\nClassification: {analysis['classification']}")
+        
+        context_parts.append(f"\nFull Workout:\n{raw_description}")
         context = "\n".join(context_parts)
         
         system_prompt = """You are an expert swimming coach who creates CLEVER, CREATIVE, and MEMORABLE workout titles.
@@ -626,24 +650,50 @@ Requirements:
 - Use swimming terminology coaches and athletes will enjoy
 - Capitalize appropriately (title case)
 
-Style Examples:
-CREATIVE & FUN:
-- "Butterfly Effect" (for butterfly-focused workout)
-- "The Riptide Gauntlet" (for tough descending sets)
-- "Freestyle Frenzy" (sprint workout)
-- "IM Possible Challenge" (challenging IM workout)
-- "The Deep End Theory" (endurance workout)
-- "Splash & Dash" (short, intense sprints)
-- "Tidal Wave Trainer" (volume workout)
-- "Dolphin Kicks & Dreams" (underwater work)
+IMPORTANT - Use the analysis data to create specific, accurate titles:
+- If IM (Individual Medley) strokes are present → emphasize IM in the title
+- If mostly kick → include "Kick" or kicking-related terms
+- If mostly pull → include "Pull" or pulling-related terms
+- If mostly drill → include "Drill" or technique-related terms
+- If heavy butterfly → reference butterfly specifically
+- If descending sets → use "Descending" or "Ladder" or "Pyramid"
+- If mixed strokes → highlight variety or multi-stroke nature
 
-CLASSIC BUT CLEVER:
+Style Examples:
+IM-FOCUSED:
+- "IM Impossible Challenge"
+- "Medley Madness"
+- "Four-Stroke Fury"
+
+KICK-HEAVY:
+- "Kick Crusher"
+- "Leg Burner Supreme"
+- "Dolphin Kick Domination"
+
+PULL-FOCUSED:
+- "Upper Body Assault"
+- "Pull Power Hour"
+- "Arm Artillery"
+
+DRILL-INTENSIVE:
+- "Technique Tuneup"
+- "Form Focus Friday"
+- "Drill Master Class"
+
+SPRINT WORKOUTS:
+- "Freestyle Frenzy"
 - "Sprint Savage Session"
-- "Endurance Empire Builder"
-- "Threshold Thunder"
 - "Velocity Vortex"
-- "Lactate Ladder"
-- "Power Surge Protocol"
+
+ENDURANCE WORKOUTS:
+- "The Deep End Theory"
+- "Tidal Wave Trainer"
+- "Marathon Maker"
+
+MIXED/VARIETY:
+- "Stroke Sampler"
+- "Aquatic Assault Course"
+- "The Riptide Gauntlet"
 
 Write ONLY the title, nothing else. Be creative and make it memorable!"""
 

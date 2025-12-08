@@ -39,6 +39,7 @@ class GenerateWorkoutTitleRequest(BaseModel):
     raw_description: str
     total_meters: Optional[int] = None
     effort_level: Optional[int] = None
+    analysis: Optional[dict] = None  # Workout analysis data (stroke breakdown, activity breakdown, etc.)
 
 
 class GenerateWorkoutTitleResponse(BaseModel):

@@ -126,6 +126,7 @@ async def generate_title_endpoint(
             raw_description=request.raw_description,
             total_meters=request.total_meters,
             effort_level=request.effort_level,
+            analysis=request.analysis,
         )
         
         logger.info(f"Successfully generated title for user {user_id}")

@@ -1,9 +1,9 @@
 // components/squad/sessions/AddEditSessionModal.tsx
 import { useState, useEffect } from 'react';
-import { Clock, Calendar, Type, FileText } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import DateInput from '@/components/ui/DateInput';
-import CustomSelect, { type Option } from '@/components/ui/CustomSelect';
+import TimeInput from '@/components/ui/TimeInput';
 import { format } from 'date-fns';
 
 type SessionFormData = {
@@ -25,15 +25,6 @@ type AddEditSessionModalProps = {
   onSubmit: (data: SessionFormData) => Promise<void>;
 };
 
-const TRAINING_TYPES: Option[] = [
-  { value: 'technique', label: 'Technique' },
-  { value: 'endurance', label: 'Endurance' },
-  { value: 'speed', label: 'Speed' },
-  { value: 'race_pace', label: 'Race Pace' },
-  { value: 'recovery', label: 'Recovery' },
-  { value: 'mixed', label: 'Mixed' },
-];
-
 export default function AddEditSessionModal({
   open,
   onClose,
@@ -53,7 +44,7 @@ export default function AddEditSessionModal({
     start_time: initialData?.start_time ?? '06:00',
     end_date: initialData?.end_date?.split('T')[0] ?? format(new Date(), 'yyyy-MM-dd'),
     end_time: initialData?.end_time ?? '07:00',
-    training_type: initialData?.training_type ?? 'mixed',
+    training_type: 'Swim', // Default to 'Swim'
     workout_id: initialData?.workout_id ?? null,
   });
 
@@ -65,7 +56,7 @@ export default function AddEditSessionModal({
         start_time: initialData.start_time ?? '06:00',
         end_date: initialData.end_date?.split('T')[0] ?? format(new Date(), 'yyyy-MM-dd'),
         end_time: initialData.end_time ?? '07:00',
-        training_type: initialData.training_type ?? 'mixed',
+        training_type: initialData.training_type ?? 'Swim',
         workout_id: initialData.workout_id ?? null,
       });
     } else if (open && !initialData) {
@@ -74,7 +65,7 @@ export default function AddEditSessionModal({
         start_time: '06:00',
         end_date: format(new Date(), 'yyyy-MM-dd'),
         end_time: '07:00',
-        training_type: 'mixed',
+        training_type: 'Swim',
         workout_id: null,
       });
     }
@@ -118,110 +109,49 @@ export default function AddEditSessionModal({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 text-danger text-sm">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
             {error}
           </div>
         )}
 
-        {/* Date and Time Section */}
+        {/* Single Date Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-slate-100 font-semibold">
-            <Calendar size={18} className="text-primary" />
-            <h3>Date & Time</h3>
+            <Calendar size={18} className="text-cyan-400" />
+            <h3>Session Date & Time</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Start Date */}
-            <DateInput
-              label="Start Date"
-              value={formData.start_date}
-              onChange={(v) => setFormData({ ...formData, start_date: v })}
-              placeholder="Select start date"
+          {/* Date */}
+          <DateInput
+            label="Session Date"
+            value={formData.start_date}
+            onChange={(v) => setFormData({ ...formData, start_date: v, end_date: v })}
+            placeholder="Select date"
+          />
+
+          {/* Time Range */}
+          <div className="grid grid-cols-2 gap-4">
+            <TimeInput
+              label="Start Time"
+              value={formData.start_time}
+              onChange={(v) => setFormData({ ...formData, start_time: v })}
             />
-
-            {/* Start Time */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                <Clock size={14} />
-                Start Time
-              </label>
-              <input
-                type="time"
-                value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full bg-slate-800/60 border border-slate-800/60 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
-                required
-              />
-            </div>
-
-            {/* End Date */}
-            <DateInput
-              label="End Date"
-              value={formData.end_date}
-              onChange={(v) => setFormData({ ...formData, end_date: v })}
-              placeholder="Select end date"
+            
+            <TimeInput
+              label="End Time"
+              value={formData.end_time}
+              onChange={(v) => setFormData({ ...formData, end_time: v })}
             />
-
-            {/* End Time */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                <Clock size={14} />
-                End Time
-              </label>
-              <input
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full bg-slate-800/60 border border-slate-800/60 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Session Details Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-slate-100 font-semibold">
-            <Type size={18} className="text-accent" />
-            <h3>Session Details</h3>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {/* Training Type */}
-            <CustomSelect
-              label="Training Type"
-              value={formData.training_type}
-              onChange={(v) => setFormData({ ...formData, training_type: v })}
-              options={TRAINING_TYPES}
-            />
-
-            {/* Workout ID (Optional) */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                <FileText size={14} />
-                Workout ID (Optional)
-              </label>
-              <input
-                type="text"
-                value={formData.workout_id ?? ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, workout_id: e.target.value || null })
-                }
-                className="w-full bg-slate-800/60 border border-slate-800/60 rounded-lg px-4 py-2.5 text-slate-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
-                placeholder="Enter workout ID or leave empty"
-              />
-              <p className="text-xs text-slate-500">Link this session to a specific workout (optional)</p>
-            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-3 pt-4 border-t border-slate-700/30">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-slate-800/60 text-slate-100 rounded-lg font-semibold hover:bg-slate-800/70 transition-all disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-slate-800/60 hover:bg-slate-800/80 text-slate-100 rounded-lg font-semibold transition-all disabled:opacity-50"
           >
             Cancel
           </button>
@@ -237,4 +167,3 @@ export default function AddEditSessionModal({
     </Modal>
   );
 }
-

@@ -240,10 +240,23 @@ export function useWorkoutForm() {
       setGeneratingTitle(true);
       setError("");
       
+      // Parse analysis data if available
+      let analysisData = null;
+      if (formData.jsonDescription) {
+        try {
+          const parsed = JSON.parse(formData.jsonDescription);
+          // Extract analysis from versioned format or use directly
+          analysisData = parsed.analysis || parsed;
+        } catch (e) {
+          console.warn("Failed to parse analysis data", e);
+        }
+      }
+      
       const response = await generateWorkoutTitle({
         raw_description: formData.rawDescription,
         total_meters: formData.totalMeters || undefined,
         effort_level: formData.effortLevel || undefined,
+        analysis: analysisData,
       });
       
       setFormData(prev => ({
@@ -255,7 +268,7 @@ export function useWorkoutForm() {
     } finally {
       setGeneratingTitle(false);
     }
-  }, [formData.rawDescription, formData.totalMeters, formData.effortLevel]);
+  }, [formData.rawDescription, formData.totalMeters, formData.effortLevel, formData.jsonDescription]);
 
   const isValid = !!(formData.name.trim() && formData.rawDescription.trim());
 
