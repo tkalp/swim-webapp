@@ -42,6 +42,7 @@ type Session = {
   start_date: string;
   end_date: string;
   workout_id?: string | null;
+  workout_template?: { name: string } | null;
 };
 
 type DateRange =
@@ -625,110 +626,114 @@ export default function SessionsList({
               return (
                 <div
                   key={s.id}
-                  className="group bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl overflow-hidden hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300"
+                  className="group bg-slate-900/40 backdrop-blur-sm border border-slate-800/60 rounded-xl overflow-hidden hover:border-cyan-500/40 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300"
                 >
-                  {/* Header with Date & Type */}
-                  <div className="bg-linear-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-slate-700/40 px-5 py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-100 mb-0.5">
-                          {startDate.toLocaleDateString(undefined, {
-                            weekday: "long",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </div>
-                        <div className="text-xs text-slate-400">
-                          {startDate.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                          {" - "}
-                          {endDate.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 backdrop-blur-xl/80 border border-slate-700/40 rounded-lg">
-                          <Clock size={14} className="text-cyan-400" />
-                          <span className="text-xs font-semibold text-slate-100">
-                            {duration} min
+                  {/* Compact Header */}
+                  <div className="px-4 py-3 bg-slate-800/40 border-b border-slate-700/30">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left: Date and Time */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex flex-col items-center justify-center px-3 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg shrink-0">
+                          <span className="text-xs font-bold text-cyan-400 uppercase">
+                            {startDate.toLocaleDateString(undefined, { month: "short" })}
+                          </span>
+                          <span className="text-xl font-bold text-slate-100">
+                            {startDate.getDate()}
                           </span>
                         </div>
-                        <div className="px-3 py-1.5 bg-primary/15 border border-cyan-500/30 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-slate-200 mb-1 truncate">
+                            {startDate.toLocaleDateString(undefined, { weekday: "long" })}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <Clock size={12} />
+                            <span>
+                              {startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {" - "}
+                              {endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              <span className="text-slate-500 ml-1">({duration} min)</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Badges */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="px-2.5 py-1 bg-cyan-500/15 border border-cyan-500/30 rounded-md">
                           <span className="text-xs font-bold text-cyan-400">
                             {s.training_type}
                           </span>
                         </div>
                       </div>
                     </div>
+
+                    {/* Workout Name Badge (if exists) */}
+                    {s.workout_template?.name && (
+                      <div className="mt-2.5 pt-2.5 border-t border-slate-700/30">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-lg w-fit">
+                          <FileText size={14} className="text-purple-400" />
+                          <span className="text-sm font-medium text-purple-300">
+                            {s.workout_template.name}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Body - Workout Section */}
-                  <div className="p-5">
+                  {/* Body - Workout Content */}
+                  <div className="p-4">
                     {s.workout_id ? (
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <FileText size={16} className="text-cyan-400" />
-                            <span className="text-sm font-semibold text-slate-100">
-                              Workout Details
-                            </span>
-                          </div>
+                          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                            Workout Preview
+                          </span>
                           <div className="flex items-center gap-2">
                             {!isUpcoming && (
                               <button
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-400 rounded-lg transition-all duration-200 text-xs font-medium"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 hover:border-yellow-500/50 text-yellow-400 rounded-md transition-all duration-200 text-xs font-medium"
                                 onClick={() => {
                                   setRatingSessionId(s.id);
                                   setRatingWorkoutId(s.workout_id!);
-                                  setRatingWorkoutName('Workout');
+                                  setRatingWorkoutName(s.workout_template?.name || 'Workout');
                                   setRatingModalOpen(true);
                                 }}
                               >
-                                <Star size={14} />
-                                <span>Rate Workout</span>
+                                <Star size={13} />
+                                <span>Rate</span>
                               </button>
                             )}
                             <button
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-xs font-medium group/btn"
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-md transition-all duration-200 text-xs font-medium group/btn"
                               onClick={() => handleViewWorkout(s.workout_id!)}
                             >
                               <span>View Full</span>
                               <ChevronRight
-                                size={14}
+                                size={13}
                                 className="group-hover/btn:translate-x-0.5 transition-transform"
                               />
                             </button>
                           </div>
                         </div>
-                        <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 min-h-[280px]">
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/40 min-h-[240px]">
                           <WorkoutMiniChart workoutId={s.workout_id} />
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-slate-800/30 border border-dashed border-slate-700/40 rounded-xl p-6 text-center min-h-[200px] flex flex-col items-center justify-center">
-                        <FileText
-                          size={24}
-                          className="inline-block text-slate-500/60 mb-2"
-                        />
+                      <div className="bg-slate-800/30 border border-dashed border-slate-700/50 rounded-lg p-5 text-center min-h-[180px] flex flex-col items-center justify-center">
+                        <FileText size={28} className="inline-block text-slate-600 mb-2" />
                         <p className="text-sm font-medium text-slate-400 mb-1">
                           No workout assigned
                         </p>
                         <p className="text-xs text-slate-500 mb-3">
-                          Create a workout to add training details for this
-                          session
+                          Add a workout to track training details
                         </p>
                         {canManage && (
                           <button
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-lg transition-all duration-200 text-sm font-semibold"
-                            onClick={() =>
-                              navigate(`/workouts/create?sessionId=${s.id}`)
-                            }
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-md transition-all duration-200 text-xs font-medium"
+                            onClick={() => navigate(`/workouts/create?sessionId=${s.id}`)}
                           >
-                            <Plus size={16} />
+                            <Plus size={14} />
                             <span>Create Workout</span>
                           </button>
                         )}
@@ -736,58 +741,52 @@ export default function SessionsList({
                     )}
                   </div>
 
-                  {/* Footer - Session Actions */}
+                  {/* Footer - Quick Actions */}
                   {(canManage || canManageAttendance) && (
-                    <div className="border-t border-slate-700/30 px-5 py-3">
-                      <div className="flex items-center gap-2 justify-end">
+                    <div className="border-t border-slate-700/30 px-4 py-2.5 bg-slate-800/20">
+                      <div className="flex items-center gap-1.5 justify-end">
                         {canManage && (
                           <>
                             <button
-                              className="p-2 hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 rounded-lg transition-all duration-200"
-                              onClick={() =>
-                                handlePracticeNotes(s.id, s.start_date, "pre")
-                              }
+                              className="p-1.5 hover:bg-blue-500/15 text-slate-500 hover:text-blue-400 rounded-md transition-all duration-200"
+                              onClick={() => handlePracticeNotes(s.id, s.start_date, "pre")}
                               title="Pre-practice notes"
                             >
-                              <ClipboardList size={16} />
+                              <ClipboardList size={15} />
                             </button>
                             <button
-                              className="p-2 hover:bg-purple-500/10 text-slate-400 hover:text-purple-400 rounded-lg transition-all duration-200"
-                              onClick={() =>
-                                handlePracticeNotes(s.id, s.start_date, "post")
-                              }
+                              className="p-1.5 hover:bg-purple-500/15 text-slate-500 hover:text-purple-400 rounded-md transition-all duration-200"
+                              onClick={() => handlePracticeNotes(s.id, s.start_date, "post")}
                               title="Post-practice notes"
                             >
-                              <Sparkles size={16} />
+                              <Sparkles size={15} />
                             </button>
                           </>
                         )}
                         {canManageAttendance && (
                           <button
-                            className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
-                            onClick={() =>
-                              handleTakeAttendance(s.id, s.start_date)
-                            }
+                            className="p-1.5 hover:bg-cyan-500/15 text-slate-500 hover:text-cyan-400 rounded-md transition-all duration-200"
+                            onClick={() => handleTakeAttendance(s.id, s.start_date)}
                             title="Take attendance"
                           >
-                            <Users size={16} />
+                            <Users size={15} />
                           </button>
                         )}
                         {canManage && (
                           <>
                             <button
-                              className="p-2 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 rounded-lg transition-all duration-200"
+                              className="p-1.5 hover:bg-cyan-500/15 text-slate-500 hover:text-cyan-400 rounded-md transition-all duration-200"
                               onClick={() => handleEditSession(s)}
                               title="Edit session"
                             >
-                              <Edit2 size={16} />
+                              <Edit2 size={15} />
                             </button>
                             <button
-                              className="p-2 hover:bg-red-500/10 text-slate-400 hover:text-red-400 rounded-lg transition-all duration-200"
+                              className="p-1.5 hover:bg-red-500/15 text-slate-500 hover:text-red-400 rounded-md transition-all duration-200"
                               onClick={() => handleDeleteSession(s.id)}
                               title="Delete session"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={15} />
                             </button>
                           </>
                         )}

@@ -199,7 +199,7 @@ export default function WorkoutViewPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Modern Header */}
-      <div className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/60 sticky top-0 z-50">
+      <div className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/60 sticky top-[60px] z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-start justify-between gap-6">
             {/* Left: Back button and title section */}

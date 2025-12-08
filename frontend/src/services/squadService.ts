@@ -246,7 +246,7 @@ export async function getSquadSessions(squadId: string, fromISO?: string, toISO?
   
   const { data, error } = await supabase
     .from('training_sessions')
-    .select('id, start_date, end_date, training_type, workout_id, created_at')
+    .select('id, start_date, end_date, training_type, workout_id, created_at, workout_template(name)')
     .eq('squad_id', squadId)
     .gte('start_date', from)
     .lte('start_date', to)

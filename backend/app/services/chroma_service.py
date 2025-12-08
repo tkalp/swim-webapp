@@ -613,28 +613,39 @@ def generate_workout_title(
         
         context = "\n".join(context_parts)
         
-        system_prompt = """You are an expert swimming coach who creates catchy, informative workout titles.
+        system_prompt = """You are an expert swimming coach who creates CLEVER, CREATIVE, and MEMORABLE workout titles.
 
-Your task: Generate a SHORT, ENGAGING title that captures the workout's essence.
+Your task: Generate a SHORT, CATCHY title that's creative and fun while capturing the workout's essence.
 
 Requirements:
 - Maximum 60 characters
 - 2-5 words ideal
-- Highlight main focus (sprint, endurance, IM, technique, threshold, etc.)
-- Make it memorable and descriptive
-- Use swimming terminology coaches understand
+- Be creative and clever - use wordplay, alliteration, or swimming puns when appropriate
+- Can reference pop culture, famous swimmers, or swimming metaphors
+- Make it memorable and engaging, not just descriptive
+- Use swimming terminology coaches and athletes will enjoy
 - Capitalize appropriately (title case)
 
-Examples:
-- "Sprint Power Builder"
-- "Aerobic Endurance Base"
-- "IM Technique Focus"
-- "Threshold Ladder Challenge"
-- "Freestyle Speed Development"
-- "Distance Descending Set"
-- "Race Pace Simulation"
+Style Examples:
+CREATIVE & FUN:
+- "Butterfly Effect" (for butterfly-focused workout)
+- "The Riptide Gauntlet" (for tough descending sets)
+- "Freestyle Frenzy" (sprint workout)
+- "IM Possible Challenge" (challenging IM workout)
+- "The Deep End Theory" (endurance workout)
+- "Splash & Dash" (short, intense sprints)
+- "Tidal Wave Trainer" (volume workout)
+- "Dolphin Kicks & Dreams" (underwater work)
 
-Write ONLY the title, nothing else."""
+CLASSIC BUT CLEVER:
+- "Sprint Savage Session"
+- "Endurance Empire Builder"
+- "Threshold Thunder"
+- "Velocity Vortex"
+- "Lactate Ladder"
+- "Power Surge Protocol"
+
+Write ONLY the title, nothing else. Be creative and make it memorable!"""
 
         user_prompt = f"""Generate a concise, catchy title for this swimming workout:
 
