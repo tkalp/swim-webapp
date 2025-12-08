@@ -1,6 +1,6 @@
 // pages/WorkoutForm.tsx
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Sparkles } from "lucide-react";
 import { RealtimeWorkoutAnalyzer } from '@/components/workout';
 import { TagManager } from '@/components/workout/TagManager';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +29,10 @@ export default function WorkoutFormPage() {
     handleSubmit,
     handleCancel,
     handleAnalysisUpdate,
+    generateDescription,
+    generatingDescription,
+    generateTitle,
+    generatingTitle,
   } = useWorkoutForm();
 
   // Modal state for editing metrics
@@ -92,19 +96,42 @@ export default function WorkoutFormPage() {
                   value={formData.name}
                   onChange={(value) => setFormData({ ...formData, name: value })}
                   autoFocus
+                  onGenerateTitle={generateTitle}
+                  generatingTitle={generatingTitle}
+                  canGenerateTitle={!!formData.rawDescription.trim()}
                 />
 
                 {/* Brief Description */}
                 <div className="bg-background-elevated rounded-xl border border-border/60 p-4">
-                  <label className="block text-sm font-semibold text-text-primary mb-2">
-                    Brief Description
-                    <span className="text-text-muted font-normal ml-2">(Optional, 500 char max)</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-semibold text-text-primary">
+                      Brief Description
+                      <span className="text-text-muted font-normal ml-2">(Optional, 150 char max)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={generateDescription}
+                      disabled={generatingDescription || !formData.name.trim() || !formData.rawDescription.trim()}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingDescription ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={14} />
+                          AI Generate
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     value={formData.description}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (value.length <= 500) {
+                      if (value.length <= 150) {
                         setFormData({ ...formData, description: value });
                       }
                     }}
@@ -113,7 +140,7 @@ export default function WorkoutFormPage() {
                     rows={3}
                   />
                   <div className="text-xs text-text-muted mt-1 text-right">
-                    {formData.description.length}/500
+                    {formData.description.length}/150
                   </div>
                 </div>
 

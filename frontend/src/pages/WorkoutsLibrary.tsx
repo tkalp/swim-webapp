@@ -25,6 +25,7 @@ import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
 import { WorkoutTag } from '@/components/workout/WorkoutTag';
 import WorkoutRatingStars from '@/components/workouts/WorkoutRatingStars';
 import WorkoutVisibilityBadge from '@/components/workouts/WorkoutVisibilityBadge';
+import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import {
   getCoachWorkouts,
   deleteWorkout,
@@ -52,7 +53,8 @@ export default function WorkoutsLibrary() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [allTags, setAllTags] = useState<WorkoutTagType[]>([]);
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [filterMode, setFilterMode] = useState<'OR' | 'AND'>('OR');
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 12;
 
@@ -67,7 +69,7 @@ export default function WorkoutsLibrary() {
 
   useEffect(() => {
     filterAndSortWorkouts();
-  }, [workouts, searchQuery, sortBy, selectedTagId]);
+  }, [workouts, searchQuery, sortBy, selectedTagIds, filterMode]);
 
   const loadTags = async () => {
     if (!coachId) return;
@@ -108,18 +110,18 @@ export default function WorkoutsLibrary() {
 
   const loadMore = useCallback(() => {
     // Don't load more if we're filtering - client-side filtering means we need all data loaded first
-    if (!loadingMore && hasMore && coachId && !searchQuery && !selectedTagId) {
+    if (!loadingMore && hasMore && coachId && !searchQuery && selectedTagIds.length === 0) {
       const nextPage = page + 1;
       setPage(nextPage);
       loadWorkouts(nextPage, false);
     }
-  }, [loadingMore, hasMore, page, coachId, searchQuery, selectedTagId]);
+  }, [loadingMore, hasMore, page, coachId, searchQuery, selectedTagIds]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         // Only trigger infinite scroll if not filtering
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore && !searchQuery && !selectedTagId) {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore && !searchQuery && selectedTagIds.length === 0) {
           loadMore();
         }
       },
@@ -136,7 +138,7 @@ export default function WorkoutsLibrary() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loading, loadingMore, loadMore, searchQuery, selectedTagId]);
+  }, [hasMore, loading, loadingMore, loadMore, searchQuery, selectedTagIds]);
 
   const filterAndSortWorkouts = () => {
     let filtered = [...workouts];
@@ -152,11 +154,22 @@ export default function WorkoutsLibrary() {
       );
     }
 
-    // Filter by selected tag
-    if (selectedTagId) {
-      filtered = filtered.filter((w) => 
-        w.tags?.some((tag) => tag.id === selectedTagId)
-      );
+    // Filter by selected tags
+    if (selectedTagIds.length > 0) {
+      filtered = filtered.filter((w) => {
+        if (!w.tags || w.tags.length === 0) return false;
+        
+        if (filterMode === 'OR') {
+          // Show workout if it has ANY of the selected tags
+          return w.tags.some((tag) => selectedTagIds.includes(tag.id));
+        } else {
+          // Show workout if it has ALL of the selected tags
+          const workoutTags = w.tags; // Cache to help TypeScript
+          return selectedTagIds.every((selectedId) =>
+            workoutTags.some((tag) => tag.id === selectedId)
+          );
+        }
+      });
     }
 
     // Sort
@@ -334,38 +347,49 @@ export default function WorkoutsLibrary() {
 
             {/* Tag Filter Row */}
             {allTags.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-slate-400 text-sm font-medium">
-                  <TagIcon size={16} />
-                  <span>Filter by tag:</span>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 max-w-md">
+                  <MultiSelectDropdown
+                    options={allTags.map(tag => ({
+                      id: tag.id,
+                      name: tag.name,
+                      color: tag.color
+                    }))}
+                    selectedIds={selectedTagIds}
+                    onChange={setSelectedTagIds}
+                    placeholder="Filter by tags..."
+                    label="Tags"
+                    maxHeight="400px"
+                  />
                 </div>
-                <button
-                  onClick={() => setSelectedTagId(null)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    selectedTagId === null
-                      ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
-                      : "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 border border-slate-700/40"
-                  }`}
-                >
-                  All
-                </button>
-                {allTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => setSelectedTagId(tag.id === selectedTagId ? null : tag.id)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                      tag.id === selectedTagId ? "ring-2 ring-offset-2 ring-offset-background-primary" : ""
-                    }`}
-                    style={{
-                      backgroundColor: tag.id === selectedTagId ? `${tag.color}30` : `${tag.color}20`,
-                      color: tag.color,
-                      borderColor: `${tag.color}40`,
-                      ...(tag.id === selectedTagId && { ringColor: tag.color }),
-                    }}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
+                
+                {selectedTagIds.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-medium">Match:</span>
+                    <div className="flex gap-1 bg-slate-800/50 border border-slate-700/40 rounded-lg p-1">
+                      <button
+                        onClick={() => setFilterMode('OR')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                          filterMode === 'OR'
+                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        ANY
+                      </button>
+                      <button
+                        onClick={() => setFilterMode('AND')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                          filterMode === 'AND'
+                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        ALL
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -548,7 +572,7 @@ export default function WorkoutsLibrary() {
                 <p className="text-sm text-slate-500">You've reached the end of your workout library</p>
               </div>
             )}
-            {!loadingMore && hasMore && (searchQuery || selectedTagId) && (
+            {!loadingMore && hasMore && (searchQuery || selectedTagIds.length > 0) && (
               <div className="text-center py-6">
                 <p className="text-sm text-slate-400 mb-3">Filtering is active. Load all workouts to see complete results.</p>
                 <button
@@ -569,7 +593,7 @@ export default function WorkoutsLibrary() {
                 </button>
               </div>
             )}
-            {!loadingMore && hasMore && !searchQuery && !selectedTagId && (
+            {!loadingMore && hasMore && !searchQuery && selectedTagIds.length === 0 && (
               <div className="text-center py-6">
                 <p className="text-xs text-slate-500">Scroll down to load more...</p>
               </div>

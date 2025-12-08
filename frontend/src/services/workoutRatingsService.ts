@@ -30,7 +30,7 @@ export interface CreateRatingRequest {
 export async function createWorkoutRating(
   request: CreateRatingRequest
 ): Promise<WorkoutRating> {
-  const url = getApiUrl('workout-ratings');
+  const url = getApiUrl('workout-ratings/');
   const response = await authenticatedFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

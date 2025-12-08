@@ -133,3 +133,74 @@ export const WORKOUT_TEMPLATES = [
 ] as const;
 
 export type TemplateId = (typeof WORKOUT_TEMPLATES)[number]["id"];
+
+/**
+ * Generate a 1-sentence description for a workout using AI
+ */
+export interface GenerateWorkoutDescriptionRequest {
+  workout_name: string;
+  raw_description: string;
+  total_meters?: number;
+  effort_level?: number;
+}
+
+export interface GenerateWorkoutDescriptionResponse {
+  description: string;
+  cached: boolean;
+}
+
+export interface GenerateWorkoutTitleRequest {
+  raw_description: string;
+  total_meters?: number;
+  effort_level?: number;
+}
+
+export interface GenerateWorkoutTitleResponse {
+  title: string;
+  cached: boolean;
+}
+
+export async function generateWorkoutTitle(
+  params: GenerateWorkoutTitleRequest
+): Promise<GenerateWorkoutTitleResponse> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/ai-coach/generate-title`, {
+    method: 'POST',
+    body: JSON.stringify({
+      raw_description: params.raw_description,
+      total_meters: params.total_meters,
+      effort_level: params.effort_level,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ 
+      detail: 'Failed to generate title' 
+    }));
+    throw new Error(error.detail || error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function generateWorkoutDescription(
+  params: GenerateWorkoutDescriptionRequest
+): Promise<GenerateWorkoutDescriptionResponse> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/ai-coach/generate-description`, {
+    method: 'POST',
+    body: JSON.stringify({
+      workout_name: params.workout_name,
+      raw_description: params.raw_description,
+      total_meters: params.total_meters,
+      effort_level: params.effort_level,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ 
+      detail: 'Failed to generate description' 
+    }));
+    throw new Error(error.detail || error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}

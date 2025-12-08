@@ -471,3 +471,202 @@ def generate_workout(
         logger.error("Failed to generate workout with Claude")
         log_error(e, context="generate_workout", num_examples=num_examples)
         raise Exception(f"Failed to generate workout: {str(e)}")
+
+
+def generate_workout_description(
+    workout_name: str,
+    raw_description: str,
+    total_meters: Optional[int] = None,
+    effort_level: Optional[int] = None
+) -> str:
+    """
+    Generate a concise 1-sentence description for a workout using Claude.
+    
+    Args:
+        workout_name: Name of the workout
+        raw_description: Full workout text
+        total_meters: Total distance in meters (optional)
+        effort_level: Effort level 1-10 (optional)
+    
+    Returns:
+        A concise 1-sentence description (max 150 chars)
+    
+    Raises:
+        ValueError: If ANTHROPIC_API_KEY is missing
+        Exception: If Claude API call fails
+    """
+    # Get API key
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+    
+    logger.info(
+        f"Generating workout description | "
+        f"name_length={len(workout_name)} | "
+        f"raw_length={len(raw_description)}"
+    )
+    
+    try:
+        client = Anthropic(api_key=api_key)
+        
+        # Build context for the LLM
+        context_parts = [f"Workout Name: {workout_name}"]
+        if total_meters:
+            context_parts.append(f"Total Distance: {total_meters}m")
+        if effort_level:
+            context_parts.append(f"Effort Level: {effort_level}/10")
+        context_parts.append(f"\nFull Workout:\n{raw_description}")
+        
+        context = "\n".join(context_parts)
+        
+        system_prompt = """You are an expert swimming coach who writes concise, engaging workout descriptions.
+
+Your task: Generate a SINGLE SENTENCE description that captures the essence of a workout.
+
+Requirements:
+- Exactly ONE sentence (no periods in the middle)
+- Maximum 150 characters
+- Highlight the main focus/theme (e.g., "sprint work", "endurance building", "IM technique")
+- Include key details like distance or stroke if relevant
+- Make it engaging and informative for coaches browsing workouts
+- Do NOT include the workout name in the description
+
+Examples:
+- "High-intensity sprint set with short rest, building explosive power and race pace control"
+- "Aerobic endurance builder with progressive 200s and steady-state freestyle at moderate effort"
+- "IM-focused technique session emphasizing transitions and stroke-specific drills with 3000m total"
+- "Threshold training with descending intervals, targeting lactate clearance and mental toughness"
+
+Write ONLY the description sentence, nothing else."""
+
+        user_prompt = f"""Generate a concise 1-sentence description for this swimming workout:
+
+{context}
+
+Description:"""
+        
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=100,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        
+        description = response.content[0].text.strip()
+        
+        # Ensure it's actually one sentence and under limit
+        description = description.split('.')[0]  # Take only first sentence
+        if len(description) > 150:
+            description = description[:147] + "..."
+        
+        logger.info(f"Generated description | length={len(description)}")
+        return description
+        
+    except ValueError as e:
+        logger.warning(f"Invalid description generation request: {str(e)}")
+        log_error(e, context="generate_workout_description", error_type="validation")
+        raise
+        
+    except Exception as e:
+        logger.error("Failed to generate workout description with Claude")
+        log_error(e, context="generate_workout_description")
+        raise Exception(f"Failed to generate description: {str(e)}")
+
+
+def generate_workout_title(
+    raw_description: str,
+    total_meters: Optional[int] = None,
+    effort_level: Optional[int] = None
+) -> str:
+    """
+    Generate a concise, engaging title for a workout using Claude.
+    
+    Args:
+        raw_description: Full workout text
+        total_meters: Total distance in meters (optional)
+        effort_level: Effort level 1-10 (optional)
+    
+    Returns:
+        A concise, engaging title (max 60 chars)
+    
+    Raises:
+        ValueError: If ANTHROPIC_API_KEY is missing
+        Exception: If Claude API call fails
+    """
+    # Get API key
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+    
+    logger.info(f"Generating workout title | raw_length={len(raw_description)}")
+    
+    try:
+        client = Anthropic(api_key=api_key)
+        
+        # Build context for the LLM
+        context_parts = []
+        if total_meters:
+            context_parts.append(f"Total Distance: {total_meters}m")
+        if effort_level:
+            context_parts.append(f"Effort Level: {effort_level}/10")
+        context_parts.append(f"\nFull Workout:\n{raw_description}")
+        
+        context = "\n".join(context_parts)
+        
+        system_prompt = """You are an expert swimming coach who creates catchy, informative workout titles.
+
+Your task: Generate a SHORT, ENGAGING title that captures the workout's essence.
+
+Requirements:
+- Maximum 60 characters
+- 2-5 words ideal
+- Highlight main focus (sprint, endurance, IM, technique, threshold, etc.)
+- Make it memorable and descriptive
+- Use swimming terminology coaches understand
+- Capitalize appropriately (title case)
+
+Examples:
+- "Sprint Power Builder"
+- "Aerobic Endurance Base"
+- "IM Technique Focus"
+- "Threshold Ladder Challenge"
+- "Freestyle Speed Development"
+- "Distance Descending Set"
+- "Race Pace Simulation"
+
+Write ONLY the title, nothing else."""
+
+        user_prompt = f"""Generate a concise, catchy title for this swimming workout:
+
+{context}
+
+Title:"""
+        
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=50,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        
+        title = response.content[0].text.strip()
+        
+        # Remove quotes if present
+        title = title.strip('"\'')
+        
+        # Ensure under character limit
+        if len(title) > 60:
+            title = title[:57] + "..."
+        
+        logger.info(f"Generated title | length={len(title)}")
+        return title
+        
+    except ValueError as e:
+        logger.warning(f"Invalid title generation request: {str(e)}")
+        log_error(e, context="generate_workout_title", error_type="validation")
+        raise
+        
+    except Exception as e:
+        logger.error("Failed to generate workout title with Claude")
+        log_error(e, context="generate_workout_title")
+        raise Exception(f"Failed to generate title: {str(e)}")

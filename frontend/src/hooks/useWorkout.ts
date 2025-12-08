@@ -3,6 +3,7 @@ import { getWorkoutTemplate } from '@/services/workoutTemplateService';
 
 export type Workout = {
   id: string;
+  description: string;
   name: string;
   totalMeters: number;
   estimatedTimeMinutes: number;
@@ -26,6 +27,7 @@ function convertToWorkout(data: any): Workout {
     jsonDescription: data.json_description,
     createdAt: data.created_at,
     createByCoach: data.create_by_coach,
+    description: data.description,
     };
 }
 
@@ -40,7 +42,6 @@ export default function useWorkout() {
     try {
       setWorkoutLoading(true);
       const workout = await getWorkoutTemplate(id);
-      console.log("Fetched workout:", workout);
     
       // Convert to Workout type
       const convertedWorkout = convertToWorkout(workout);

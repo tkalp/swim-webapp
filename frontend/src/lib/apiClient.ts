@@ -31,8 +31,8 @@ export async function authenticatedFetch(
   const response = await fetch(url, {
     ...options,
     headers: {
-      ...authHeaders,
       ...options.headers,
+      ...authHeaders, // Auth headers last to ensure Authorization is not overridden
     },
   })
   
@@ -52,8 +52,8 @@ export async function authenticatedFetch(
     return fetch(url, {
       ...options,
       headers: {
-        ...newHeaders,
         ...options.headers,
+        ...newHeaders, // Auth headers last to ensure Authorization is not overridden
       },
     })
   }

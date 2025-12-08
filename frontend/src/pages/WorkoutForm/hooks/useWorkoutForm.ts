@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { createWorkoutForSession, getWorkoutTemplate, updateWorkoutTemplate } from '@/services/workoutTemplateService';
 import { useAuth } from '@/contexts/AuthContext';
 import { getWorkoutTags, setWorkoutTags } from '@/services/workoutTagService';
+import { generateWorkoutDescription, generateWorkoutTitle } from '@/services/aiCoachService';
 import type { WorkoutTag } from '@/types/workoutTags';
 
 export type WorkoutFormData = {
@@ -47,6 +48,8 @@ export function useWorkoutForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [generatingTitle, setGeneratingTitle] = useState(false);
 
   // Load existing workout data if in edit mode
   useEffect(() => {
@@ -199,6 +202,61 @@ export function useWorkoutForm() {
     }
   };
 
+  const generateDescription = useCallback(async () => {
+    if (!formData.name.trim() || !formData.rawDescription.trim()) {
+      setError("Please enter a workout name and description first");
+      return;
+    }
+
+    try {
+      setGeneratingDescription(true);
+      setError("");
+      
+      const response = await generateWorkoutDescription({
+        workout_name: formData.name,
+        raw_description: formData.rawDescription,
+        total_meters: formData.totalMeters || undefined,
+        effort_level: formData.effortLevel || undefined,
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        description: response.description,
+      }));
+    } catch (err: any) {
+      setError(err.message || "Failed to generate description");
+    } finally {
+      setGeneratingDescription(false);
+    }
+  }, [formData.name, formData.rawDescription, formData.totalMeters, formData.effortLevel]);
+
+  const generateTitle = useCallback(async () => {
+    if (!formData.rawDescription.trim()) {
+      setError("Please enter a workout description first");
+      return;
+    }
+
+    try {
+      setGeneratingTitle(true);
+      setError("");
+      
+      const response = await generateWorkoutTitle({
+        raw_description: formData.rawDescription,
+        total_meters: formData.totalMeters || undefined,
+        effort_level: formData.effortLevel || undefined,
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        name: response.title,
+      }));
+    } catch (err: any) {
+      setError(err.message || "Failed to generate title");
+    } finally {
+      setGeneratingTitle(false);
+    }
+  }, [formData.rawDescription, formData.totalMeters, formData.effortLevel]);
+
   const isValid = !!(formData.name.trim() && formData.rawDescription.trim());
 
   return {
@@ -215,5 +273,9 @@ export function useWorkoutForm() {
     handleSubmit,
     handleCancel,
     handleAnalysisUpdate,
+    generateDescription,
+    generatingDescription,
+    generateTitle,
+    generatingTitle,
   };
 }

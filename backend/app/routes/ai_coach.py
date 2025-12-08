@@ -4,10 +4,16 @@ from typing import Dict, Any
 from app.models.schemas import (
     GenerateWorkoutRequest,
     GenerateWorkoutResponse,
+    GenerateWorkoutDescriptionRequest,
+    GenerateWorkoutDescriptionResponse,
+    GenerateWorkoutTitleRequest,
+    GenerateWorkoutTitleResponse,
     HealthResponse,
 )
 from app.services.chroma_service import (
     generate_workout,
+    generate_workout_description,
+    generate_workout_title,
     check_chromadb,
 )
 from app.middleware.auth import get_current_user, get_current_user_id
@@ -51,6 +57,94 @@ async def generate_workout_endpoint(
         logger.error(f"Failed to generate workout for user {user_id}")
         log_error(e, context="generate_workout", user_id=user_id)
         raise HTTPException(status_code=500, detail=f"Failed to generate workout: {str(e)}")
+
+
+@router.post("/generate-description", response_model=GenerateWorkoutDescriptionResponse)
+async def generate_description_endpoint(
+    request: GenerateWorkoutDescriptionRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Generate a concise 1-sentence description for a workout using Claude AI.
+    
+    This endpoint is designed for fast, real-time generation during workout creation/editing.
+    
+    Requires authentication. User must be logged in.
+    """
+    logger.info(
+        f"Generating workout description for user {user_id} | "
+        f"workout_name='{request.workout_name}'"
+    )
+    
+    try:
+        description = generate_workout_description(
+            workout_name=request.workout_name,
+            raw_description=request.raw_description,
+            total_meters=request.total_meters,
+            effort_level=request.effort_level,
+        )
+        
+        logger.info(f"Successfully generated description for user {user_id}")
+        return GenerateWorkoutDescriptionResponse(
+            description=description,
+            cached=False
+        )
+        
+    except ValueError as e:
+        # Client errors (bad input)
+        logger.warning(f"Invalid description request from user {user_id}: {str(e)}")
+        log_error(e, context="generate_description", user_id=user_id, error_type="validation")
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    except Exception as e:
+        # Server errors
+        logger.error(f"Failed to generate description for user {user_id}")
+        log_error(e, context="generate_description", user_id=user_id)
+        raise HTTPException(status_code=500, detail=f"Failed to generate description: {str(e)}")
+
+
+@router.post("/generate-title", response_model=GenerateWorkoutTitleResponse)
+async def generate_title_endpoint(
+    request: GenerateWorkoutTitleRequest,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Generate a concise, catchy title for a workout using Claude AI.
+    
+    This endpoint analyzes the full workout text and creates a memorable
+    title (max 60 characters) that captures the workout's essence.
+    
+    Requires authentication. User must be logged in.
+    """
+    logger.info(
+        f"Generating workout title for user {user_id} | "
+        f"raw_description_length={len(request.raw_description)}"
+    )
+    
+    try:
+        title = generate_workout_title(
+            raw_description=request.raw_description,
+            total_meters=request.total_meters,
+            effort_level=request.effort_level,
+        )
+        
+        logger.info(f"Successfully generated title for user {user_id}")
+        return GenerateWorkoutTitleResponse(
+            title=title,
+            cached=False
+        )
+        
+    except ValueError as e:
+        # Client errors (bad input)
+        logger.warning(f"Invalid title request from user {user_id}: {str(e)}")
+        log_error(e, context="generate_title", user_id=user_id, error_type="validation")
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    except Exception as e:
+        # Server errors
+        logger.error(f"Failed to generate title for user {user_id}")
+        log_error(e, context="generate_title", user_id=user_id)
+        raise HTTPException(status_code=500, detail=f"Failed to generate title: {str(e)}")
 
 
 @router.get("/health", response_model=HealthResponse)

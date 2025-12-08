@@ -193,6 +193,7 @@ export default function WorkoutViewPage() {
     );
   }
 
+
   const normalized = normalizeJsonDescription(workout.jsonDescription);
 
   return (
@@ -217,6 +218,9 @@ export default function WorkoutViewPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-2xl font-bold text-slate-100 mb-2">{workout.name}</h1>
+                  {workout.description && (
+                    <p className="text-slate-400 text-sm mb-3 leading-relaxed">{workout.description}</p>
+                  )}
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="flex items-center gap-1.5 text-sm text-slate-400">
                       <Calendar size={14} />
@@ -400,13 +404,13 @@ export default function WorkoutViewPage() {
                 </div>
               </div>
             </div>
-            <div className="p-6">
+            <div className="p-2">
               <div className="relative group/content">
                 {/* Decorative gradient overlay */}
                 <div className="absolute -inset-4 bg-linear-to-r from-blue-500/5 via-cyan-500/5 to-teal-500/5 rounded-2xl opacity-0 group-hover/content:opacity-100 transition-opacity blur-xl" />
                 
                 {/* Content container */}
-                <div className="relative bg-slate-800/60 rounded-xl p-6 border border-slate-700/40 backdrop-blur-sm hover:border-slate-600/60 transition-all h-[730px] overflow-y-auto">
+                <div className="relative bg-slate-800/60 rounded-xl p-6 border border-slate-700/40 backdrop-blur-sm hover:border-slate-600/60 transition-all h-[820px] overflow-y-auto">
                   {/* Line numbers and content */}
                   <div className="flex gap-4">
                     {/* Line numbers */}
