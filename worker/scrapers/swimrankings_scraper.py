@@ -21,22 +21,19 @@ logger = logging.getLogger('swimrankings_scraper')
 class SwimRankingsScraper(BaseScraper):
     """Service for scraping SwimRankings.net"""
     
-    def __init__(self, max_workers: Optional[int] = None, fetch_mode: Optional[str] = None, global_splits_semaphore: Optional[asyncio.Semaphore] = None):
+    def __init__(self, max_workers: Optional[int] = None, fetch_mode: Optional[str] = None):
         """
         Initialize SwimRankings scraper
         
         Args:
             max_workers: Maximum parallel workers for split fetching
             fetch_mode: Fetch mode ('curl', 'httpx', 'playwright'). Defaults to config.
-            global_splits_semaphore: Optional global semaphore for parallel splits across events (optimization #1)
         """
         super().__init__(max_workers)
         self.base_url = WorkerConfig.SWIMRANKINGS_BASE_URL
         self.parser = SwimRankingsParser()
         self.fetcher: BaseFetcher = FetcherFactory.create(mode=fetch_mode)
-        self.global_splits_semaphore = global_splits_semaphore
-        logger.info(f"SwimRankingsScraper initialized with {self.fetcher.get_name()} fetcher" + 
-                   (" (global splits semaphore enabled)" if global_splits_semaphore else ""))
+        logger.info(f"SwimRankingsScraper initialized with {self.fetcher.get_name()} fetcher")
     
     async def fetch_event_attempts(
         self,
@@ -146,8 +143,9 @@ class SwimRankingsScraper(BaseScraper):
                 else:
                     # Fetch splits for all attempts in parallel with semaphore for rate limiting
                     logger.info(f"Fetching splits for {len(attempts)} attempt(s) using {self.MAX_WORKERS} parallel workers...")
-                    # Optimization #1: Use global semaphore if provided (parallel across events), otherwise local (per-event)
-                    semaphore = self.global_splits_semaphore if self.global_splits_semaphore else asyncio.Semaphore(self.MAX_WORKERS)
+                    # Create semaphore in the current event loop (fixes "bound to different event loop" error)
+                    # Note: Cannot reuse semaphores across event loops (e.g., after multiprocessing fork)
+                    semaphore = asyncio.Semaphore(self.MAX_WORKERS)
                     
                     async def fetch_splits_with_semaphore(idx: int, attempt: AttemptData) -> ResultWithSplits:
                         """Fetch splits for a single attempt with rate limiting"""

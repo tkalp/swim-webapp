@@ -847,6 +847,183 @@ async def get_squad_performance(
         raise HTTPException(status_code=500, detail=f"Failed to fetch squad performance: {str(e)}")
 
 
+@router.get("/{squad_id}/event-statistics")
+async def get_squad_event_statistics(
+    squad_id: str,
+    distance: Optional[int] = None,
+    stroke: Optional[str] = None,
+    activity: Optional[str] = None,
+    result_units: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get aggregated statistics for a specific event.
+    
+    Returns average, median, top quartile (25%), and bottom quartile (75%) times
+    for a specific event across all squad swimmers.
+    
+    Query params:
+    - distance: Required - event distance in meters
+    - stroke: Required - stroke type (free, back, breast, fly, im)
+    - activity: Optional - activity type (swim, kick, pull), defaults to 'swim'
+    - result_units: Optional - pool type (SCM, LCM, SCY), defaults to 'SCM'
+    """
+    try:
+        supabase = get_supabase_client()
+        logger.info(f"User {user_id} fetching event statistics | squad_id={squad_id} | distance={distance} | stroke={stroke} | activity={activity} | units={result_units}")
+        
+        # Validate required parameters
+        if not distance or not stroke:
+            raise HTTPException(status_code=400, detail="distance and stroke are required")
+        
+        # Set defaults
+        activity = activity or 'swim'
+        result_units = result_units or 'SCM'
+        
+        # Verify squad exists
+        squad_response = supabase.table('squads').select('id, name').eq('id', squad_id).execute()
+        if not squad_response.data:
+            raise HTTPException(status_code=404, detail="Squad not found")
+        
+        squad_info = squad_response.data[0]
+        
+        # Get all swimmers in the squad
+        swimmers_response = supabase.table('swimmers')\
+            .select('id')\
+            .eq('squad_id', squad_id)\
+            .execute()
+        
+        if not swimmers_response.data:
+            return {
+                "squad": squad_info,
+                "event": f"{distance}m {stroke.title()} {result_units}",
+                "distance": distance,
+                "stroke": stroke,
+                "result_units": result_units,
+                "activity": activity,
+                "sample_size": 0,
+                "avg_time": None,
+                "median_time": None,
+                "top_quartile_time": None,
+                "bottom_quartile_time": None
+            }
+        
+        swimmer_ids = [s['id'] for s in swimmers_response.data]
+        
+        # Get all workout results for this specific event
+        query = supabase.table('workout_result')\
+            .select('time_result, swimmer_id')\
+            .in_('swimmer_id', swimmer_ids)\
+            .eq('distance', distance)\
+            .eq('stroke', stroke)\
+            .eq('result_units', result_units)\
+            .not_.is_('time_result', 'null')
+        
+        # Filter by activity
+        if activity:
+            query = query.eq('activity', activity)
+        
+        results_response = query.execute()
+        
+        if not results_response.data:
+            return {
+                "squad": squad_info,
+                "event": f"{distance}m {stroke.title()} {result_units}",
+                "distance": distance,
+                "stroke": stroke,
+                "result_units": result_units,
+                "activity": activity,
+                "sample_size": 0,
+                "avg_time": None,
+                "median_time": None,
+                "top_quartile_time": None,
+                "bottom_quartile_time": None
+            }
+        
+        # Group by swimmer and get their best (fastest) time only
+        swimmer_best_times = {}
+        
+        for result in results_response.data:
+            swimmer_id = result['swimmer_id']
+            time_result = result['time_result']
+            
+            if isinstance(time_result, str):
+                try:
+                    import re
+                    match = re.match(r'(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)', time_result)
+                    if match:
+                        hours = int(match.group(1)) if match.group(1) else 0
+                        minutes = int(match.group(2))
+                        seconds = float(match.group(3))
+                        total_seconds = hours * 3600 + minutes * 60 + seconds
+                        
+                        # Keep only the best (fastest/lowest) time for each swimmer
+                        if swimmer_id not in swimmer_best_times or total_seconds < swimmer_best_times[swimmer_id]:
+                            swimmer_best_times[swimmer_id] = total_seconds
+                except:
+                    continue
+        
+        # Convert to list of best times
+        times = list(swimmer_best_times.values())
+        
+        if len(times) < 3:
+            return {
+                "squad": squad_info,
+                "event": f"{distance}m {stroke.title()} {result_units}",
+                "distance": distance,
+                "stroke": stroke,
+                "result_units": result_units,
+                "activity": activity,
+                "sample_size": len(times),
+                "avg_time": None,
+                "median_time": None,
+                "top_quartile_time": None,
+                "bottom_quartile_time": None
+            }
+        
+        # Sort times
+        times_sorted = sorted(times)
+        n = len(times_sorted)
+        
+        # Calculate percentiles
+        def percentile(data, p):
+            """Calculate percentile using linear interpolation"""
+            k = (n - 1) * p
+            f = int(k)
+            c = k - f
+            if f + 1 < n:
+                return data[f] + c * (data[f + 1] - data[f])
+            return data[f]
+        
+        avg_time = sum(times_sorted) / n
+        median_time = percentile(times_sorted, 0.5)
+        top_quartile = percentile(times_sorted, 0.25)
+        bottom_quartile = percentile(times_sorted, 0.75)
+        
+        logger.info(f"Event statistics calculated | sample_size={n} | avg={avg_time:.2f}s | median={median_time:.2f}s")
+        
+        return {
+            "squad": squad_info,
+            "event": f"{distance}m {stroke.title()} {result_units}",
+            "distance": distance,
+            "stroke": stroke,
+            "result_units": result_units,
+            "activity": activity,
+            "sample_size": n,
+            "avg_time": avg_time,
+            "median_time": median_time,
+            "top_quartile_time": top_quartile,
+            "bottom_quartile_time": bottom_quartile
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching event statistics: {str(e)}")
+        log_error(e, context="get_squad_event_statistics", squad_id=squad_id)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch event statistics: {str(e)}")
+
+
 def _time_to_seconds(time_str: str) -> float:
     """Convert time string (MM:SS.MS or SS.MS or interval format) to seconds"""
     if not time_str:

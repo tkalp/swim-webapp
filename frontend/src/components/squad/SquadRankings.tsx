@@ -11,6 +11,7 @@ import { useAvailableDistances, useSquadRankings } from '@/hooks/useSquadRanking
 import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
 import { Trophy, Medal, Award, Timer, Eye, EyeOff, Clock, ExternalLink } from "lucide-react";
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
+import EventStatisticsSection from '@/components/squad/rankings/EventStatisticsSection';
 
 const STROKES: { value: StrokeType; label: string }[] = [
   { value: "free", label: "Freestyle" },
@@ -254,6 +255,17 @@ export default function SquadRankings({ squadId }: Props) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Event Statistics Section */}
+      <div className="mb-6">
+        <EventStatisticsSection
+          squadId={squadId}
+          distance={selectedDistance}
+          stroke={stroke}
+          activity={activity}
+          resultUnits="SCM"
+        />
       </div>
 
       {/* Error Message */}

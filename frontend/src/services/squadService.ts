@@ -274,3 +274,50 @@ export async function getSquadCalendarEvents(squadId: string, fromISO?: string, 
   if (error) throw error
   return data ?? []
 }
+
+// ============================================
+// EVENT STATISTICS
+// ============================================
+
+export interface EventStatistics {
+  squad: {
+    id: string
+    name: string
+  }
+  event: string
+  distance: number
+  stroke: string
+  result_units: string
+  activity: string
+  sample_size: number
+  avg_time: number | null
+  median_time: number | null
+  top_quartile_time: number | null
+  bottom_quartile_time: number | null
+}
+
+/**
+ * Get aggregated statistics for a specific event
+ */
+export async function getSquadEventStatistics(
+  squadId: string,
+  distance: number,
+  stroke: string,
+  activity?: string,
+  resultUnits?: string
+): Promise<EventStatistics> {
+  const params = new URLSearchParams()
+  params.append('distance', distance.toString())
+  params.append('stroke', stroke)
+  if (activity) params.append('activity', activity)
+  if (resultUnits) params.append('result_units', resultUnits)
+
+  const url = `${API_BASE_URL}/squads/${squadId}/event-statistics?${params.toString()}`
+  const response = await authenticatedFetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch event statistics: ${response.statusText}`)
+  }
+
+  return response.json()
+}

@@ -65,12 +65,6 @@ class SyncOrchestrator:
         
         # Initialize services
         self.persister = ResultPersister(db_service)
-        
-        # Optimization #1: Global splits semaphore for parallel fetching across all events
-        # Instead of per-event semaphore, use one global semaphore for all splits
-        self.global_splits_semaphore = asyncio.Semaphore(WorkerConfig.GLOBAL_SPLITS_SEMAPHORE_SIZE)
-        # Pass the global semaphore to the scraper
-        self.scraper.global_splits_semaphore = self.global_splits_semaphore
     
     async def sync_swimmer(
         self,
