@@ -43,7 +43,7 @@ export default function AddEditWorkoutResultModal({
   const [error, setError] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   
-  const getInitialFormData = (): WorkoutResultFormData => ({
+  const [formData, setFormData] = useState<WorkoutResultFormData>(() => ({
     swimmer_id: swimmerId,
     distance: initialData?.distance ?? 50,
     stroke: initialData?.stroke ?? 'free',
@@ -53,17 +53,25 @@ export default function AddEditWorkoutResultModal({
     time_result: initialData?.time_result ?? '',
     performed_on: initialData?.performed_on ?? format(new Date(), 'yyyy-MM-dd'),
     result_units: initialData?.result_units ?? 'SCM',
-  });
-  
-  const [formData, setFormData] = useState<WorkoutResultFormData>(getInitialFormData());
+  }));
   
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
-      setFormData(getInitialFormData());
+      setFormData({
+        swimmer_id: swimmerId,
+        distance: initialData?.distance ?? 50,
+        stroke: initialData?.stroke ?? 'free',
+        activity: initialData?.activity ?? 'swim',
+        equipment: initialData?.equipment ?? 'none',
+        units: initialData?.units ?? 'meters',
+        time_result: initialData?.time_result ?? '',
+        performed_on: initialData?.performed_on ?? format(new Date(), 'yyyy-MM-dd'),
+        result_units: initialData?.result_units ?? 'SCM',
+      });
       setError('');
     }
-  }, [open, initialData]);
+  }, [open, swimmerId, initialData]);
 
   // Load existing data if editing - only once when modal opens
   useEffect(() => {
@@ -115,6 +123,7 @@ export default function AddEditWorkoutResultModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    console.log("hello")
     
     // Validation
     if (!formData.distance || formData.distance <= 0) {

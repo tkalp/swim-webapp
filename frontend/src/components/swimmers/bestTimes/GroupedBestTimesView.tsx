@@ -42,7 +42,7 @@ function PredictionBadge({
       </div>
       
       {/* Tooltip */}
-      <div className={`absolute left-1/2 -translate-x-1/2 ${showTooltipBelow ? 'top-full mt-2' : 'bottom-full mb-2'} w-72 p-4 bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 opacity-0 invisible group-hover/pred:opacity-100 group-hover/pred:visible transition-all duration-200 z-9999 pointer-events-none`}>
+      <div className={`absolute left-1/2 -translate-x-1/2 ${showTooltipBelow ? 'top-full mt-2' : 'bottom-full mb-2'} w-72 p-4 bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 opacity-0 invisible group-hover/pred:opacity-100 group-hover/pred:visible transition-all duration-200 z-50 pointer-events-none`}>
         <div className={`absolute ${showTooltipBelow ? 'bottom-full' : 'top-full'} left-1/2 -translate-x-1/2`}>
           <div className={`border-8 border-transparent ${showTooltipBelow ? 'border-b-purple-500/30' : 'border-t-purple-500/30'}`}></div>
         </div>

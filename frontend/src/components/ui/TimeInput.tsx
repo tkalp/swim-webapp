@@ -179,7 +179,7 @@ export default function TimeInput({ value, onChange, placeholder = 'Select time'
       {isOpen && createPortal(
         <div
           ref={popupRef}
-          className="fixed z-9999 bg-slate-800/95 backdrop-blur-xl border border-slate-700/60 rounded-lg shadow-2xl shadow-black/40 p-4"
+          className="fixed z-50 bg-slate-800/95 backdrop-blur-xl border border-slate-700/60 rounded-lg shadow-2xl shadow-black/40 p-4"
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,

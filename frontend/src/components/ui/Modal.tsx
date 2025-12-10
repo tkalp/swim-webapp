@@ -90,7 +90,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-9999 flex items-center justify-center p-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
         isAnimating
           ? 'bg-black/60 backdrop-blur-md'
           : 'bg-black/0 backdrop-blur-none'
@@ -105,10 +105,7 @@ export default function Modal({
             ? 'scale-100 opacity-100 translate-y-0'
             : 'scale-95 opacity-0 translate-y-4'
         }`}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
+        onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Subtle gradient glow */}
