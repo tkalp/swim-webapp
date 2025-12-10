@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.services.swimmer_service import SwimmerService
 from app.services.performance_service import PerformanceService
+from app.services.prediction_service import PredictionService
 from app.middleware.auth import get_current_user_id
 from app.infrastructure.database import get_supabase_client
 from app.infrastructure.constants import SyncStatus
@@ -618,6 +619,161 @@ async def get_fina_supported_events(
         }
     except Exception as e:
         logger.error(f"Error fetching supported FINA events: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{swimmer_id}/predictions")
+async def get_swimmer_predictions(
+    swimmer_id: str,
+    attempts_until_target: int = Query(default=3, description="Number of future attempts to predict"),
+    min_attempts: int = Query(default=3, description="Minimum attempts required for prediction"),
+    user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
+    """
+    Get improvement predictions for a swimmer's events.
+    
+    Returns predicted future times based on historical performance trends.
+    Only events with sufficient data (min_attempts) will have predictions.
+    Includes attendance data if available to improve prediction accuracy.
+    """
+    try:
+        performance_service = PerformanceService()
+        supabase = get_supabase_client()
+        
+        # Verify swimmer exists and user has permission
+        swimmer_check = supabase.table('swimmers').select('id, squad_id, first_name, last_name').eq('id', swimmer_id).execute()
+        
+        if not swimmer_check.data:
+            raise HTTPException(status_code=404, detail="Swimmer not found")
+        
+        swimmer = swimmer_check.data[0]
+        squad_id = swimmer.get('squad_id')
+        
+        if squad_id:
+            # Verify user has permission to this squad
+            coach_check = supabase.table('coach_squads').select('id').eq(
+                'squad_id', squad_id
+            ).eq('coach_id', user_id).execute()
+            
+            if not coach_check.data:
+                raise HTTPException(status_code=403, detail="Unauthorized to access this swimmer")
+        
+        # Fetch attendance data for last 30 days
+        from datetime import datetime, timedelta
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        attendance_result = supabase.table('training_attendance').select(
+            'status'
+        ).eq('swimmer_id', swimmer_id).gte('created_at', thirty_days_ago).execute()
+        
+        # Calculate attendance rate
+        attendance_rate = None
+        if attendance_result.data:
+            total_sessions = len(attendance_result.data)
+            present_sessions = sum(1 for a in attendance_result.data if a.get('status', '').lower() == 'present')
+            if total_sessions > 0:
+                attendance_rate = round((present_sessions / total_sessions * 100), 1)
+        
+        # Get all workout results for the swimmer
+        results = performance_service.get_workout_results(
+            swimmer_id=swimmer_id,
+            user_id=user_id
+        )
+        
+        # Group results by event key (distance_stroke_units_activity)
+        from collections import defaultdict
+        events_data = defaultdict(list)
+        
+        for result in results:
+            # Build event key
+            distance = str(result.get('distance', ''))
+            stroke = result.get('stroke', '').lower()
+            units = result.get('result_units', 'LCM')
+            activity = result.get('activity', 'swim').lower()
+            
+            event_key = f"{distance}_{stroke}_{units}_{activity}"
+            
+            # Convert time_result interval to seconds
+            time_result = result.get('time_result')
+            performed_on = result.get('performed_on')
+            
+            if time_result and performed_on:
+                try:
+                    # Convert interval to seconds
+                    time_seconds = interval_to_seconds(time_result)
+                    
+                    # Build event display name
+                    event_display = f"{distance}m {stroke.title()} {activity.title()} {units}"
+                    
+                    events_data[event_key].append({
+                        'time_seconds': time_seconds,
+                        'performed_on': performed_on,
+                        'event_display': event_display
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to convert time_result '{time_result}' for event {event_key}: {e}")
+                    continue
+        
+        # Generate predictions for each event with sufficient data
+        predictions = []
+        
+        for event_key, event_results in events_data.items():
+            if len(event_results) < min_attempts:
+                continue
+            
+            # Sort by date to get chronological order
+            sorted_results = sorted(event_results, key=lambda x: x['performed_on'])
+            
+            # Extract times in chronological order
+            all_times = [r['time_seconds'] for r in sorted_results]
+            current_best = min(all_times)
+            event_display = sorted_results[0]['event_display']
+            
+            # Generate prediction
+            prediction = PredictionService.predict_improvement(
+                event=event_display,
+                current_best=current_best,
+                all_times=all_times,
+                attempts_until_target=attempts_until_target,
+                attendance_rate=attendance_rate
+            )
+            
+            predictions.append({
+                'event_key': event_key,
+                'event': prediction.event,
+                'current_best': prediction.current_best,
+                'predicted_time': prediction.predicted_time,
+                'confidence_level': prediction.confidence_level,
+                'improvement_expected': prediction.improvement_expected,
+                'factors': prediction.factors
+            })
+        
+        # Sort predictions by current best time (fastest first within each distance)
+        predictions.sort(key=lambda x: (
+            int(x['event_key'].split('_')[0]) if x['event_key'].split('_')[0].isdigit() else 999,
+            x['current_best']
+        ))
+        
+        return {
+            'swimmer_id': swimmer_id,
+            'swimmer_name': f"{swimmer['first_name']} {swimmer['last_name']}",
+            'attempts_until_target': attempts_until_target,
+            'predictions': predictions,
+            'total_events_analyzed': len(predictions),
+            'attendance_rate': attendance_rate,  # Include attendance in response
+            'metadata': {
+                'min_attempts_required': min_attempts,
+                'total_events_with_data': len(events_data),
+                'events_with_insufficient_data': len([e for e in events_data.values() if len(e) < min_attempts]),
+                'attendance_days_analyzed': 30,
+                'attendance_included': attendance_rate is not None
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating predictions for swimmer {swimmer_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

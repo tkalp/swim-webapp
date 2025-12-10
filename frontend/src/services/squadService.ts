@@ -321,3 +321,156 @@ export async function getSquadEventStatistics(
 
   return response.json()
 }
+
+/**
+ * Swimmer comparison types
+ */
+
+export interface TrendAnalysis {
+  improvement_per_year: number  // Seconds per year (negative = improving)
+  velocity_category: 'rapid' | 'moderate' | 'slow' | 'plateaued' | 'declining'
+  consistency_score: number  // 0-100
+  data_points: number
+  predicted_next_year: number | null
+}
+
+export interface EventTrend {
+  event: string
+  swimmer_a: TrendAnalysis
+  swimmer_b: TrendAnalysis
+  comparison: {
+    relative_velocity: number
+    velocity_advantage: 'swimmer_a' | 'swimmer_b' | 'similar'
+  }
+}
+
+export interface HeadToHeadEvent {
+  event_key: string
+  event: string
+  swimmer_a: {
+    time: string
+    time_seconds: number
+    age: number
+    date: string
+  } | null
+  swimmer_b: {
+    time: string
+    time_seconds: number
+    age: number
+    date: string
+  } | null
+  differential: number | null  // Positive = A slower, negative = A faster
+  percentage_faster: number | null
+  faster_swimmer: 'swimmer_a' | 'swimmer_b' | null
+}
+
+export interface RacePrediction {
+  event: string
+  swimmer_a_probability: number
+  swimmer_b_probability: number
+  confidence_level: 'high' | 'medium' | 'low'
+  predicted_differential: number
+  predicted_time_a: number | null
+  predicted_time_b: number | null
+  factors: Record<string, number>
+}
+
+export interface PredictionAnalysis {
+  events: RacePrediction[]
+  overall_favorite: 'swimmer_a' | 'swimmer_b' | 'even'
+  average_confidence: number
+}
+
+export interface SwimmerComparisonResult {
+  swimmer_a: {
+    id: string
+    name: string
+    age: number
+    squad: string
+    total_results: number
+  }
+  swimmer_b: {
+    id: string
+    name: string
+    age: number
+    squad: string
+    total_results: number
+  }
+  comparison_settings: {
+    normalize_by_age: boolean
+    target_age: number | null
+    events_filter: string[] | null
+  }
+  summary: {
+    total_events_compared: number
+    total_unique_events: number
+    swimmer_a_faster_count: number
+    swimmer_b_faster_count: number
+    average_time_differential: number | null
+    stroke_breakdown: Record<string, {
+      a_faster_count: number
+      b_faster_count: number
+      total: number
+    }>
+  }
+  head_to_head: HeadToHeadEvent[]
+  trend_analysis: {
+    by_event: Record<string, EventTrend>
+    overall: {
+      swimmer_a: TrendAnalysis
+      swimmer_b: TrendAnalysis
+      comparison: {
+        relative_velocity: number
+        velocity_advantage: 'swimmer_a' | 'swimmer_b' | 'similar'
+      }
+    } | null
+    events_analyzed: number
+  }
+  predictions: PredictionAnalysis
+}
+
+/**
+ * Compare two swimmers with comprehensive analysis
+ */
+export async function compareSwimmers(
+  squadId: string,
+  swimmerAId: string,
+  swimmerBId: string,
+  options?: {
+    normalizeByAge?: boolean
+    targetAge?: number
+    events?: string[]
+    dateFrom?: string
+    dateTo?: string
+  }
+): Promise<SwimmerComparisonResult> {
+  const params = new URLSearchParams()
+  params.append('swimmer_a_id', swimmerAId)
+  params.append('swimmer_b_id', swimmerBId)
+  
+  if (options?.normalizeByAge) {
+    params.append('normalize_by_age', 'true')
+  }
+  if (options?.targetAge !== undefined) {
+    params.append('target_age', options.targetAge.toString())
+  }
+  if (options?.events && options.events.length > 0) {
+    params.append('events', options.events.join(','))
+  }
+  if (options?.dateFrom) {
+    params.append('date_from', options.dateFrom)
+  }
+  if (options?.dateTo) {
+    params.append('date_to', options.dateTo)
+  }
+
+  const url = `${API_BASE_URL}/squads/${squadId}/compare-swimmers?${params.toString()}`
+  const response = await authenticatedFetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Failed to compare swimmers: ${response.statusText}`)
+  }
+
+  return response.json()
+}
+

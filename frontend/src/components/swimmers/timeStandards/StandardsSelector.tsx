@@ -38,18 +38,21 @@ export function StandardsSelector({ onSetChange, selectedSetId }: StandardsSelec
     }))
   ];
 
+  const selectedSet = standardsSets.find(s => s.id === selectedSetId);
+  const displayLabel = selectedSet 
+    ? `${selectedSet.name}${selectedSet.year ? ` (${selectedSet.year})` : ''}`
+    : 'Compare Standards';
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="min-w-[280px] m-2">
-        <CustomSelect
-          label="Compare to:"
-          value={selectedSetId || ''}
-          onChange={(value) => onSetChange(value || null)}
-          options={options}
-          placeholder="Select a time standard..."
-          disabled={isLoading}
-        />
-      </div>
+    <div className="standards-selector-button">
+      <CustomSelect
+        value={selectedSetId || ''}
+        onChange={(value) => onSetChange(value || null)}
+        options={options}
+        placeholder={displayLabel}
+        disabled={isLoading}
+        className="button-style"
+      />
     </div>
   );
 }

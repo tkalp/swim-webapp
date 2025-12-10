@@ -41,8 +41,9 @@ export default function AddEditWorkoutResultModal({
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  const [formData, setFormData] = useState<WorkoutResultFormData>({
+  const getInitialFormData = (): WorkoutResultFormData => ({
     swimmer_id: swimmerId,
     distance: initialData?.distance ?? 50,
     stroke: initialData?.stroke ?? 'free',
@@ -53,13 +54,29 @@ export default function AddEditWorkoutResultModal({
     performed_on: initialData?.performed_on ?? format(new Date(), 'yyyy-MM-dd'),
     result_units: initialData?.result_units ?? 'SCM',
   });
-
-  // Load existing data if editing
+  
+  const [formData, setFormData] = useState<WorkoutResultFormData>(getInitialFormData());
+  
+  // Reset form when modal opens/closes
   useEffect(() => {
-    if (isEdit && open) {
-      loadWorkoutResult();
+    if (open) {
+      setFormData(getInitialFormData());
+      setError('');
     }
-  }, [isEdit, resultId, open]);
+  }, [open, initialData]);
+
+  // Load existing data if editing - only once when modal opens
+  useEffect(() => {
+    if (open && !isInitialized) {
+      if (isEdit) {
+        loadWorkoutResult();
+      }
+      setIsInitialized(true);
+    }
+    if (!open) {
+      setIsInitialized(false);
+    }
+  }, [open]);
 
   const loadWorkoutResult = async () => {
     if (!resultId) return;

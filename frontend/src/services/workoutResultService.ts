@@ -488,3 +488,55 @@ export function intervalToSeconds(intervalStr: string | null): number {
   }
   return h * 3600 + m * 60 + s
 }
+
+export type PredictionFactors = {
+  attempts_analyzed: number
+  improvement_rate: number
+  consistency: number
+  recent_form: number
+}
+
+export type SwimmerPrediction = {
+  event: string
+  current_best: number
+  predicted_time: number
+  confidence_level: 'high' | 'medium' | 'low'
+  improvement_expected: number
+  factors: PredictionFactors
+}
+
+export type SwimmerPredictionsResponse = {
+  swimmer_id: string
+  swimmer_name: string
+  predictions: SwimmerPrediction[]
+  total_events: number
+  high_confidence_count: number
+  medium_confidence_count: number
+  low_confidence_count: number
+  metadata: {
+    attempts_until_target: number
+    min_attempts: number
+    total_results_analyzed: number
+  }
+}
+
+/**
+ * Get improvement predictions for a swimmer
+ */
+export async function getSwimmerPredictions(
+  swimmerId: string,
+  attemptsUntilTarget: number = 3,
+  minAttempts: number = 3
+): Promise<SwimmerPredictionsResponse> {
+  const url = getApiUrl(
+    `swimmers/${swimmerId}/predictions?attempts_until_target=${attemptsUntilTarget}&min_attempts=${minAttempts}`
+  )
+  
+  const response = await authenticatedFetch(url)
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch predictions: ${response.statusText}`)
+  }
+  
+  return response.json()
+}

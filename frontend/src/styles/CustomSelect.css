@@ -18,6 +18,46 @@
   min-width: 140px;
 }
 
+/* Button-style variant for matching UI buttons */
+.cs-field.button-style {
+  gap: 0;
+  min-width: auto;
+}
+
+.cs-field.button-style .cs-label {
+  display: none;
+}
+
+.cs-field.button-style .cs-button {
+  padding: 0.5rem 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  color: rgb(148, 163, 184);
+}
+
+.cs-field.button-style .cs-button:hover {
+  background: rgb(30, 41, 59);
+  color: rgb(241, 245, 249);
+  border-color: rgba(71, 85, 105, 0.5);
+}
+
+.cs-field.button-style .cs-button.is-open,
+.cs-field.button-style .cs-button:focus-visible {
+  background: linear-gradient(to right, rgb(6, 182, 212), rgb(59, 130, 246));
+  color: white;
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.3);
+  transform: scale(1.05);
+}
+
+.cs-field.button-style .cs-caret {
+  color: inherit;
+}
+
 .cs-label {
   font-size: 0.85rem;
   color: var(--cs-muted);

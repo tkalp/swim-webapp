@@ -1,8 +1,8 @@
 // components/swimmer/bestTimes/GroupedBestTimesView.tsx
 import { useMemo, useState } from "react";
-import type { BestTimeResult } from '@/services/workoutResultService';
+import type { BestTimeResult, SwimmerPredictionsResponse } from '@/services/workoutResultService';
 import { formatTime } from '@/utils/timeUtils';
-import { Clock, Activity, Edit2, TrendingDown, TrendingUp, Minus, Eye, EyeOff } from "lucide-react";
+import { Clock, Activity, TrendingDown, TrendingUp, Eye, EyeOff, Info, Sparkles } from "lucide-react";
 import { StandardsCell } from '@/components/swimmers/timeStandards';
 import { calculateSwimmerAge } from '@/services/swimmerStandards';
 
@@ -21,9 +21,113 @@ type StrokeGroup = {
   items: BestTimeResult[];
 };
 
+// Prediction Badge Component
+function PredictionBadge({ 
+  prediction, 
+  showTooltipBelow,
+  compact = false
+}: { 
+  prediction: any; 
+  showTooltipBelow: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <div className="group/pred relative inline-block">
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-linear-to-br from-purple-500/15 via-purple-500/8 to-transparent border border-purple-500/30 rounded-md hover:border-purple-400/50 hover:shadow-md hover:shadow-purple-500/10 transition-all cursor-help">
+        <Sparkles size={11} className="text-purple-400 group-hover/pred:text-purple-300 transition-colors shrink-0" />
+        <span className="text-xs font-bold text-purple-300 group-hover/pred:text-purple-200 font-mono tracking-tight transition-colors">
+          {formatTime(prediction.predicted_time)}
+        </span>
+        <Info size={9} className="text-purple-400/60 group-hover/pred:text-purple-400 transition-colors shrink-0" />
+      </div>
+      
+      {/* Tooltip */}
+      <div className={`absolute left-1/2 -translate-x-1/2 ${showTooltipBelow ? 'top-full mt-2' : 'bottom-full mb-2'} w-72 p-4 bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 opacity-0 invisible group-hover/pred:opacity-100 group-hover/pred:visible transition-all duration-200 z-9999 pointer-events-none`}>
+        <div className={`absolute ${showTooltipBelow ? 'bottom-full' : 'top-full'} left-1/2 -translate-x-1/2`}>
+          <div className={`border-8 border-transparent ${showTooltipBelow ? 'border-b-purple-500/30' : 'border-t-purple-500/30'}`}></div>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 pb-2 border-b border-purple-500/20">
+            <Sparkles size={16} className="text-purple-400" />
+            <h4 className="font-semibold text-purple-300">AI Prediction</h4>
+            <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${
+              prediction.confidence_level === 'high' 
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                : prediction.confidence_level === 'medium'
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+            }`}>
+              {prediction.confidence_level}
+            </span>
+          </div>
+          
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">Current Best:</span>
+              <span className="font-mono text-slate-200">{formatTime(prediction.current_best)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">Predicted:</span>
+              <span className="font-mono font-bold text-purple-400">{formatTime(prediction.predicted_time)}</span>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-slate-700/50">
+              <span className="text-slate-400">Expected Change:</span>
+              <div className="flex items-center gap-1">
+                {prediction.current_best > prediction.predicted_time ? (
+                  <TrendingDown size={14} className="text-green-400" />
+                ) : (
+                  <TrendingUp size={14} className="text-red-400" />
+                )}
+                <span className={`font-mono font-bold ${prediction.current_best > prediction.predicted_time ? 'text-green-400' : 'text-red-400'}`}>
+                  {prediction.current_best > prediction.predicted_time ? '-' : '+'}{Math.abs(prediction.current_best - prediction.predicted_time).toFixed(2)}s
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {prediction.factors && (
+            <div className="pt-2 border-t border-purple-500/20">
+              <div className="text-xs text-slate-500 mb-1.5">Based on:</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {prediction.factors.attempts_analyzed && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Attempts:</span>
+                    <span className="text-slate-300 font-medium">{prediction.factors.attempts_analyzed}</span>
+                  </div>
+                )}
+                {prediction.factors.consistency !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Consistency:</span>
+                    <span className="text-slate-300 font-medium">{(prediction.factors.consistency * 100).toFixed(0)}%</span>
+                  </div>
+                )}
+                {prediction.factors.improvement_rate !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Trend:</span>
+                    <span className={`font-medium ${prediction.factors.improvement_rate < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {prediction.factors.improvement_rate < 0 ? '↓' : '↑'} {Math.abs(prediction.factors.improvement_rate).toFixed(3)}s
+                    </span>
+                  </div>
+                )}
+                {prediction.factors.recent_form !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Recent Form:</span>
+                    <span className="text-slate-300 font-medium">{(prediction.factors.recent_form * 100).toFixed(0)}%</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function GroupedBestTimesView({
   bestTimes,
-  sortBy,
+  sortBy = "time",
   canManageResults = true,
   onCardPress,
   onEditResult,
@@ -31,9 +135,12 @@ export default function GroupedBestTimesView({
   swimmerDateOfBirth,
   swimmerSex,
   hasTimeStandards = false,
+  predictions,
+  predictionsLoading = false,
+  showPredictions = false,
 }: {
   bestTimes: BestTimeResult[];
-  sortBy: "time" | "event" | "date";
+  sortBy?: "time" | "event" | "date";
   canManageResults?: boolean;
   onCardPress?: (item: BestTimeResult) => void;
   onEditResult?: (item: BestTimeResult) => void;
@@ -41,6 +148,9 @@ export default function GroupedBestTimesView({
   swimmerDateOfBirth?: string;
   swimmerSex?: string;
   hasTimeStandards?: boolean;
+  predictions?: SwimmerPredictionsResponse | null;
+  predictionsLoading?: boolean;
+  showPredictions?: boolean;
 }) {
   const [showStandards, setShowStandards] = useState(true);
   
@@ -86,6 +196,9 @@ export default function GroupedBestTimesView({
       selectedStandardsSetId={selectedStandardsSetId}
       swimmerAge={swimmerAge}
       swimmerSex={swimmerSex}
+      predictions={predictions}
+      predictionsLoading={predictionsLoading}
+      showPredictions={showPredictions}
     />
   );
 }
@@ -115,6 +228,9 @@ function TableView({
   selectedStandardsSetId,
   swimmerAge,
   swimmerSex,
+  predictions,
+  predictionsLoading = false,
+  showPredictions = false,
 }: {
   groups: StrokeGroup[];
   canManageResults?: boolean;
@@ -126,11 +242,12 @@ function TableView({
   selectedStandardsSetId?: string | null;
   swimmerAge?: number;
   swimmerSex?: string;
+  predictions?: SwimmerPredictionsResponse | null;
+  predictionsLoading?: boolean;
+  showPredictions?: boolean;
 }) {
-  // Check if we have any SCY results
   const hasScyResults = groups.some(g => g.items.some(item => item.resultUnits === 'SCY'));
   
-  // Group items by distance/activity/equipment within each stroke
   const groupedData = groups.map(group => {
     const eventMap = new Map<string, { distance: number; activity: string; equipment: string; items: BestTimeResult[] }>();
     
@@ -153,39 +270,105 @@ function TableView({
     };
   });
 
+  // Helper to find predictions
+  const findPrediction = (event: any, anyItem: BestTimeResult, units: string) => {
+    return predictions?.predictions.find(p => {
+      const eventStr = p.event.toLowerCase();
+      const isYards = units === 'scy';
+      const matchDistance = isYards 
+        ? eventStr.includes(`${event.distance}y`)
+        : eventStr.includes(`${event.distance}m`);
+      const matchStroke = eventStr.includes(anyItem.stroke.toLowerCase());
+      const matchActivity = event.activity ? eventStr.includes(event.activity.toLowerCase()) : eventStr.includes('swim');
+      const matchUnits = eventStr.includes(units.toLowerCase());
+      return matchDistance && matchStroke && matchActivity && matchUnits;
+    });
+  };
+
   return (
-    <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-lg overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-lg">
+      <div className="overflow-y-visible">
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-700/50 bg-slate-800/50">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Event</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Trend</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SCM</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">LCM</th>
-              {hasScyResults && (
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SCY</th>
+              {/* Left outer - SCM Prediction */}
+              {showPredictions && (
+                <th className="text-center px-2 py-3 text-xs font-semibold text-purple-400 uppercase tracking-wider whitespace-nowrap">
+                  <div className="flex items-center justify-center gap-1">
+                    <Sparkles size={12} />
+                    <span className="hidden xl:inline">SCM Pred</span>
+                    <span className="xl:hidden">Pred</span>
+                  </div>
+                </th>
               )}
-              {hasStandardsEnabled && (
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              
+              {/* SCM Standards */}
+              {hasStandardsEnabled && showStandards && (
+                <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                   <button
                     onClick={() => setShowStandards?.(!showStandards)}
-                    className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+                    className="flex items-center justify-center gap-1 hover:text-cyan-400 transition-colors mx-auto"
                   >
-                    {showStandards ? <Eye size={14} /> : <EyeOff size={14} />}
-                    <span>Standards</span>
+                    <Eye size={12} />
+                    <span className="hidden lg:inline">Std</span>
                   </button>
                 </th>
               )}
-              <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+              
+              {/* SCM Actual */}
+              <th className="text-center px-3 py-3 text-xs font-semibold text-cyan-400 uppercase tracking-wider whitespace-nowrap">SCM</th>
+              
+              {/* Center - Event Info */}
+              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Event</th>
+              
+              {/* LCM Actual */}
+              <th className="text-center px-3 py-3 text-xs font-semibold text-blue-400 uppercase tracking-wider whitespace-nowrap">LCM</th>
+              
+              {/* LCM Standards */}
+              {hasStandardsEnabled && showStandards && (
+                <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  <span className="hidden lg:inline">Std</span>
+                </th>
+              )}
+              
+              {/* Right outer - LCM Prediction */}
+              {showPredictions && (
+                <th className="text-center px-2 py-3 text-xs font-semibold text-purple-400 uppercase tracking-wider whitespace-nowrap">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="hidden xl:inline">LCM Pred</span>
+                    <span className="xl:hidden">Pred</span>
+                    <Sparkles size={12} />
+                  </div>
+                </th>
+              )}
+              
+              {/* SCY Columns (conditional) */}
+              {hasScyResults && (
+                <>
+                  {showPredictions && (
+                    <th className="text-center px-2 py-3 text-xs font-semibold text-purple-400 uppercase tracking-wider whitespace-nowrap border-l border-slate-700/50">
+                      <div className="flex items-center justify-center gap-1">
+                        <Sparkles size={12} />
+                        <span className="hidden xl:inline">SCY Pred</span>
+                        <span className="xl:hidden">Pred</span>
+                      </div>
+                    </th>
+                  )}
+                  {hasStandardsEnabled && showStandards && (
+                    <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                      <span className="hidden lg:inline">Std</span>
+                    </th>
+                  )}
+                  <th className="text-center px-3 py-3 text-xs font-semibold text-indigo-400 uppercase tracking-wider whitespace-nowrap">SCY</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
             {groupedData.map((group) => (
               <>
                 <tr key={`header-${group.stroke}`} className="bg-slate-800/30">
-                  <td colSpan={hasScyResults ? (hasStandardsEnabled ? 8 : 7) : (hasStandardsEnabled ? 7 : 6)} className="px-4 py-2">
+                  <td colSpan={99} className="px-4 py-2">
                     <div className="flex items-center gap-2">
                       <Activity size={14} className="text-cyan-400" />
                       <span className="text-sm font-semibold text-slate-100">{group.label}</span>
@@ -193,28 +376,80 @@ function TableView({
                     </div>
                   </td>
                 </tr>
-                {group.events.map((event) => {
+                {group.events.map((event, eventIndex) => {
                   const scmItem = event.items.find(i => i.resultUnits === 'SCM');
                   const lcmItem = event.items.find(i => i.resultUnits === 'LCM');
                   const scyItem = event.items.find(i => i.resultUnits === 'SCY');
                   const anyItem = scmItem || lcmItem || scyItem!;
+                  
+                  const scmPrediction = findPrediction(event, anyItem, 'scm');
+                  const lcmPrediction = findPrediction(event, anyItem, 'lcm');
+                  const scyPrediction = findPrediction(event, anyItem, 'scy');
+                  
+                  const showTooltipBelow = eventIndex < 3;
                   
                   return (
                     <tr 
                       key={`${group.stroke}-${event.distance}-${event.activity}-${event.equipment}`}
                       className="border-b border-slate-700/30 hover:bg-slate-800/50 transition-colors group"
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-lg font-bold text-slate-100">{event.distance}</span>
-                          <span className="text-xs text-slate-500 uppercase">
-                            {anyItem.units === "yards" ? "yd" : "m"}
-                          </span>
-                          <span className="text-sm text-slate-400 ml-1">{STROKE_LABEL[anyItem.stroke] ?? anyItem.stroke}</span>
-                        </div>
+                      {/* Left outer - SCM Prediction */}
+                      {showPredictions && (
+                        <td className="px-2 py-3 text-center">
+                          {!predictionsLoading && scmPrediction ? (
+                            <PredictionBadge prediction={scmPrediction} showTooltipBelow={showTooltipBelow} compact />
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
+                          )}
+                        </td>
+                      )}
+                      
+                      {/* SCM Standards */}
+                      {hasStandardsEnabled && showStandards && (
+                        <td className="px-2 py-3 text-center">
+                          {scmItem && event.activity?.toLowerCase() === 'swim' && swimmerAge ? (
+                            <StandardsCell
+                              standardsSetId={selectedStandardsSetId!}
+                              distance={event.distance}
+                              stroke={anyItem.stroke}
+                              timeSeconds={scmItem.timeSeconds}
+                              resultUnits="SCM"
+                              swimmerAge={swimmerAge}
+                              swimmerSex={swimmerSex}
+                            />
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
+                          )}
+                        </td>
+                      )}
+                      
+                      {/* SCM Actual */}
+                      <td className="px-3 py-3 text-center">
+                        {scmItem ? (
+                          <button
+                            onClick={() => onCardPress?.(scmItem)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-cyan-500/10 via-cyan-500/5 to-transparent border border-cyan-500/30 rounded-lg hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-200"
+                          >
+                            <Clock size={13} className="text-cyan-400 transition-colors shrink-0" />
+                            <span className="text-sm font-bold text-cyan-300 font-mono tracking-tight transition-colors">
+                              {formatTime(scmItem.timeSeconds)}
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-600 text-xs">—</span>
+                        )}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1.5">
+                      
+                      {/* Center - Event */}
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-lg font-bold text-slate-100">{event.distance}</span>
+                            <span className="text-xs text-slate-500 uppercase">
+                              {anyItem.units === "yards" ? "yd" : "m"}
+                            </span>
+                            <span className="text-sm text-slate-400 ml-1">{STROKE_LABEL[anyItem.stroke] ?? anyItem.stroke}</span>
+                          </div>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ` + getActivityStyles(event.activity)}>
                             {labelActivity(event.activity)}
                           </span>
@@ -225,118 +460,29 @@ function TableView({
                           )}
                         </div>
                       </td>
+
                       
-                      {/* Trend Column */}
-                      <td className="px-4 py-3">
-                        {anyItem.recentTrend ? (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-800/50">
-                            <div className={`${
-                              anyItem.recentTrend.improving 
-                                ? 'text-emerald-500' 
-                                : anyItem.recentTrend.declining 
-                                ? 'text-rose-500'
-                                : 'text-slate-400'
-                            }`}>
-                              {anyItem.recentTrend.improving && <TrendingDown size={14} />}
-                              {anyItem.recentTrend.declining && <TrendingUp size={14} />}
-                              {anyItem.recentTrend.stable && <Minus size={14} />}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className={`text-xs font-medium ${
-                                anyItem.recentTrend.improving 
-                                  ? 'text-emerald-500' 
-                                  : anyItem.recentTrend.declining 
-                                  ? 'text-rose-500'
-                                  : 'text-slate-400'
-                              }`}>
-                                {anyItem.recentTrend.improving && `${Math.abs(anyItem.recentTrend.delta).toFixed(1)}s`}
-                                {anyItem.recentTrend.declining && `${Math.abs(anyItem.recentTrend.delta).toFixed(1)}s`}
-                                {anyItem.recentTrend.stable && 'Stable'}
-                              </span>
-                              {!anyItem.recentTrend.stable && (
-                                <span className={`text-[10px] ${
-                                  anyItem.recentTrend.improving 
-                                    ? 'text-emerald-500/70' 
-                                    : 'text-rose-500/70'
-                                }`}>
-                                  {anyItem.recentTrend.percentage >= 0 ? '+' : ''}{anyItem.recentTrend.percentage}%
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-slate-500 text-xs">—</span>
-                        )}
-                      </td>
-                      
-                      {/* SCM Column */}
-                      <td className="px-4 py-3">
-                        {scmItem ? (
-                          <button
-                            onClick={() => onCardPress?.(scmItem)}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg hover:from-cyan-500/20 hover:to-blue-500/20 hover:border-cyan-500/40 transition-all"
-                          >
-                            <Clock size={14} className="text-cyan-400" />
-                            <span className="text-base font-bold text-cyan-400">
-                              {formatTime(scmItem.timeSeconds)}
-                            </span>
-                          </button>
-                        ) : (
-                          <span className="text-slate-500 text-sm">—</span>
-                        )}
-                      </td>
-                      
-                      {/* LCM Column */}
-                      <td className="px-4 py-3">
+                      {/* LCM Actual */}
+                      <td className="px-3 py-3 text-center">
                         {lcmItem ? (
                           <button
                             onClick={() => onCardPress?.(lcmItem)}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg hover:from-cyan-500/20 hover:to-blue-500/20 hover:border-cyan-500/40 transition-all"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/30 rounded-lg hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-200"
                           >
-                            <Clock size={14} className="text-cyan-400" />
-                            <span className="text-base font-bold text-cyan-400">
+                            <Clock size={13} className="text-blue-400 transition-colors shrink-0" />
+                            <span className="text-sm font-bold text-blue-300 font-mono tracking-tight transition-colors">
                               {formatTime(lcmItem.timeSeconds)}
                             </span>
                           </button>
                         ) : (
-                          <span className="text-slate-500 text-sm">—</span>
+                          <span className="text-slate-600 text-xs">—</span>
                         )}
                       </td>
                       
-                      {/* SCY Column (conditional) */}
-                      {hasScyResults && (
-                        <td className="px-4 py-3">
-                          {scyItem ? (
-                            <button
-                              onClick={() => onCardPress?.(scyItem)}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-lg hover:from-cyan-500/20 hover:to-blue-500/20 hover:border-cyan-500/40 transition-all"
-                            >
-                              <Clock size={14} className="text-cyan-400" />
-                              <span className="text-base font-bold text-cyan-400">
-                                {formatTime(scyItem.timeSeconds)}
-                              </span>
-                            </button>
-                          ) : (
-                            <span className="text-slate-500 text-sm">—</span>
-                          )}
-                        </td>
-                      )}
-                      
-                      {/* Standards Column (conditional) */}
-                      {hasStandardsEnabled && showStandards && swimmerAge && (
-                        <td className="px-4 py-3">
-                          {scmItem && event.activity?.toLowerCase() === 'swim' && (
-                            <StandardsCell
-                              standardsSetId={selectedStandardsSetId!}
-                              distance={event.distance}
-                              stroke={anyItem.stroke}
-                              timeSeconds={scmItem.timeSeconds}
-                              resultUnits="SCM"
-                              swimmerAge={swimmerAge}
-                              swimmerSex={swimmerSex}
-                            />
-                          )}
-                          {lcmItem && !scmItem && event.activity?.toLowerCase() === 'swim' && (
+                      {/* LCM Standards */}
+                      {hasStandardsEnabled && showStandards && (
+                        <td className="px-2 py-3 text-center">
+                          {lcmItem && event.activity?.toLowerCase() === 'swim' && swimmerAge ? (
                             <StandardsCell
                               standardsSetId={selectedStandardsSetId!}
                               distance={event.distance}
@@ -346,47 +492,69 @@ function TableView({
                               swimmerAge={swimmerAge}
                               swimmerSex={swimmerSex}
                             />
-                          )}
-                          {((!scmItem && !lcmItem) || event.activity?.toLowerCase() !== 'swim') && (
-                            <span className="text-slate-500 text-sm">—</span>
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
                           )}
                         </td>
                       )}
                       
-                      {/* Actions Column */}
-                      <td className="px-4 py-3">
-                        {canManageResults && (
-                          <div className="flex justify-end gap-1">
-                            {scmItem && onEditResult && (
+                      {/* Right outer - LCM Prediction */}
+                      {showPredictions && (
+                        <td className="px-2 py-3 text-center">
+                          {!predictionsLoading && lcmPrediction ? (
+                            <PredictionBadge prediction={lcmPrediction} showTooltipBelow={showTooltipBelow} compact />
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
+                          )}
+                        </td>
+                      )}
+                      
+                      {/* SCY Columns (conditional) */}
+                      {hasScyResults && (
+                        <>
+                          {showPredictions && (
+                            <td className="px-2 py-3 text-center border-l border-slate-700/50">
+                              {!predictionsLoading && scyPrediction ? (
+                                <PredictionBadge prediction={scyPrediction} showTooltipBelow={showTooltipBelow} compact />
+                              ) : (
+                                <span className="text-slate-600 text-xs">—</span>
+                              )}
+                            </td>
+                          )}
+                          {hasStandardsEnabled && showStandards && (
+                            <td className="px-2 py-3 text-center">
+                              {scyItem && event.activity?.toLowerCase() === 'swim' && swimmerAge ? (
+                                <StandardsCell
+                                  standardsSetId={selectedStandardsSetId!}
+                                  distance={event.distance}
+                                  stroke={anyItem.stroke}
+                                  timeSeconds={scyItem.timeSeconds}
+                                  resultUnits="SCY"
+                                  swimmerAge={swimmerAge}
+                                  swimmerSex={swimmerSex}
+                                />
+                              ) : (
+                                <span className="text-slate-600 text-xs">—</span>
+                              )}
+                            </td>
+                          )}
+                          <td className="px-3 py-3 text-center">
+                            {scyItem ? (
                               <button
-                                onClick={() => onEditResult(scmItem)}
-                                className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
-                                title="Edit SCM result"
+                                onClick={() => onCardPress?.(scyItem)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/30 rounded-lg hover:border-indigo-400/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200"
                               >
-                                <Edit2 size={16} />
+                                <Clock size={13} className="text-indigo-400 transition-colors shrink-0" />
+                                <span className="text-sm font-bold text-indigo-300 font-mono tracking-tight transition-colors">
+                                  {formatTime(scyItem.timeSeconds)}
+                                </span>
                               </button>
+                            ) : (
+                              <span className="text-slate-600 text-xs">—</span>
                             )}
-                            {lcmItem && onEditResult && (
-                              <button
-                                onClick={() => onEditResult(lcmItem)}
-                                className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
-                                title="Edit LCM result"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                            )}
-                            {scyItem && onEditResult && (
-                              <button
-                                onClick={() => onEditResult(scyItem)}
-                                className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all duration-200 hover:scale-105 opacity-0 group-hover:opacity-100"
-                                title="Edit SCY result"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </td>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}

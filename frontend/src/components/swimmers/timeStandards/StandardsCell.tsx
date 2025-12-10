@@ -74,8 +74,8 @@ export function StandardsCell({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center">
-        <div className="px-3 py-1.5 rounded-lg bg-slate-800/30 backdrop-blur-sm border border-slate-700/50">
-          <span className="text-xs text-slate-400">Loading...</span>
+        <div className="px-1.5 py-0.5 rounded bg-slate-800/30 border border-slate-700/50">
+          <span className="text-[10px] text-slate-400">...</span>
         </div>
       </div>
     );
@@ -97,26 +97,34 @@ export function StandardsCell({
   if (comparison.achievedLevel) {
     const achievedStandard = comparison.allLevels.find(l => l.level === comparison.achievedLevel);
     
+    if (!achievedStandard) return null;
+    
     return (
-      <div className="inline-flex flex-col gap-1 px-2.5 py-1.5 rounded-lg bg-linear-to-br from-emerald-500/20 to-emerald-500/5 backdrop-blur-sm border border-emerald-500/30 shadow-sm hover:shadow-md hover:border-emerald-500/50 transition-all">
-        <div className="flex items-center gap-1.5">
-          <TrendingDown className="h-3 w-3 text-emerald-400" />
-          <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+      <div className="group relative">
+        <div className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-linear-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30">
+          <TrendingDown className="h-2 w-2 text-emerald-400 shrink-0" />
+          <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wide">
             {comparison.achievedLevel}
           </span>
         </div>
-        {achievedStandard && (
-          <div className="flex flex-col text-[10px] leading-tight">
-            <span className="text-emerald-300 font-semibold">{formatTimeDelta(achievedStandard.gapSeconds)}</span>
-            <span className="text-emerald-200/80 font-medium">{formatPercentageDelta(achievedStandard.gapPercentage)}</span>
+        
+        {/* Tooltip with standard time */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1.5 bg-slate-900/95 backdrop-blur-sm border border-emerald-500/30 rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap">
+          <div className="text-xs">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-emerald-400 font-semibold">{comparison.achievedLevel} Standard:</span>
+              <span className="text-emerald-300 font-mono">{achievedStandard.time}</span>
+            </div>
           </div>
-        )}
+          {/* Arrow pointing down */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-emerald-500/30"></div>
+        </div>
       </div>
     );
   }
 
   // If swimmer has a next level to achieve
-  if (comparison.nextLevel && comparison.gapSeconds !== undefined && comparison.gapPercentage !== undefined) {
+  if (comparison.nextLevel && comparison.gapSeconds !== undefined && comparison.gapPercentage !== undefined && comparison.nextLevelTime && comparison.nextLevelSeconds) {
     const absGap = Math.abs(comparison.gapPercentage);
     const isVeryClose = absGap < 2;
     const isClose = absGap < 5;
@@ -166,37 +174,51 @@ export function StandardsCell({
       ? 'text-red-400'
       : 'text-rose-400';
     
-    const deltaColor = isVeryClose
-      ? 'text-emerald-300'
+    const tooltipBorderColor = isVeryClose
+      ? 'border-emerald-500/30'
       : isClose 
-      ? 'text-amber-300' 
+      ? 'border-amber-500/30' 
       : isModerate 
-      ? 'text-orange-300' 
+      ? 'border-orange-500/30' 
       : isFar 
-      ? 'text-red-300'
-      : 'text-rose-300';
+      ? 'border-red-500/30'
+      : 'border-rose-500/30';
     
-    const deltaPercentColor = isVeryClose
-      ? 'text-emerald-200/80'
+    const tooltipAccentColor = isVeryClose
+      ? 'text-emerald-400'
       : isClose 
-      ? 'text-amber-200/80' 
+      ? 'text-amber-400' 
       : isModerate 
-      ? 'text-orange-200/80' 
+      ? 'text-orange-400' 
       : isFar 
-      ? 'text-red-200/80'
-      : 'text-rose-200/80';
+      ? 'text-red-400'
+      : 'text-rose-400';
     
     return (
-      <div className={`inline-flex flex-col gap-1 px-2.5 py-1.5 rounded-lg bg-linear-to-br ${bgGradient} backdrop-blur-sm border ${borderColor} shadow-sm hover:shadow-md transition-all`}>
-        <div className="flex items-center gap-1.5">
-          <TrendingUp className={`h-3 w-3 ${iconColor}`} />
-          <span className={`text-xs font-bold ${textColor} uppercase tracking-wide`}>
+      <div className="group relative">
+        <div className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-linear-to-br ${bgGradient} border ${borderColor}`}>
+          <TrendingUp className={`h-2 w-2 ${iconColor} shrink-0`} />
+          <span className={`text-[9px] font-bold ${textColor} uppercase tracking-wide`}>
             {comparison.nextLevel}
           </span>
         </div>
-        <div className="flex flex-col text-[10px] leading-tight">
-          <span className={`${deltaColor} font-semibold`}>{formatTimeDelta(comparison.gapSeconds)}</span>
-          <span className={`${deltaPercentColor} font-medium`}>{formatPercentageDelta(comparison.gapPercentage)}</span>
+        
+        {/* Tooltip with standard time and gap */}
+        <div className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1.5 bg-slate-900/95 backdrop-blur-sm border ${tooltipBorderColor} rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap`}>
+          <div className="text-xs space-y-0.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className={`${tooltipAccentColor} font-semibold`}>{comparison.nextLevel} Standard:</span>
+              <span className={`${tooltipAccentColor.replace('400', '300')} font-mono`}>{comparison.nextLevelTime}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 pt-0.5 border-t border-slate-700/50">
+              <span className="text-slate-400">Gap to achieve:</span>
+              <span className={`${tooltipAccentColor.replace('400', '300')} font-mono`}>
+                {formatTimeDelta(-comparison.gapSeconds)}
+              </span>
+            </div>
+          </div>
+          {/* Arrow pointing down */}
+          <div className={`absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent ${tooltipBorderColor.replace('border-', 'border-t-')}`}></div>
         </div>
       </div>
     );
@@ -204,9 +226,9 @@ export function StandardsCell({
 
   // Fallback
   return (
-    <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 text-xs text-slate-500">
-      <Target className="h-3 w-3" />
-      <span>No match</span>
+    <div className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-800/30 border border-slate-700/50 text-[9px] text-slate-500">
+      <Target className="h-2 w-2 shrink-0" />
+      <span>—</span>
     </div>
   );
 }

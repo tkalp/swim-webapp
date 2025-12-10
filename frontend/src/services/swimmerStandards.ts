@@ -40,6 +40,7 @@ export function timeStringToSeconds(timeString: string): number {
 
 /**
  * Fetch standards that match the event and swimmer criteria
+ * Handles exact age ranges, "X and over", and "X and under" age groups
  */
 export async function getStandardsForEvent(
   standardsSetId: string,
@@ -49,6 +50,12 @@ export async function getStandardsForEvent(
   gender: 'M' | 'F' | 'X',
   poolType: 'SCM' | 'LCM'
 ): Promise<TimeStandard[]> {
+  // Query for standards where:
+  // 1. The swimmer's age is within the age range (age_group_min <= age <= age_group_max)
+  // This handles:
+  //   - Exact age ranges (e.g., 13-14)
+  //   - "X and over" (e.g., 18-99 where swimmer is 20)
+  //   - "X and under" (e.g., 0-10 where swimmer is 8)
   const { data, error } = await supabase
     .from('time_standards')
     .select('*')
@@ -56,8 +63,8 @@ export async function getStandardsForEvent(
     .eq('distance', distance)
     .eq('stroke', stroke.toLowerCase())
     .eq('gender', gender)
-    .lte('age_group_min', age)
-    .gte('age_group_max', age)
+    .gte('age_group_max', age)  // age must be <= age_group_max (max is greater than or equal to age)
+    .lte('age_group_min', age)  // age must be >= age_group_min (min is less than or equal to age)
     .order('standard_level', { ascending: true });
 
   if (error) {

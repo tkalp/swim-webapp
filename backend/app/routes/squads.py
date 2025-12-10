@@ -9,6 +9,7 @@ from app.infrastructure.database import get_supabase_client
 from app.middleware.auth import get_current_user_id
 from app.utils import logger, log_error
 from app.services.performance_service import PerformanceService
+from app.services.comparison_service import SwimmerComparisonService
 
 router = APIRouter(prefix="/squads", tags=["squads"])
 
@@ -1220,4 +1221,173 @@ async def get_squad_attendance(
         logger.error(f"Error fetching squad attendance: {str(e)}")
         log_error(e, context="get_squad_attendance", squad_id=squad_id)
         raise HTTPException(status_code=500, detail=f"Failed to fetch squad attendance: {str(e)}")
+
+
+@router.get("/{squad_id}/compare-swimmers")
+async def compare_swimmers(
+    squad_id: str,
+    swimmer_a_id: str,
+    swimmer_b_id: str,
+    normalize_by_age: bool = False,
+    target_age: Optional[int] = None,
+    events: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Compare two swimmers with comprehensive head-to-head analysis and trend projections.
+    
+    Returns performance comparison including:
+    - Head-to-head event results
+    - Personal bests comparison
+    - Historical trend analysis (improvement velocity, consistency)
+    - Predictive projections
+    
+    Query params:
+    - swimmer_a_id: Required - First swimmer UUID
+    - swimmer_b_id: Required - Second swimmer UUID
+    - normalize_by_age: If True, only compare results from matching ages
+    - target_age: Specific age to compare (requires normalize_by_age=True)
+    - events: Comma-separated event keys to filter (e.g., "100_free,200_im")
+    - date_from: Optional - Filter results from this date (YYYY-MM-DD)
+    - date_to: Optional - Filter results until this date (YYYY-MM-DD)
+    """
+    try:
+        supabase = get_supabase_client()
+        logger.info(
+            f"User {user_id} comparing swimmers | squad_id={squad_id} | "
+            f"swimmer_a={swimmer_a_id} | swimmer_b={swimmer_b_id} | "
+            f"normalize_by_age={normalize_by_age} | target_age={target_age}"
+        )
+        
+        # Verify squad exists and user has access
+        squad_response = supabase.table('squads').select('id, name').eq('id', squad_id).execute()
+        if not squad_response.data:
+            raise HTTPException(status_code=404, detail="Squad not found")
+        
+        # Verify coach has access to squad
+        coach_squad_response = supabase.table('coach_squads')\
+            .select('squad_id')\
+            .eq('coach_id', user_id)\
+            .eq('squad_id', squad_id)\
+            .execute()
+        
+        if not coach_squad_response.data:
+            raise HTTPException(status_code=403, detail="Not authorized to access this squad")
+        
+        # Fetch swimmer A data with squad info
+        swimmer_a_response = supabase.table('swimmers')\
+            .select('id, first_name, last_name, date_of_birth, squad_id, squads!inner(name)')\
+            .eq('id', swimmer_a_id)\
+            .execute()
+        
+        if not swimmer_a_response.data:
+            raise HTTPException(status_code=404, detail=f"Swimmer A ({swimmer_a_id}) not found")
+        
+        swimmer_a_data = swimmer_a_response.data[0]
+        
+        # Verify swimmer A belongs to accessible squad
+        swimmer_a_squad_id = swimmer_a_data['squad_id']
+        coach_access_a = supabase.table('coach_squads')\
+            .select('squad_id')\
+            .eq('coach_id', user_id)\
+            .eq('squad_id', swimmer_a_squad_id)\
+            .execute()
+        
+        if not coach_access_a.data:
+            raise HTTPException(status_code=403, detail="Not authorized to access swimmer A's squad")
+        
+        # Fetch swimmer B data with squad info
+        swimmer_b_response = supabase.table('swimmers')\
+            .select('id, first_name, last_name, date_of_birth, squad_id, squads!inner(name)')\
+            .eq('id', swimmer_b_id)\
+            .execute()
+        
+        if not swimmer_b_response.data:
+            raise HTTPException(status_code=404, detail=f"Swimmer B ({swimmer_b_id}) not found")
+        
+        swimmer_b_data = swimmer_b_response.data[0]
+        
+        # Verify swimmer B belongs to accessible squad
+        swimmer_b_squad_id = swimmer_b_data['squad_id']
+        coach_access_b = supabase.table('coach_squads')\
+            .select('squad_id')\
+            .eq('coach_id', user_id)\
+            .eq('squad_id', swimmer_b_squad_id)\
+            .execute()
+        
+        if not coach_access_b.data:
+            raise HTTPException(status_code=403, detail="Not authorized to access swimmer B's squad")
+        
+        # Validate both swimmers have date_of_birth
+        if not swimmer_a_data.get('date_of_birth'):
+            raise HTTPException(status_code=400, detail="Swimmer A missing date of birth")
+        if not swimmer_b_data.get('date_of_birth'):
+            raise HTTPException(status_code=400, detail="Swimmer B missing date of birth")
+        
+        # Add squad name to swimmer data
+        swimmer_a_data['squad_name'] = swimmer_a_data['squads']['name']
+        swimmer_b_data['squad_name'] = swimmer_b_data['squads']['name']
+        
+        # Fetch all workout results for swimmer A
+        query_a = supabase.table('workout_result')\
+            .select('*')\
+            .eq('swimmer_id', swimmer_a_id)\
+            .eq('activity', 'swim')\
+            .not_.is_('time_result', 'null')
+        
+        if date_from:
+            query_a = query_a.gte('performed_on', date_from)
+        if date_to:
+            query_a = query_a.lte('performed_on', date_to)
+        
+        results_a_response = query_a.execute()
+        results_a = results_a_response.data or []
+        
+        # Fetch all workout results for swimmer B
+        query_b = supabase.table('workout_result')\
+            .select('*')\
+            .eq('swimmer_id', swimmer_b_id)\
+            .eq('activity', 'swim')\
+            .not_.is_('time_result', 'null')
+        
+        if date_from:
+            query_b = query_b.gte('performed_on', date_from)
+        if date_to:
+            query_b = query_b.lte('performed_on', date_to)
+        
+        results_b_response = query_b.execute()
+        results_b = results_b_response.data or []
+        
+        # Parse events filter
+        events_filter = None
+        if events:
+            events_filter = [e.strip() for e in events.split(',')]
+        
+        # Perform comparison using service
+        comparison_result = SwimmerComparisonService.compare_swimmers(
+            swimmer_a_data=swimmer_a_data,
+            swimmer_b_data=swimmer_b_data,
+            results_a=results_a,
+            results_b=results_b,
+            normalize_by_age=normalize_by_age,
+            target_age=target_age,
+            events_filter=events_filter
+        )
+        
+        logger.info(
+            f"Comparison complete | events_compared={comparison_result['summary']['total_events_compared']} | "
+            f"trend_events_analyzed={comparison_result['trend_analysis']['events_analyzed']}"
+        )
+        
+        return comparison_result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error comparing swimmers: {str(e)}")
+        log_error(e, context="compare_swimmers", squad_id=squad_id)
+        raise HTTPException(status_code=500, detail=f"Failed to compare swimmers: {str(e)}")
+
 

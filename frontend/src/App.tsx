@@ -21,6 +21,8 @@ import CoachNetworkPage from './pages/CoachNetwork';
 import AdminSyncPage from './pages/AdminSyncPage';
 import CalendarPage from './pages/Calendar';
 import TimeStandards from './pages/TimeStandards';
+import SwimmerComparisonPage from './pages/SwimmerComparison';
+import ToolsPage from './pages/Tools';
 import LandingPage from './pages/LandingPage';
 import BetaAccessPage from './pages/BetaAccessPage';
 import AdminBetaWaitlist from './pages/AdminBetaWaitlist';
@@ -146,6 +148,46 @@ export default function App() {
             </GlobalLayout>
           }
           path="/network"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <SwimmerComparisonPage />
+            </GlobalLayout>
+          }
+          path="/comparison"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <ToolsPage />
+            </GlobalLayout>
+          }
+          path="/tools"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <SwimmerComparisonPage />
+            </GlobalLayout>
+          }
+          path="/tools/comparison"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <AICoachPage />
+            </GlobalLayout>
+          }
+          path="/tools/ai-coach"
+        />
+        <Route
+          element={
+            <GlobalLayout>
+              <TimeStandards />
+            </GlobalLayout>
+          }
+          path="/tools/standards"
         />
         <Route
           element={

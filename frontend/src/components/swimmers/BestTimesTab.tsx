@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   getSwimmerBestTimes,
+  getSwimmerPredictions,
   type BestTimeResult,
   type EventQuery,
+  type SwimmerPredictionsResponse,
 } from '@/services/workoutResultService';
 import GroupedBestTimesView from '@/components/swimmers/bestTimes/GroupedBestTimesView';
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
 import AddEditWorkoutResultModal from '@/components/swimmers/bestTimes/AddEditWorkoutResultModal';
-import type { Option } from '@/components/ui/CustomSelect';
-import CustomSelect from '@/components/ui/CustomSelect';
 import { supabase } from '@/lib/supabase';
-import { Activity, TrendingUp, Filter, RotateCcw, Plus } from "lucide-react";
+import { Activity, TrendingUp, Plus, Sparkles } from "lucide-react";
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-
-type SortOption = "time" | "event" | "date";
-type Filters = { activity?: string; resultUnits?: string; stroke?: string; distance?: number };
 
 type Swimmer = {
   first_name?: string;
@@ -28,14 +25,14 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [allBest, setAllBest] = useState<BestTimeResult[]>([]);
-  const [filters, setFilters] = useState<Filters>({});
-  const [sortBy, setSortBy] = useState<SortOption>("time");
-  const [selectedStroke, setSelectedStroke] = useState<string>("all");
+  const [predictions, setPredictions] = useState<SwimmerPredictionsResponse | null>(null);
+  const [predictionsLoading, setPredictionsLoading] = useState(false);
 
   const [query, setQuery] = useState<EventQuery | null>(null);
   const [open, setOpen] = useState(false);
   const [addEditOpen, setAddEditOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<BestTimeResult | null>(null);
+  const [showPredictions, setShowPredictions] = useState(false);
 
   const refreshData = () => {
     setLoading(true);
@@ -44,6 +41,18 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
         const data = await getSwimmerBestTimes(swimmerId);
         setAllBest(data);
         setErr("");
+        
+        // Fetch predictions in parallel
+        setPredictionsLoading(true);
+        try {
+          const predictionsData = await getSwimmerPredictions(swimmerId, 3);
+          setPredictions(predictionsData);
+        } catch (predError: any) {
+          console.error('Failed to load predictions:', predError);
+          // Don't set error state - predictions are optional
+        } finally {
+          setPredictionsLoading(false);
+        }
       } catch (e: any) {
         setErr(e.message ?? "Failed to load best times");
       } finally {
@@ -61,6 +70,19 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
         if (!mounted) return;
         setAllBest(data);
         setErr("");
+        
+        // Fetch predictions in parallel
+        setPredictionsLoading(true);
+        try {
+          const predictionsData = await getSwimmerPredictions(swimmerId, 3);
+          if (!mounted) return;
+          setPredictions(predictionsData);
+        } catch (predError: any) {
+          console.error('Failed to load predictions:', predError);
+          // Don't set error state - predictions are optional
+        } finally {
+          if (mounted) setPredictionsLoading(false);
+        }
       } catch (e: any) {
         setErr(e.message ?? "Failed to load best times");
       } finally {
@@ -72,38 +94,12 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
     };
   }, [swimmerId]);
 
-  const filtered = useMemo(() => {
-    let result = allBest.filter((r) => {
-      if (filters.activity && r.activity !== filters.activity) return false;
-      if (filters.resultUnits && r.resultUnits !== filters.resultUnits) return false;
-      if (filters.stroke && r.stroke !== filters.stroke) return false;
-      if (filters.distance && r.distance !== filters.distance) return false;
-      return true;
-    });
-
-    // Apply stroke tab filter
-    if (selectedStroke !== "all") {
-      result = result.filter(r => r.stroke === selectedStroke);
-    }
-
-    return result;
-  }, [allBest, filters, selectedStroke]);
-
   const sorted = useMemo(() => {
-    const copy = [...filtered];
-    if (sortBy === "time") copy.sort((a, b) => a.timeSeconds - b.timeSeconds);
-    else if (sortBy === "event")
-      copy.sort(
-        (a, b) => a.distance - b.distance || a.stroke.localeCompare(b.stroke)
-      );
-    else
-      copy.sort(
-        (a, b) =>
-          new Date(b.performedOn ?? 0).getTime() -
-          new Date(a.performedOn ?? 0).getTime()
-      );
+    const copy = [...allBest];
+    // Sort by time (fastest first)
+    copy.sort((a, b) => a.timeSeconds - b.timeSeconds);
     return copy;
-  }, [filtered, sortBy]);
+  }, [allBest]);
 
   const onCardPress = (it: BestTimeResult) => {
     setQuery({
@@ -162,30 +158,6 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
     setEditingResult(null);
   };
 
-  const hasActiveFilters = filters.activity || filters.resultUnits || filters.stroke || filters.distance;
-
-  // Get available strokes from data
-  const availableStrokes = useMemo(() => {
-    const strokes = new Set(allBest.map(r => r.stroke));
-    return Array.from(strokes).sort();
-  }, [allBest]);
-
-  // Common distances for quick filters
-  const commonDistances = [50, 100, 200, 400, 800, 1500];
-  const availableDistances = useMemo(() => {
-    const distances = new Set(allBest.map(r => r.distance));
-    return commonDistances.filter(d => distances.has(d));
-  }, [allBest]);
-
-  const strokeOptions: Option[] = [
-    { value: "", label: "All Strokes" },
-    { value: "free", label: "Freestyle" },
-    { value: "back", label: "Backstroke" },
-    { value: "breast", label: "Breaststroke" },
-    { value: "fly", label: "Butterfly" },
-    { value: "im", label: "IM" },
-  ];
-
   return (
     <>
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom duration-500">
@@ -204,105 +176,33 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
               </p>
             </div>
           </div>
-          {canManageResults && (
+          <div className="flex items-center gap-3">
+            {/* Predictions Toggle */}
             <button
-              onClick={() => setAddEditOpen(true)}
-              className="group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/30 ring-2 ring-cyan-500/50 flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Add Result
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Filters & Sort */}
-      <div className="bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-4 shadow-lg hover:shadow-xl transition-all duration-300">
-        {/* Stroke Tabs */}
-        <div className="mb-4 pb-4 border-b border-slate-700/50">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-linear-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-cyan-500/25">
-              <Filter className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-slate-100">Filter by Stroke</h3>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedStroke("all")}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                selectedStroke === "all"
-                  ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md"
-                  : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+              onClick={() => setShowPredictions(!showPredictions)}
+              className={`group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 ${
+                showPredictions
+                  ? 'bg-linear-to-r from-purple-500 to-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-500/50'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-100 border border-slate-700/50'
               }`}
             >
-              All Strokes
+              <Sparkles size={16} />
+              {showPredictions ? 'Hide' : 'Show'} Predictions
             </button>
-            {availableStrokes.map(stroke => (
+            {canManageResults && (
               <button
-                key={stroke}
-                onClick={() => setSelectedStroke(stroke)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  selectedStroke === stroke
-                    ? "bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md"
-                    : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
-                }`}
+                onClick={() => setAddEditOpen(true)}
+                className="group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 bg-linear-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/30 ring-2 ring-cyan-500/50 flex items-center gap-2"
               >
-                {strokeOptions.find(s => s.value === stroke)?.label || stroke}
+                <Plus size={16} />
+                Add Result
               </button>
-            ))}
+            )}
           </div>
         </div>
-
-        {/* Distance Quick Filters */}
-        {availableDistances.length > 0 && (
-          <div className="mb-4 pb-4 border-b border-slate-700/50">
-            <h4 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Quick Distance Filter</h4>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilters(f => ({ ...f, distance: undefined }))}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  !filters.distance
-                    ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30"
-                    : "bg-slate-800/30 text-slate-500 hover:text-slate-400"
-                }`}
-              >
-                All
-              </button>
-              {availableDistances.map(distance => (
-                <button
-                  key={distance}
-                  onClick={() => setFilters(f => ({ ...f, distance }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filters.distance === distance
-                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30"
-                      : "bg-slate-800/30 text-slate-500 hover:text-slate-400"
-                  }`}
-                >
-                  {distance}m
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {hasActiveFilters && (
-          <div className="mt-3 flex justify-end">
-            <button 
-              className="group px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 hover:scale-105 active:scale-95 bg-background-tertiary/80 text-text-secondary hover:bg-background-secondary hover:text-text-primary hover:shadow-sm border border-border/30 flex items-center gap-2"
-              onClick={() => {
-                setFilters({});
-                setSelectedStroke("all");
-              }}
-            >
-              <RotateCcw size={14} />
-              Clear All Filters
-            </button>
-          </div>
-        )}
       </div>
+
+
 
       {/* Error State */}
       {err && (
@@ -348,19 +248,8 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
           </div>
           <h3 className="text-xl font-bold text-slate-100 mb-3">No Best Times Found</h3>
           <p className="text-slate-400 mb-6 max-w-md mx-auto">
-            {hasActiveFilters
-              ? "Try adjusting your filters to see more results."
-              : "No personal records have been recorded yet."}
+            No personal records have been recorded yet.
           </p>
-          {hasActiveFilters && (
-            <button 
-              className="px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-medium hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 transition-all flex items-center gap-2 mx-auto"
-              onClick={() => setFilters({})}
-            >
-              <RotateCcw size={16} />
-              Clear Filters
-            </button>
-          )}
         </div>
       )}
 
@@ -369,14 +258,14 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
         <div className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
           <GroupedBestTimesView
             bestTimes={sorted}
-            sortBy={sortBy}
             canManageResults={canManageResults}
             onCardPress={onCardPress}
             onEditResult={onEditResult}
-            selectedStandardsSetId={null}
             swimmerDateOfBirth={swimmer?.date_of_birth}
             swimmerSex={swimmer?.sex}
-            hasTimeStandards={hasTimeStandards}
+            predictions={predictions}
+            predictionsLoading={predictionsLoading}
+            showPredictions={showPredictions}
           />
         </div>
       )}

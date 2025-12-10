@@ -70,7 +70,8 @@ export default function Modal({
   }, [isOpen])
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (closeOnBackdrop && e.target === e.currentTarget) {
+    // Only close if click is directly on backdrop, not bubbled from content
+    if (closeOnBackdrop && e.target === e.currentTarget && !e.defaultPrevented) {
       onClose()
     }
   }
@@ -104,7 +105,11 @@ export default function Modal({
             ? 'scale-100 opacity-100 translate-y-0'
             : 'scale-95 opacity-0 translate-y-4'
         }`}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Subtle gradient glow */}
         <div className="absolute -inset-px bg-linear-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none -z-10" />
