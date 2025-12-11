@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 from datetime import datetime, timedelta
 from collections import defaultdict
 import statistics
+import re
 
 from app.infrastructure.database import get_supabase_client
 from app.middleware.auth import get_current_user_id
@@ -1389,5 +1390,65 @@ async def compare_swimmers(
         logger.error(f"Error comparing swimmers: {str(e)}")
         log_error(e, context="compare_swimmers", squad_id=squad_id)
         raise HTTPException(status_code=500, detail=f"Failed to compare swimmers: {str(e)}")
+
+
+@router.get("/{squad_id}/benchmarks")
+async def get_squad_benchmarks(
+    squad_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get best times for all squad members grouped by event.
+    Returns benchmarks in format: { "eventKey": [{ swimmer_id, time_seconds, performed_on }, ...] }
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        logger.info(f"Fetching benchmarks for squad {squad_id}")
+        
+        # Get squad members (squad_id is on swimmers table)
+        swimmers_response = supabase.table('swimmers')\
+            .select('id, first_name, last_name')\
+            .eq('squad_id', squad_id)\
+            .execute()
+        
+        if not swimmers_response.data:
+            logger.info(f"No swimmers found for squad {squad_id}")
+            return {}
+        
+        swimmer_ids = [s['id'] for s in swimmers_response.data]
+        
+        logger.info(f"Found {len(swimmer_ids)} swimmers in squad {squad_id}")
+        
+        # Call PostgreSQL function to get benchmarks efficiently
+        # This does all the aggregation on the database server
+        rpc_response = supabase.rpc('get_squad_benchmarks', {'p_squad_id': squad_id}).execute()
+        
+        if not rpc_response.data:
+            logger.info(f"No benchmarks found for squad {squad_id}")
+            return {}
+        
+        logger.info(f"Retrieved {len(rpc_response.data)} benchmark entries from database")
+        
+        # Group results by event key
+        final_benchmarks: Dict[str, List[Dict]] = defaultdict(list)
+        
+        for row in rpc_response.data:
+            event_key = row['event_key']
+            final_benchmarks[event_key].append({
+                'swimmer_id': row['swimmer_id'],
+                'time_seconds': row['time_seconds'],
+                'performed_on': row['performed_on']
+            })
+        
+        logger.info(f"Generated benchmarks for {len(final_benchmarks)} unique events")
+        
+        return dict(final_benchmarks)
+        
+    except Exception as e:
+        logger.error(f"Error fetching squad benchmarks: {str(e)}")
+        log_error(e, context="get_squad_benchmarks", squad_id=squad_id)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch squad benchmarks: {str(e)}")
+
 
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getSwimmerBestTimes, type BestTimeResult } from '@/services/workoutResultService';
+import { type BestTimeResult } from '@/services/workoutResultService';
+import { useSquadQualifiersOptimized } from '@/hooks/useSquadQualifiers';
 import { StandardsSelector } from '@/components/swimmers/timeStandards';
 import { calculateSwimmerAge, mapGenderToStandards, timeStringToSeconds, getStandardsForEvent } from '@/services/swimmerStandards';
 import { formatTime } from '@/utils/timeUtils';
@@ -19,17 +20,52 @@ type Props = {
 };
 
 export default function SquadQualifiersTab({ squadId }: Props) {
-  const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
-  const [bestTimesMap, setBestTimesMap] = useState<Map<string, BestTimeResult[]>>(new Map());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // OPTIMIZED: Use single query instead of N+1 queries
+  const { data: qualifiersData, isLoading: loading, error: queryError } = useSquadQualifiersOptimized(squadId);
+  
   const [selectedStandardsSetId, setSelectedStandardsSetId] = useState<string | null>(null);
   const [poolType, setPoolType] = useState<'SCM' | 'LCM'>('SCM');
   const [standardsMap, setStandardsMap] = useState<Map<string, number>>(new Map());
 
-  useEffect(() => {
-    loadSwimmersAndTimes();
-  }, [squadId]);
+  const error = queryError ? String(queryError) : '';
+  
+  // Transform API data to component format
+  const swimmers: Swimmer[] = useMemo(() => {
+    if (!qualifiersData?.swimmers) return [];
+    return qualifiersData.swimmers.map(s => ({
+      id: s.swimmer_id,
+      first_name: s.first_name,
+      last_name: s.last_name,
+      date_of_birth: s.date_of_birth,
+      sex: s.sex,
+    }));
+  }, [qualifiersData]);
+
+  const bestTimesMap = useMemo(() => {
+    if (!qualifiersData?.swimmers) return new Map<string, BestTimeResult[]>();
+    
+    const map = new Map<string, BestTimeResult[]>();
+    qualifiersData.swimmers.forEach(swimmer => {
+      const bestTimes: BestTimeResult[] = swimmer.best_times.map(bt => ({
+        id: "test",
+        distance: bt.distance,
+        stroke: bt.stroke,
+        activity: bt.activity,
+        equipment: bt.equipment,
+        resultUnits: bt.result_units,
+        timeSeconds: bt.time_seconds,
+        performedOn: bt.performed_on,
+        attemptsCount: 1, // Not used in this component
+        recentTrend: null, // Not used in this component,
+        eventKey: `${bt.distance}M_${bt.stroke}_${bt.activity}_${bt.result_units}_${bt.equipment}`,
+        units: bt.result_units,
+        timeResult: "", // Alias for clarity
+        numberOfResults: 1, // Not used in this component
+      }));
+      map.set(swimmer.swimmer_id, bestTimes);
+    });
+    return map;
+  }, [qualifiersData]);
 
   useEffect(() => {
     if (selectedStandardsSetId && swimmers.length > 0) {
@@ -117,42 +153,6 @@ export default function SquadQualifiersTab({ squadId }: Props) {
     const key = `${distance}-${stroke}-${poolType}-${age}-${gender}`;
     return standardsMap.get(key) ?? null;
   }, [standardsMap]);
-
-  const loadSwimmersAndTimes = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const { data: swimmerData, error: swimmerError } = await supabase
-        .from('swimmers')
-        .select('id, first_name, last_name, date_of_birth, sex')
-        .eq('squad_id', squadId)
-        .order('last_name', { ascending: true });
-
-      if (swimmerError) throw swimmerError;
-      if (!swimmerData || swimmerData.length === 0) {
-        setSwimmers([]);
-        setLoading(false);
-        return;
-      }
-
-      setSwimmers(swimmerData);
-
-      const timesPromises = swimmerData.map(s => getSwimmerBestTimes(s.id));
-      const allTimes = await Promise.all(timesPromises);
-
-      const timesMap = new Map<string, BestTimeResult[]>();
-      swimmerData.forEach((swimmer, idx) => {
-        timesMap.set(swimmer.id, allTimes[idx]);
-      });
-
-      setBestTimesMap(timesMap);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load qualifiers data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const swimmerQualifications = useMemo(() => {
     if (!selectedStandardsSetId) return [];
@@ -247,8 +247,9 @@ export default function SquadQualifiersTab({ squadId }: Props) {
     );
   }
 
-  const totalQualified = swimmerQualifications.reduce((sum, sq) => sum + sq.qualifiedCount, 0);
-  const totalClose = swimmerQualifications.reduce((sum, sq) => sum + sq.closeCount, 0);
+
+  const totalQualified = swimmerQualifications.filter(sq => sq.qualifiedCount > 0).length;
+  const totalClose = swimmerQualifications.filter(sq => sq.closeCount > 0).length;
 
   return (
     <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 bg-linear-to-br from-slate-950/50 via-transparent to-slate-950/50">

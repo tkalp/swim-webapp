@@ -27,6 +27,8 @@ export const COMMON_EVENTS: EventKey[] = [
   { distance: 100, stroke: 'free', poolType: 'SCM' },
   { distance: 200, stroke: 'free', poolType: 'SCM' },
   { distance: 400, stroke: 'free', poolType: 'SCM' },
+  { distance: 800, stroke: 'free', poolType: 'SCM' },
+  { distance: 1500, stroke: 'free', poolType: 'SCM' },
   { distance: 50, stroke: 'back', poolType: 'SCM' },
   { distance: 100, stroke: 'back', poolType: 'SCM' },
   { distance: 200, stroke: 'back', poolType: 'SCM' },
@@ -36,6 +38,7 @@ export const COMMON_EVENTS: EventKey[] = [
   { distance: 50, stroke: 'fly', poolType: 'SCM' },
   { distance: 100, stroke: 'fly', poolType: 'SCM' },
   { distance: 200, stroke: 'fly', poolType: 'SCM' },
+  { distance: 100, stroke: 'im', poolType: 'SCM' },
   { distance: 200, stroke: 'im', poolType: 'SCM' },
   { distance: 400, stroke: 'im', poolType: 'SCM' },
 ];

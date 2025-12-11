@@ -10,14 +10,17 @@ import GroupedBestTimesView from '@/components/swimmers/bestTimes/GroupedBestTim
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
 import AddEditWorkoutResultModal from '@/components/swimmers/bestTimes/AddEditWorkoutResultModal';
 import { supabase } from '@/lib/supabase';
-import { Activity, TrendingUp, Plus, Sparkles } from "lucide-react";
+import { Activity, TrendingUp, Plus, Sparkles, HelpCircle, X, Users } from "lucide-react";
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import Modal from '@/components/ui/Modal';
+import { useSquadBenchmarks } from '@/hooks/useSquadBenchmarks';
 
 type Swimmer = {
   first_name?: string;
   last_name?: string;
   date_of_birth?: string;
   sex?: string;
+  squad_id?: string;
 };
 
 export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: { swimmerId: string; swimmer?: Swimmer; canManageResults?: boolean }) {
@@ -33,6 +36,22 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
   const [addEditOpen, setAddEditOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<BestTimeResult | null>(null);
   const [showPredictions, setShowPredictions] = useState(false);
+  const [showPredictionsGuide, setShowPredictionsGuide] = useState(false);
+  const [showSquadRanks, setShowSquadRanks] = useState(false);
+  
+  // Lazy load squad benchmarks only when enabled
+  useEffect(() => {
+    console.log('==== BestTimesTab Debug ====');
+    console.log('Swimmer ID:', swimmerId);
+    console.log('Swimmer object:', swimmer);
+    console.log('Squad ID from swimmer:', swimmer?.squad_id);
+    console.log('Show squad ranks:', showSquadRanks);
+  }, [swimmerId, swimmer, showSquadRanks]);
+  
+  const { data: squadBenchmarks = {}, isLoading: squadBenchmarksLoading } = useSquadBenchmarks(
+    swimmer?.squad_id,
+    showSquadRanks
+  );
 
   const refreshData = () => {
     setLoading(true);
@@ -92,7 +111,34 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swimmerId]);
+
+  // Keyboard shortcuts for toggling predictions (P key) and squad ranks (R key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input/textarea and no modifiers
+      if (
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        if (e.key.toLowerCase() === 'p') {
+          e.preventDefault();
+          setShowPredictions(prev => !prev);
+        } else if (e.key.toLowerCase() === 'r') {
+          e.preventDefault();
+          setShowSquadRanks(prev => !prev);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const sorted = useMemo(() => {
     const copy = [...allBest];
@@ -176,19 +222,42 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Predictions Toggle */}
             <button
               onClick={() => setShowPredictions(!showPredictions)}
-              className={`group px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 ${
+              className={`group px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
                 showPredictions
-                  ? 'bg-linear-to-r from-purple-500 to-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-500/50'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-100 border border-slate-700/50'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30'
+                  : 'bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-700/60 hover:text-slate-300'
               }`}
             >
-              <Sparkles size={16} />
-              {showPredictions ? 'Hide' : 'Show'} Predictions
+              <Sparkles size={14} />
+              <span className="hidden sm:inline">{showPredictions ? 'Hide' : 'Show'}</span>
+              <kbd className="hidden sm:inline-block px-1 py-0.5 text-[10px] bg-slate-900/50 rounded border border-slate-700/40 font-mono">
+                P
+              </kbd>
             </button>
+            
+            {/* Squad Ranks Toggle */}
+            {swimmer?.squad_id && (
+              <button
+                onClick={() => setShowSquadRanks(!showSquadRanks)}
+                disabled={squadBenchmarksLoading}
+                className={`group px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  showSquadRanks
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30'
+                    : 'bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-700/60 hover:text-slate-300'
+                } ${squadBenchmarksLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <Users size={14} />
+                <span className="hidden sm:inline">{squadBenchmarksLoading ? 'Loading...' : showSquadRanks ? 'Hide' : 'Show'}</span>
+                <kbd className="hidden sm:inline-block px-1 py-0.5 text-[10px] bg-slate-900/50 rounded border border-slate-700/40 font-mono">
+                  R
+                </kbd>
+              </button>
+            )}
+            
             {canManageResults && (
               <button
                 onClick={() => setAddEditOpen(true)}
@@ -266,6 +335,12 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
             predictions={predictions}
             predictionsLoading={predictionsLoading}
             showPredictions={showPredictions}
+            squadBenchmarks={squadBenchmarks}
+            swimmerId={swimmerId}
+            showSquadRanks={showSquadRanks}
+            onToggleSquadRanks={() => setShowSquadRanks(prev => !prev)}
+            squadBenchmarksLoading={squadBenchmarksLoading}
+            onShowPredictionsGuide={() => setShowPredictionsGuide(true)}
           />
         </div>
       )}
@@ -306,6 +381,115 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
         handleModalClose();
       }}
     />
+
+    {/* Predictions Guide Modal */}
+    <Modal
+      isOpen={showPredictionsGuide}
+      onClose={() => setShowPredictionsGuide(false)}
+      title="Understanding AI Predictions"
+      size="lg"
+    >
+      <div className="space-y-4">
+        {/* Main explanation */}
+        <div className="bg-linear-to-r from-cyan-500/10 to-blue-500/10 rounded-lg p-4 border border-cyan-500/20">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+              <Sparkles size={20} className="text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-100 mb-2">What does this predict?</h3>
+              <p className="text-sm text-slate-300 leading-relaxed mb-3">
+                AI predictions estimate what time a swimmer could achieve after <strong className="text-cyan-400">3 more training sessions</strong>, 
+                based on their recent performance trend.
+              </p>
+              <p className="text-sm text-slate-400">
+                Think of it as a realistic goal based on how they've been improving lately.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Simple example */}
+        <div className="bg-slate-800/40 rounded-lg p-4 border border-slate-700/40">
+          <h4 className="font-semibold text-slate-100 mb-3">Example</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
+              <span className="text-slate-400">Recent 100m Free times:</span>
+              <span className="font-mono text-slate-300">62.5s → 61.2s → 60.5s</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-slate-400">Current best:</span>
+              <span className="text-cyan-400 font-semibold">60.5s</span>
+            </div>
+            <div className="flex items-center justify-between py-2 bg-purple-500/10 -mx-4 px-4 rounded">
+              <span className="text-slate-200 font-medium">Predicted next time:</span>
+              <span className="text-purple-400 font-bold text-lg">59.3s</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Key factors */}
+        <div className="bg-slate-800/40 rounded-lg p-4 border border-slate-700/40">
+          <h4 className="font-semibold text-slate-100 mb-3">What affects the prediction?</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-start gap-2">
+              <span className="text-cyan-400 mt-0.5">•</span>
+              <div>
+                <span className="text-slate-300 font-medium">Recent performance:</span>
+                <span className="text-slate-400 ml-1">How fast they're improving</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-cyan-400 mt-0.5">•</span>
+              <div>
+                <span className="text-slate-300 font-medium">Training attendance:</span>
+                <span className="text-slate-400 ml-1">Better attendance = better predictions</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-cyan-400 mt-0.5">•</span>
+              <div>
+                <span className="text-slate-300 font-medium">Consistency:</span>
+                <span className="text-slate-400 ml-1">How steady their times have been</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-cyan-400 mt-0.5">•</span>
+              <div>
+                <span className="text-slate-300 font-medium">Squad comparison:</span>
+                <span className="text-slate-400 ml-1">How you're improving vs. training partners</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Confidence explained simply */}
+        <div className="bg-slate-800/40 rounded-lg p-4 border border-slate-700/40">
+          <h4 className="font-semibold text-slate-100 mb-3">Confidence Level</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-16 px-2 py-1 bg-purple-500/20 rounded text-purple-400 text-xs font-semibold text-center">HIGH</div>
+              <span className="text-slate-400">Lots of data, clear improvement trend</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-16 px-2 py-1 bg-blue-500/20 rounded text-blue-400 text-xs font-semibold text-center">MEDIUM</div>
+              <span className="text-slate-400">Some data, reasonable prediction</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-16 px-2 py-1 bg-slate-500/20 rounded text-slate-400 text-xs font-semibold text-center">LOW</div>
+              <span className="text-slate-400">Limited data, take with caution</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom note */}
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+          <p className="text-sm text-blue-200">
+            💡 Use predictions to set short-term goals and track if training is working.
+          </p>
+        </div>
+      </div>
+    </Modal>
     </>
   );
 }

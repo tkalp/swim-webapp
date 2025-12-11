@@ -2,11 +2,6 @@ import { useState, lazy, Suspense, useEffect } from 'react';
 import { BarChart3, Trophy, TrendingUp, CalendarCheck, Lock, Target } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-import { 
-  getSquadAttendanceRankings, 
-  type SquadAttendanceData 
-} from '@/services/attendanceService';
-import { hasAttendanceData } from '@/components/squad/attendance/SquadAttendanceTab';
 
 // Lazy load sub-tab components
 const SquadMetricsTab = lazy(() => import('@/components/squad/SquadMetrics'));
@@ -56,62 +51,24 @@ export function OverviewTab({ squadId }: OverviewTabProps) {
     { key: 'attendance', icon: CalendarCheck, label: 'Attendance' },
   ];
 
-  // Check which tabs have data
+  // Setup available tabs based on feature flags
   useEffect(() => {
-    if (!squadId) return;
+    const availableTabs = new Set<OverviewSubTab>();
     
-    let mounted = true;
+    // Always show core tabs - they handle their own empty states
+    availableTabs.add('metrics');
+    availableTabs.add('rankings');
+    availableTabs.add('performance');
+    availableTabs.add('attendance'); // Always show, let component handle empty state
     
-    (async () => {
-      try {
-        const availableTabs = new Set<OverviewSubTab>();
-        
-        // Always show core tabs - they'll handle their own empty states
-        availableTabs.add('metrics');
-        availableTabs.add('rankings');
-        availableTabs.add('performance');
-        
-        // Add qualifiers if feature is enabled
-        if (hasQualifiers) {
-          availableTabs.add('qualifiers');
-        }
-        
-        // Check attendance data (lighter weight check)
-        try {
-          const attendanceData = await getSquadAttendanceRankings(squadId);
-          if (hasAttendanceData(attendanceData)) {
-            availableTabs.add('attendance');
-          }
-        } catch (error) {
-          console.error('Error checking attendance data:', error);
-        }
-        
-        if (!mounted) return;
-        
-        setTabsWithData(availableTabs);
-        
-        // If current active tab doesn't have data, switch to first available tab
-        if (!availableTabs.has(activeSubTab)) {
-          const firstAvailable = Array.from(availableTabs)[0];
-          if (firstAvailable) {
-            setActiveSubTab(firstAvailable);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking tab data:', error);
-        // On error, show all tabs
-        if (mounted) {
-          setTabsWithData(new Set(['metrics', 'rankings', 'performance', 'attendance']));
-        }
-      } finally {
-        if (mounted) setCheckingData(false);
-      }
-    })();
+    // Add qualifiers if feature is enabled
+    if (hasQualifiers) {
+      availableTabs.add('qualifiers');
+    }
     
-    return () => {
-      mounted = false;
-    };
-  }, [squadId, activeSubTab, hasQualifiers]);
+    setTabsWithData(availableTabs);
+    setCheckingData(false);
+  }, [hasQualifiers]);
 
   // Filter visible tabs
   const visibleTabs = SUB_TABS.filter(tab => tabsWithData.has(tab.key));

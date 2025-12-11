@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Search, 
   Users, 
@@ -13,6 +14,8 @@ import {
   Clock
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSquadsForCoach } from '@/services/squadService';
+import { supabase } from '@/lib/supabase';
 
 interface Command {
   id: string;
@@ -20,7 +23,7 @@ interface Command {
   description?: string;
   icon: React.ElementType;
   action: () => void;
-  category: 'navigation' | 'create' | 'recent' | 'search';
+  category: 'navigation' | 'create' | 'recent' | 'search' | 'swimmers';
   keywords?: string[];
 }
 
@@ -35,6 +38,42 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+
+  // Fetch coach's squads
+  const { data: squads = [] } = useQuery({
+    queryKey: ['squads', user?.id],
+    queryFn: () => user?.id ? getSquadsForCoach(user.id) : Promise.resolve([]),
+    enabled: !!user?.id && isOpen,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch all swimmers from all squads
+  const { data: allSwimmers = [] } = useQuery({
+    queryKey: ['all-swimmers', squads.map((s: any) => s.id)],
+    queryFn: async () => {
+      if (squads.length === 0) return [];
+      try {
+        const swimmerPromises = squads.map(async (squad: any) => {
+          const { data, error } = await supabase
+            .from('swimmers')
+            .select('id, first_name, last_name, date_of_birth')
+            .eq('squad_id', squad.id);
+          
+          if (error) throw error;
+          return data || [];
+        });
+        const results = await Promise.all(swimmerPromises);
+        return results.flat();
+      } catch (error) {
+        console.error('Failed to fetch swimmers:', error);
+        return [];
+      }
+    },
+    enabled: squads.length > 0 && isOpen,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   const commands: Command[] = useMemo(() => [
     // Navigation
@@ -121,16 +160,45 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     },
   ], [navigate, onClose]);
 
+  // Generate swimmer commands dynamically
+  const swimmerCommands: Command[] = useMemo(() => 
+    allSwimmers.map((swimmer: any) => ({
+      id: `swimmer-${swimmer.id}`,
+      label: `${swimmer.first_name} ${swimmer.last_name}`,
+      description: swimmer.date_of_birth 
+        ? `Born ${new Date(swimmer.date_of_birth).getFullYear()}`
+        : undefined,
+      icon: User,
+      category: 'swimmers' as const,
+      action: () => {
+        navigate(`/swimmers/${swimmer.id}`);
+        onClose();
+      },
+      keywords: [
+        swimmer.first_name?.toLowerCase() || '',
+        swimmer.last_name?.toLowerCase() || '',
+        `${swimmer.first_name} ${swimmer.last_name}`.toLowerCase(),
+      ]
+    })),
+    [allSwimmers, navigate, onClose]
+  );
+
+  // Combine all commands
+  const allCommands = useMemo(() => 
+    [...commands, ...swimmerCommands],
+    [commands, swimmerCommands]
+  );
+
   const filteredCommands = useMemo(() => {
-    if (!search) return commands;
+    if (!search) return allCommands;
     
     const searchLower = search.toLowerCase();
-    return commands.filter(cmd => 
+    return allCommands.filter(cmd => 
       cmd.label.toLowerCase().includes(searchLower) ||
       cmd.description?.toLowerCase().includes(searchLower) ||
       cmd.keywords?.some(k => k.includes(searchLower))
     );
-  }, [search, commands]);
+  }, [search, allCommands]);
 
   useEffect(() => {
     if (isOpen) {
@@ -178,7 +246,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const categoryLabels = {
     navigation: 'Navigation',
     create: 'Create',
-    recent: 'Recent'
+    recent: 'Recent',
+    swimmers: 'Swimmers'
   };
 
   return (
@@ -200,7 +269,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search commands or type to filter..."
+              placeholder="Search commands, swimmers, or type to filter..."
               className="flex-1 bg-transparent border-none outline-none text-slate-100 placeholder:text-slate-500 text-base"
             />
             <kbd className="hidden sm:inline-block px-2 py-1 text-xs text-slate-500 bg-slate-800/60 rounded border border-slate-700/40 font-mono">

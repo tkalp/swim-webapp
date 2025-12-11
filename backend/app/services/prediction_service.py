@@ -26,6 +26,15 @@ class PredictionAnalysis:
 
 
 @dataclass
+class WorkoutContext:
+    """Workout context data for prediction enhancement."""
+    total_meters: float
+    effort_level: Optional[int]  # 1-10 scale
+    session_date: str
+    workout_type: str  # 'sprint', 'endurance', 'technique', 'mixed'
+
+
+@dataclass
 class ImprovementPrediction:
     """Prediction for a single swimmer's improvement in an event."""
     event: str
@@ -864,7 +873,9 @@ class PredictionService:
         current_best: float,
         all_times: List[float],
         attempts_until_target: int = 3,
-        attendance_rate: Optional[float] = None
+        attendance_rate: Optional[float] = None,
+        squad_improvement_rate: Optional[float] = None,
+        recent_workouts: Optional[List[WorkoutContext]] = None
     ) -> ImprovementPrediction:
         """
         Predict improvement for a single swimmer in a specific event.
@@ -875,6 +886,8 @@ class PredictionService:
             all_times: All historical times in chronological order (oldest first)
             attempts_until_target: Number of future attempts to predict (default 3)
             attendance_rate: Optional attendance percentage (0-100) for last 30 days
+            squad_improvement_rate: Optional squad average improvement rate per attempt
+            recent_workouts: Optional list of recent workout contexts (last 30 days)
             
         Returns:
             ImprovementPrediction with predicted time and confidence
@@ -905,6 +918,21 @@ class PredictionService:
             attendance_normalized = attendance_rate / 100.0
             factors['attendance_rate'] = round(attendance_rate, 1)
             factors['attendance_factor'] = round(attendance_normalized, 3)
+        
+        # Add squad comparison factor if available
+        if squad_improvement_rate is not None:
+            factors['squad_avg_improvement_rate'] = round(squad_improvement_rate, 4)
+            # Compare swimmer's rate to squad average
+            # Negative rate = getting faster (improvement)
+            # If swimmer improving faster than squad, boost confidence
+            # If swimmer improving slower, reduce confidence
+            if improvement_rate < squad_improvement_rate:  # Swimmer improving faster
+                squad_comparison = 1.0  # Positive indicator
+            elif improvement_rate > squad_improvement_rate:  # Swimmer improving slower
+                squad_comparison = 0.5  # Neutral to negative indicator
+            else:
+                squad_comparison = 0.75  # Average
+            factors['squad_comparison_score'] = round(squad_comparison, 3)
         
         # Calculate improvement rate
         improvement_rate = PredictionService.calculate_improvement_per_attempt(all_times)
@@ -1037,7 +1065,7 @@ class PredictionService:
         if 'pb_recency' in factors:
             confidence_score += factors['pb_recency'] * 10
         
-        # Attendance factor (0-15 points) - new factor for training consistency
+        # Attendance factor (0-15 points) - training consistency
         if attendance_rate is not None:
             # High attendance (>80%) gives full 15 points
             # Medium attendance (60-80%) gives 10 points
@@ -1050,10 +1078,38 @@ class PredictionService:
                 # Scale from 0 at 0% to 10 at 60%
                 confidence_score += (attendance_rate / 60.0) * 10
         
-        # Determine confidence level
-        if confidence_score >= 70:
+        # Squad comparison factor (0-10 points) - performance relative to training partners
+        if squad_improvement_rate is not None and 'squad_comparison_score' in factors:
+            confidence_score += factors['squad_comparison_score'] * 10
+        
+        # Workout alignment factor (0-15 points) - training appropriateness for event
+        if recent_workouts is not None and len(recent_workouts) > 0:
+            alignment_score = PredictionService._calculate_training_alignment(
+                event=event,
+                workouts=recent_workouts
+            )
+            factors['training_alignment'] = round(alignment_score, 3)
+            confidence_score += alignment_score * 15
+            
+            # Add workout volume factor
+            total_training_meters = sum(w.total_meters for w in recent_workouts)
+            factors['recent_training_volume_meters'] = round(total_training_meters, 0)
+            
+            # Add workout intensity factor
+            avg_effort = statistics.mean([
+                w.effort_level for w in recent_workouts 
+                if w.effort_level is not None
+            ]) if any(w.effort_level is not None for w in recent_workouts) else None
+            
+            if avg_effort is not None:
+                factors['avg_workout_effort'] = round(avg_effort, 1)
+        
+        # Determine confidence level (adjusted max score with workout data: 110)
+        max_possible_score = 110 if recent_workouts else 95
+        
+        if confidence_score >= (max_possible_score * 0.64):  # ~70 or 70+ with workouts
             confidence_level = "high"
-        elif confidence_score >= 40:
+        elif confidence_score >= (max_possible_score * 0.37):  # ~40 or 40+ with workouts
             confidence_level = "medium"
         else:
             confidence_level = "low"
@@ -1066,3 +1122,86 @@ class PredictionService:
             improvement_expected=round(improvement_expected, 2),
             factors=factors
         )
+    
+    @staticmethod
+    def _calculate_training_alignment(
+        event: str,
+        workouts: List[WorkoutContext]
+    ) -> float:
+        """
+        Calculate how well recent workouts align with event requirements.
+        
+        Returns alignment score (0-1) where 1.0 means perfect alignment.
+        
+        Args:
+            event: Event name (e.g., "100m Free Swim SCM")
+            workouts: List of recent workout contexts
+            
+        Returns:
+            Alignment score 0-1
+        """
+        if not workouts:
+            return 0.5  # Neutral score
+        
+        # Parse event distance
+        try:
+            parts = event.lower().split()
+            distance = int(parts[0].replace('m', ''))
+        except (ValueError, IndexError):
+            return 0.5  # Can't parse, return neutral
+        
+        # Determine target workout profile based on event distance
+        if distance < 100:
+            target_profile = {'sprint': 0.6, 'mixed': 0.3, 'technique': 0.1, 'endurance': 0.0}
+            target_effort_min = 7
+            target_effort_max = 10
+        elif distance <= 200:
+            target_profile = {'sprint': 0.5, 'mixed': 0.3, 'technique': 0.1, 'endurance': 0.1}
+            target_effort_min = 6
+            target_effort_max = 9
+        elif distance <= 400:
+            target_profile = {'mixed': 0.5, 'endurance': 0.3, 'sprint': 0.1, 'technique': 0.1}
+            target_effort_min = 5
+            target_effort_max = 8
+        else:  # 800m+
+            target_profile = {'endurance': 0.6, 'mixed': 0.3, 'technique': 0.1, 'sprint': 0.0}
+            target_effort_min = 3
+            target_effort_max = 6
+        
+        # Calculate actual workout distribution
+        workout_counts = {'sprint': 0, 'endurance': 0, 'technique': 0, 'mixed': 0}
+        effort_scores = []
+        
+        for workout in workouts:
+            workout_type = workout.workout_type.lower()
+            if workout_type in workout_counts:
+                workout_counts[workout_type] += 1
+            
+            # Score effort level alignment
+            if workout.effort_level is not None:
+                if target_effort_min <= workout.effort_level <= target_effort_max:
+                    effort_scores.append(1.0)  # Perfect alignment
+                elif target_effort_min - 2 <= workout.effort_level <= target_effort_max + 2:
+                    effort_scores.append(0.7)  # Acceptable alignment
+                else:
+                    effort_scores.append(0.3)  # Poor alignment
+        
+        # Calculate workout type alignment score
+        total_workouts = len(workouts)
+        actual_profile = {
+            k: v / total_workouts for k, v in workout_counts.items()
+        }
+        
+        # Calculate profile similarity (0-1)
+        profile_score = 1.0 - sum(
+            abs(target_profile.get(k, 0) - actual_profile.get(k, 0))
+            for k in set(target_profile.keys()) | set(actual_profile.keys())
+        ) / 2.0
+        
+        # Calculate effort alignment score (0-1)
+        effort_score = statistics.mean(effort_scores) if effort_scores else 0.5
+        
+        # Weighted combination: 60% workout type, 40% effort level
+        alignment_score = (profile_score * 0.6) + (effort_score * 0.4)
+        
+        return max(0.0, min(1.0, alignment_score))

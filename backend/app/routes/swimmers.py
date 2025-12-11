@@ -714,6 +714,41 @@ async def get_swimmer_predictions(
                     logger.warning(f"Failed to convert time_result '{time_result}' for event {event_key}: {e}")
                     continue
         
+        # Fetch squad data for comparison if swimmer has squad_id
+        squad_improvement_rates = {}
+        if squad_id:
+            try:
+                # Get all swimmers in the squad
+                squad_swimmers_response = supabase.table('swimmers').select('id').eq('squad_id', squad_id).execute()
+                
+                if squad_swimmers_response.data and len(squad_swimmers_response.data) > 1:
+                    squad_member_ids = [s['id'] for s in squad_swimmers_response.data]
+                    
+                    # Get workout results for all squad members
+                    squad_results_response = supabase.table('workout_result').select(
+                        'swimmer_id, distance, stroke, activity, units, result_units, time_result, performed_on'
+                    ).in_('swimmer_id', squad_member_ids).gte('performed_on', start_date).eq('activity', 'swim').order('performed_on', desc=False).execute()
+                    
+                    # Group by event and calculate squad average improvement rate
+                    squad_events = defaultdict(lambda: defaultdict(list))
+                    for result in squad_results_response.data:
+                        event_key = f"{result['distance']}_{result['stroke']}_{result['activity']}_{result.get('result_units', 'SCM') or 'SCM'}"
+                        time_seconds = interval_to_seconds(result['time_result'])
+                        squad_events[event_key][result['swimmer_id']].append(time_seconds)
+                    
+                    # Calculate average improvement rate per event
+                    for event_key, swimmers_times in squad_events.items():
+                        rates = []
+                        for swimmer_times in swimmers_times.values():
+                            if len(swimmer_times) >= 2:
+                                rate = PredictionService.calculate_improvement_per_attempt(swimmer_times)
+                                rates.append(rate)
+                        if rates:
+                            squad_improvement_rates[event_key] = statistics.mean(rates)
+            except Exception as squad_error:
+                logger.warning(f"Failed to fetch squad comparison data: {squad_error}")
+                # Continue without squad data
+        
         # Generate predictions for each event with sufficient data
         predictions = []
         
@@ -729,13 +764,83 @@ async def get_swimmer_predictions(
             current_best = min(all_times)
             event_display = sorted_results[0]['event_display']
             
+            # Get squad improvement rate for this event if available
+            squad_rate = squad_improvement_rates.get(event_key)
+            
+            # Fetch recent workouts for this swimmer (last 30 days)
+            recent_workouts = []
+            try:
+                from app.services.prediction_service import WorkoutContext
+                
+                # Get sessions where this swimmer attended
+                attendance_response = supabase.table('training_attendance').select(
+                    'training_session_id, status'
+                ).eq('swimmer_id', swimmer_id).execute()
+                
+                attended_session_ids = [
+                    a['training_session_id'] for a in attendance_response.data 
+                    if a.get('training_session_id') and a.get('status') == 'present'
+                ] if attendance_response.data else []
+                
+                # Get training sessions with workouts for sessions the swimmer attended
+                if attended_session_ids:
+                    workouts_response = supabase.table('training_sessions').select(
+                        'id, start_date, workout_id, workout_template(total_meters, effort_level, json_description)'
+                    ).in_('id', attended_session_ids).gte(
+                        'start_date', thirty_days_ago
+                    ).execute()
+                else:
+                    workouts_response = None
+                
+                if workouts_response and workouts_response.data:
+                    for session in workouts_response.data:
+                        workout_template = session.get('workout_template')
+                        if workout_template:
+                            # Categorize workout type
+                            effort_level = workout_template.get('effort_level')
+                            json_desc = workout_template.get('json_description', {})
+                            
+                            # Simple categorization
+                            if effort_level is not None:
+                                if effort_level >= 7:
+                                    workout_type = 'sprint'
+                                elif effort_level <= 4:
+                                    workout_type = 'endurance'
+                                elif effort_level in [5, 6]:
+                                    # Check for technique focus
+                                    if isinstance(json_desc, dict):
+                                        activity_breakdown = json_desc.get('activity_breakdown', {})
+                                        drill_pct = activity_breakdown.get('Drill', 0)
+                                        if drill_pct > 30:
+                                            workout_type = 'technique'
+                                        else:
+                                            workout_type = 'mixed'
+                                    else:
+                                        workout_type = 'mixed'
+                                else:
+                                    workout_type = 'mixed'
+                            else:
+                                workout_type = 'mixed'
+                            
+                            recent_workouts.append(WorkoutContext(
+                                total_meters=workout_template.get('total_meters', 0),
+                                effort_level=effort_level,
+                                session_date=session['start_date'],
+                                workout_type=workout_type
+                            ))
+            except Exception as workout_error:
+                logger.warning(f"Failed to fetch workout context: {workout_error}")
+                # Continue without workout data
+            
             # Generate prediction
             prediction = PredictionService.predict_improvement(
                 event=event_display,
                 current_best=current_best,
                 all_times=all_times,
                 attempts_until_target=attempts_until_target,
-                attendance_rate=attendance_rate
+                attendance_rate=attendance_rate,
+                squad_improvement_rate=squad_rate,
+                recent_workouts=recent_workouts if recent_workouts else None
             )
             
             predictions.append({

@@ -50,8 +50,10 @@ export function EnhancedPieChart({ data, total, size = 'sm' }: EnhancedPieChartP
     return null;
   };
 
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
   const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, name }: any) => {
-    if (percentage < 8) return null;
+    if (percentage < 1) return null;
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.65;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -79,7 +81,7 @@ export function EnhancedPieChart({ data, total, size = 'sm' }: EnhancedPieChartP
           className="font-medium text-[10px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-opacity duration-300"
           style={{ animation: 'fadeIn 0.5s ease-in 0.1s backwards' }}
         >
-          {name.length > 8 ? name.substring(0, 8) + '...' : name}
+          {name.length > 8 ? capitalize(name).substring(0, 8) + '...' : capitalize(name)}
         </text>
       </g>
     );
@@ -201,33 +203,6 @@ export function EnhancedPieChart({ data, total, size = 'sm' }: EnhancedPieChartP
             <Tooltip content={<CustomTooltip />} />
           </PieChart>
         </ResponsiveContainer>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-col gap-2 min-w-[200px]">
-        {data.map((item, index) => (
-          <div 
-            key={item.name} 
-            className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-slate-800/40 hover:bg-slate-800/70 transition-all cursor-pointer group/item border border-slate-700/30 hover:border-slate-600/50"
-            onMouseEnter={() => setActiveIndex(index)}
-            onMouseLeave={() => setActiveIndex(undefined)}
-          >
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-3 h-3 rounded-full shadow-lg group-hover/item:scale-125 transition-transform" 
-                style={{ 
-                  backgroundColor: item.color,
-                  boxShadow: `0 0 0 3px ${item.color}30`
-                }}
-              />
-              <span className="text-sm font-semibold text-slate-100">{item.name}</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-bold text-slate-300 bg-slate-800/60 px-2 py-1 rounded min-w-[45px] text-center">{item.percentage}%</span>
-              <span className="text-sm font-bold text-slate-100 min-w-[65px] text-right">{item.value.toLocaleString()}m</span>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

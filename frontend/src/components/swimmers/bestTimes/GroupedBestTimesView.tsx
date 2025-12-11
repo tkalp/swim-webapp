@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import type { BestTimeResult, SwimmerPredictionsResponse } from '@/services/workoutResultService';
 import { formatTime } from '@/utils/timeUtils';
-import { Clock, Activity, TrendingDown, TrendingUp, Eye, EyeOff, Info, Sparkles } from "lucide-react";
+import { Clock, Activity, TrendingDown, TrendingUp, Eye, EyeOff, Info, Sparkles, Users, Award, HelpCircle } from "lucide-react";
 import { StandardsCell } from '@/components/swimmers/timeStandards';
 import { calculateSwimmerAge } from '@/services/swimmerStandards';
 
@@ -20,6 +20,49 @@ type StrokeGroup = {
   label: string;
   items: BestTimeResult[];
 };
+
+// Squad Rank Badge Component
+function SquadRankBadge({ rank, total, isLeader }: { rank: number; total: number; isLeader: boolean }) {
+  // Safety check for invalid data
+  if (rank < 1 || rank > total || total < 2) return null;
+  
+  // Calculate percentile (handle edge case where total = 1)
+  const percentile = total > 1 ? Math.round((1 - (rank - 1) / (total - 1)) * 100) : 100;
+  const badgeColor = percentile >= 80 
+    ? 'from-purple-500/15 to-purple-500/5 border-purple-500/30 text-purple-400'
+    : percentile >= 60
+    ? 'from-cyan-500/15 to-cyan-500/5 border-cyan-500/30 text-cyan-400'
+    : percentile >= 40
+    ? 'from-blue-500/15 to-blue-500/5 border-blue-500/30 text-blue-400'
+    : 'from-slate-500/15 to-slate-500/5 border-slate-500/30 text-slate-400';
+
+  return (
+    <div className="group/squad relative inline-block">
+      <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-linear-to-r ${badgeColor} border rounded text-xs font-semibold cursor-help`}>
+        {isLeader && <Award size={10} className="shrink-0" />}
+        <Users size={9} className="shrink-0" />
+        <span>#{rank}</span>
+      </div>
+      
+      {/* Tooltip */}
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-lg shadow-xl opacity-0 invisible group-hover/squad:opacity-100 group-hover/squad:visible transition-all duration-200 z-50 pointer-events-none">
+        <div className="absolute top-full left-1/2 -translate-x-1/2">
+          <div className="border-4 border-transparent border-t-cyan-500/30"></div>
+        </div>
+        <div className="text-xs space-y-1">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Squad Rank:</span>
+            <span className="text-cyan-400 font-bold">#{rank}/{total}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Percentile:</span>
+            <span className="text-cyan-400 font-bold">{percentile}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Prediction Badge Component
 function PredictionBadge({ 
@@ -116,6 +159,30 @@ function PredictionBadge({
                     <span className="text-slate-300 font-medium">{(prediction.factors.recent_form * 100).toFixed(0)}%</span>
                   </div>
                 )}
+                {prediction.factors.training_alignment !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Training Fit:</span>
+                    <span className="text-slate-300 font-medium">{(prediction.factors.training_alignment * 100).toFixed(0)}%</span>
+                  </div>
+                )}
+                {prediction.factors.recent_training_volume_meters !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Volume (30d):</span>
+                    <span className="text-slate-300 font-medium">{(prediction.factors.recent_training_volume_meters / 1000).toFixed(1)}km</span>
+                  </div>
+                )}
+                {prediction.factors.avg_workout_effort !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Avg Effort:</span>
+                    <span className="text-slate-300 font-medium">{prediction.factors.avg_workout_effort}/10</span>
+                  </div>
+                )}
+                {prediction.factors.attendance_rate !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Attendance:</span>
+                    <span className="text-slate-300 font-medium">{prediction.factors.attendance_rate.toFixed(0)}%</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -138,6 +205,12 @@ export default function GroupedBestTimesView({
   predictions,
   predictionsLoading = false,
   showPredictions = false,
+  squadBenchmarks,
+  swimmerId,
+  showSquadRanks = false,
+  onToggleSquadRanks,
+  squadBenchmarksLoading = false,
+  onShowPredictionsGuide,
 }: {
   bestTimes: BestTimeResult[];
   sortBy?: "time" | "event" | "date";
@@ -151,8 +224,16 @@ export default function GroupedBestTimesView({
   predictions?: SwimmerPredictionsResponse | null;
   predictionsLoading?: boolean;
   showPredictions?: boolean;
+  squadBenchmarks?: Record<string, any[]>;
+  swimmerId?: string;
+  showSquadRanks?: boolean;
+  onToggleSquadRanks?: () => void;
+  squadBenchmarksLoading?: boolean;
+  onShowPredictionsGuide?: () => void;
 }) {
   const [showStandards, setShowStandards] = useState(true);
+  
+  const hasSquadData = squadBenchmarks && Object.keys(squadBenchmarks).length > 0;
   
   const swimmerAge = swimmerDateOfBirth ? calculateSwimmerAge(swimmerDateOfBirth) : undefined;
   const hasStandardsEnabled = hasTimeStandards && selectedStandardsSetId && swimmerAge !== undefined && swimmerSex;
@@ -199,6 +280,13 @@ export default function GroupedBestTimesView({
       predictions={predictions}
       predictionsLoading={predictionsLoading}
       showPredictions={showPredictions}
+      squadBenchmarks={squadBenchmarks}
+      swimmerId={swimmerId}
+      hasSquadData={hasSquadData}
+      showSquadRanks={showSquadRanks}
+      onToggleSquadRanks={onToggleSquadRanks}
+      squadBenchmarksLoading={squadBenchmarksLoading}
+      onShowPredictionsGuide={onShowPredictionsGuide}
     />
   );
 }
@@ -231,6 +319,13 @@ function TableView({
   predictions,
   predictionsLoading = false,
   showPredictions = false,
+  squadBenchmarks,
+  swimmerId,
+  hasSquadData,
+  showSquadRanks,
+  onToggleSquadRanks,
+  squadBenchmarksLoading,
+  onShowPredictionsGuide,
 }: {
   groups: StrokeGroup[];
   canManageResults?: boolean;
@@ -245,6 +340,13 @@ function TableView({
   predictions?: SwimmerPredictionsResponse | null;
   predictionsLoading?: boolean;
   showPredictions?: boolean;
+  squadBenchmarks?: Record<string, any[]>;
+  swimmerId?: string;
+  hasSquadData?: boolean;
+  showSquadRanks?: boolean;
+  onToggleSquadRanks?: () => void;
+  squadBenchmarksLoading?: boolean;
+  onShowPredictionsGuide?: () => void;
 }) {
   const hasScyResults = groups.some(g => g.items.some(item => item.resultUnits === 'SCY'));
   
@@ -285,6 +387,38 @@ function TableView({
     });
   };
 
+  // Helper to calculate squad rank
+  const getSquadRank = (event: any, anyItem: BestTimeResult, units: string, timeSeconds: number) => {
+    const eventKey = `${event.distance}_${anyItem.stroke}_${event.activity}_${units}_${event.equipment || 'none'}`;
+    const squadMates = squadBenchmarks?.[eventKey];
+    
+    // Debug logging
+    if (!squadMates && squadBenchmarks && Object.keys(squadBenchmarks).length > 0) {
+      console.log(`No squad benchmarks found for key: "${eventKey}"`, {
+        availableKeys: Object.keys(squadBenchmarks),
+        event: { distance: event.distance, stroke: anyItem.stroke, activity: event.activity, units, equipment: event.equipment }
+      });
+    }
+    
+    if (!squadMates || !swimmerId || squadMates.length < 3) return null;
+    
+    const sortedSwimmers = [...squadMates].sort((a, b) => a.time_seconds - b.time_seconds);
+    const rankIndex = sortedSwimmers.findIndex(s => s.swimmer_id === swimmerId);
+    
+    // If swimmer not found in squad data, don't show rank
+    if (rankIndex === -1) {
+      console.log(`Swimmer ${swimmerId} not found in squad benchmarks for ${eventKey}`, {
+        availableSwimmers: sortedSwimmers.map(s => s.swimmer_id)
+      });
+      return null;
+    }
+    
+    const rank = rankIndex + 1;
+    const isLeader = rank === 1;
+    
+    return { rank, total: sortedSwimmers.length, isLeader };
+  };
+
   return (
     <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-lg">
       <div className="overflow-y-visible">
@@ -294,10 +428,19 @@ function TableView({
               {/* Left outer - SCM Prediction */}
               {showPredictions && (
                 <th className="text-center px-2 py-3 text-xs font-semibold text-purple-400 uppercase tracking-wider whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-1">
+                  <div className="flex items-center justify-center gap-1.5">
                     <Sparkles size={12} />
                     <span className="hidden xl:inline">SCM Pred</span>
                     <span className="xl:hidden">Pred</span>
+                    {onShowPredictionsGuide && (
+                      <button
+                        onClick={onShowPredictionsGuide}
+                        className="ml-0.5 p-0.5 rounded-full hover:bg-purple-500/20 transition-colors"
+                        title="How AI Predictions Work"
+                      >
+                        <HelpCircle size={11} className="text-purple-400/70 hover:text-purple-300" />
+                      </button>
+                    )}
                   </div>
                 </th>
               )}
@@ -315,6 +458,13 @@ function TableView({
                 </th>
               )}
               
+              {/* SCM Squad Rank */}
+              {hasSquadData && showSquadRanks && (
+                <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  <Users size={12} className="mx-auto text-slate-500" />
+                </th>
+              )}
+              
               {/* SCM Actual */}
               <th className="text-center px-3 py-3 text-xs font-semibold text-cyan-400 uppercase tracking-wider whitespace-nowrap">SCM</th>
               
@@ -323,6 +473,13 @@ function TableView({
               
               {/* LCM Actual */}
               <th className="text-center px-3 py-3 text-xs font-semibold text-blue-400 uppercase tracking-wider whitespace-nowrap">LCM</th>
+              
+              {/* LCM Squad Rank */}
+              {hasSquadData && showSquadRanks && (
+                <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  <Users size={10} className="mx-auto" />
+                </th>
+              )}
               
               {/* LCM Standards */}
               {hasStandardsEnabled && showStandards && (
@@ -357,6 +514,11 @@ function TableView({
                   {hasStandardsEnabled && showStandards && (
                     <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       <span className="hidden lg:inline">Std</span>
+                    </th>
+                  )}
+                  {hasSquadData && showSquadRanks && (
+                    <th className="text-center px-2 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                      <Users size={10} className="mx-auto" />
                     </th>
                   )}
                   <th className="text-center px-3 py-3 text-xs font-semibold text-indigo-400 uppercase tracking-wider whitespace-nowrap">SCY</th>
@@ -423,6 +585,16 @@ function TableView({
                         </td>
                       )}
                       
+                      {/* SCM Squad Rank */}
+                      {hasSquadData && showSquadRanks && (
+                        <td className="px-2 py-3 text-center">
+                          {scmItem && (() => {
+                            const rankData = getSquadRank(event, anyItem, 'SCM', scmItem.timeSeconds);
+                            return rankData ? <SquadRankBadge {...rankData} /> : <span className="text-slate-600 text-xs">—</span>;
+                          })()}
+                        </td>
+                      )}
+                      
                       {/* SCM Actual */}
                       <td className="px-3 py-3 text-center">
                         {scmItem ? (
@@ -478,6 +650,16 @@ function TableView({
                           <span className="text-slate-600 text-xs">—</span>
                         )}
                       </td>
+                      
+                      {/* LCM Squad Rank */}
+                      {hasSquadData && showSquadRanks && (
+                        <td className="px-2 py-3 text-center">
+                          {lcmItem && (() => {
+                            const rankData = getSquadRank(event, anyItem, 'LCM', lcmItem.timeSeconds);
+                            return rankData ? <SquadRankBadge {...rankData} /> : <span className="text-slate-600 text-xs">—</span>;
+                          })()}
+                        </td>
+                      )}
                       
                       {/* LCM Standards */}
                       {hasStandardsEnabled && showStandards && (
@@ -536,6 +718,14 @@ function TableView({
                               ) : (
                                 <span className="text-slate-600 text-xs">—</span>
                               )}
+                            </td>
+                          )}
+                          {hasSquadData && showSquadRanks && (
+                            <td className="px-2 py-3 text-center">
+                              {scyItem && (() => {
+                                const rankData = getSquadRank(event, anyItem, 'SCY', scyItem.timeSeconds);
+                                return rankData ? <SquadRankBadge {...rankData} /> : <span className="text-slate-600 text-xs">—</span>;
+                              })()}
                             </td>
                           )}
                           <td className="px-3 py-3 text-center">

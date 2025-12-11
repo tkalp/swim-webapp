@@ -1,6 +1,7 @@
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, ComposedChart } from 'recharts';
+import { useState } from 'react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, ComposedChart, ReferenceArea, ReferenceLine } from 'recharts';
 import { formatTime } from '@/utils/timeUtils';
-import { BarChart3, TrendingDown } from 'lucide-react';
+import { BarChart3, TrendingDown, ZoomIn, ZoomOut } from 'lucide-react';
 
 type ChartDataPoint = {
   i: number;
@@ -47,6 +48,11 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function AttemptsChart({ data }: AttemptsChartProps) {
+  // Zoom state
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  const [zoomDomain, setZoomDomain] = useState<{ left: number; right: number } | null>(null);
+
   // Adaptive display based on data points
   const showDots = data.length <= 15;
   const shouldRotateLabels = data.length > 10;
@@ -55,6 +61,62 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
   // Calculate best time for highlighting
   const bestTime = Math.min(...data.map(d => d.seconds));
   const worstTime = Math.max(...data.map(d => d.seconds));
+
+  // Get the visible data based on zoom
+  const visibleData = zoomDomain 
+    ? data.slice(zoomDomain.left, zoomDomain.right + 1)
+    : data;
+
+  // Adaptive x-axis display based on visible data points
+  const visibleDataLength = visibleData.length;
+  const shouldRotateLabelsForZoom = visibleDataLength > 10;
+  const tickIntervalForZoom = visibleDataLength > 20 
+    ? Math.ceil(visibleDataLength / 10) 
+    : visibleDataLength > 10 
+    ? Math.ceil(visibleDataLength / 8) 
+    : 0;
+
+  // Zoom handlers
+  const handleMouseDown = (e: any) => {
+    if (e && e.activeLabel) {
+      setRefAreaLeft(e.activeLabel);
+    }
+  };
+
+  const handleMouseMove = (e: any) => {
+    if (refAreaLeft && e && e.activeLabel) {
+      setRefAreaRight(e.activeLabel);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (refAreaLeft && refAreaRight) {
+      // Find indices of the selected area
+      const leftIndex = data.findIndex(d => d.date === refAreaLeft);
+      const rightIndex = data.findIndex(d => d.date === refAreaRight);
+      
+      if (leftIndex !== -1 && rightIndex !== -1) {
+        const left = Math.min(leftIndex, rightIndex);
+        const right = Math.max(leftIndex, rightIndex);
+        
+        // Only zoom if selection is meaningful (more than 1 point)
+        if (right - left > 0) {
+          setZoomDomain({ left, right });
+        }
+      }
+    }
+    
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+
+  const handleZoomOut = () => {
+    setZoomDomain(null);
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+  
+  const isZoomed = zoomDomain !== null;
   
   return (
     <div className="bg-linear-to-br from-slate-900 to-slate-800 border-2 border-cyan-500/20 rounded-2xl p-6 relative overflow-hidden shadow-xl">
@@ -75,7 +137,19 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
           <h3 className="text-xl font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
             Performance Progression
           </h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {isZoomed ? 'Click Reset Zoom to see all data' : 'Click and drag on chart to zoom'}
+          </p>
         </div>
+        {isZoomed && (
+          <button
+            onClick={handleZoomOut}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-cyan-500/30 rounded-lg text-slate-300 hover:text-cyan-400 transition-all duration-200 text-sm font-medium"
+          >
+            <ZoomOut size={16} />
+            Reset Zoom
+          </button>
+        )}
       </div>
 
       {/* Chart */}
@@ -85,13 +159,16 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
         
         <ResponsiveContainer width="100%" height={340}>
           <ComposedChart 
-            data={data} 
+            data={visibleData} 
             margin={{ 
               top: 20, 
               right: 30, 
               left: 20, 
-              bottom: shouldRotateLabels ? 60 : 30 
+              bottom: shouldRotateLabelsForZoom ? 60 : 30 
             }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
           >
             {/* Gradient fill under line */}
             <defs>
@@ -123,10 +200,10 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
               stroke="#475569"
               axisLine={{ stroke: "#475569", strokeWidth: 2 }}
               tickLine={{ stroke: "#475569" }}
-              interval={tickInterval}
-              angle={shouldRotateLabels ? -45 : 0}
-              textAnchor={shouldRotateLabels ? "end" : "middle"}
-              height={shouldRotateLabels ? 80 : 50}
+              interval={tickIntervalForZoom}
+              angle={shouldRotateLabelsForZoom ? -45 : 0}
+              textAnchor={shouldRotateLabelsForZoom ? "end" : "middle"}
+              height={shouldRotateLabelsForZoom ? 80 : 50}
             />
             
             <YAxis 
@@ -165,6 +242,33 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
                 opacity: 0.5
               }}
             />
+
+            {/* Zoom selection area */}
+            {refAreaLeft && refAreaRight && (
+              <ReferenceArea
+                x1={refAreaLeft}
+                x2={refAreaRight}
+                strokeOpacity={0.3}
+                fill="#22d3ee"
+                fillOpacity={0.3}
+              />
+            )}
+
+            {/* Best time reference line */}
+            <ReferenceLine
+              y={bestTime}
+              stroke="#10b981"
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              label={{
+                value: `Best: ${formatTime(bestTime)}`,
+                position: 'insideTopLeft',
+                fill: '#10b981',
+                fontSize: 12,
+                fontWeight: 600,
+                offset: 10
+              }}
+            />
             
             {/* Area fill */}
             <Area
@@ -180,20 +284,11 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
               dataKey="seconds" 
               stroke="url(#lineGradient)"
               strokeWidth={4}
-              dot={showDots ? (props: any) => {
-                const isBest = props.payload.seconds === bestTime;
-                const isWorst = props.payload.seconds === worstTime;
-                return (
-                  <circle
-                    cx={props.cx}
-                    cy={props.cy}
-                    r={isBest ? 8 : 5}
-                    fill={isBest ? '#10b981' : isWorst ? '#ef4444' : '#22d3ee'}
-                    stroke={isBest ? '#059669' : isWorst ? '#dc2626' : '#0891b2'}
-                    strokeWidth={2}
-                    className="drop-shadow-lg transition-all duration-200 hover:r-7"
-                  />
-                );
+              dot={showDots ? {
+                r: 5,
+                fill: '#22d3ee',
+                stroke: '#0891b2',
+                strokeWidth: 2
               } : false}
               activeDot={{ 
                 r: 9,
@@ -212,19 +307,13 @@ export default function AttemptsChart({ data }: AttemptsChartProps) {
         {showDots && data.length > 1 && (
           <div className="flex items-center justify-center gap-6 mt-4 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500 border-2 border-green-600 shadow-lg shadow-green-500/30"></div>
-              <span className="text-slate-400">Best Time</span>
-            </div>
-            <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-cyan-400 border-2 border-cyan-600"></div>
               <span className="text-slate-400">Attempt</span>
             </div>
-            {data.length > 2 && (
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-600 shadow-lg shadow-red-500/30"></div>
-                <span className="text-slate-400">Slowest</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-0.5 bg-green-500"></div>
+              <span className="text-slate-400">Best Time</span>
+            </div>
           </div>
         )}
       </div>

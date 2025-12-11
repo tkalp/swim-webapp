@@ -60,3 +60,64 @@ export async function authenticatedFetch(
   
   return response
 }
+
+/**
+ * API client with common HTTP methods
+ */
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+export const apiClient = {
+  async get<T>(path: string): Promise<T> {
+    const url = `${API_BASE_URL}${path}`;
+    const response = await authenticatedFetch(url, {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+    
+    return response.json();
+  },
+  
+  async post<T>(path: string, data?: any): Promise<T> {
+    const url = `${API_BASE_URL}${path}`;
+    const response = await authenticatedFetch(url, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+    
+    return response.json();
+  },
+  
+  async put<T>(path: string, data?: any): Promise<T> {
+    const url = `${API_BASE_URL}${path}`;
+    const response = await authenticatedFetch(url, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+    
+    return response.json();
+  },
+  
+  async delete<T>(path: string): Promise<T> {
+    const url = `${API_BASE_URL}${path}`;
+    const response = await authenticatedFetch(url, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+    
+    return response.json();
+  }
+};
