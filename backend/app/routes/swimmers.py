@@ -641,7 +641,7 @@ async def get_swimmer_predictions(
         supabase = get_supabase_client()
         
         # Verify swimmer exists and user has permission
-        swimmer_check = supabase.table('swimmers').select('id, squad_id, first_name, last_name').eq('id', swimmer_id).execute()
+        swimmer_check = supabase.table('swimmers').select('id, squad_id, first_name, last_name, date_of_birth').eq('id', swimmer_id).execute()
         
         if not swimmer_check.data:
             raise HTTPException(status_code=404, detail="Swimmer not found")
@@ -752,6 +752,16 @@ async def get_swimmer_predictions(
         # Generate predictions for each event with sufficient data
         predictions = []
         
+        # Calculate swimmer age if date_of_birth is available
+        swimmer_age = None
+        if swimmer.get('date_of_birth'):
+            try:
+                from datetime import datetime
+                dob = datetime.fromisoformat(swimmer['date_of_birth'].replace('Z', '+00:00'))
+                swimmer_age = (datetime.utcnow() - dob).days // 365
+            except Exception as age_error:
+                logger.warning(f"Failed to calculate swimmer age: {age_error}")
+        
         for event_key, event_results in events_data.items():
             if len(event_results) < min_attempts:
                 continue
@@ -763,6 +773,15 @@ async def get_swimmer_predictions(
             all_times = [r['time_seconds'] for r in sorted_results]
             current_best = min(all_times)
             event_display = sorted_results[0]['event_display']
+            
+            # Calculate days since last result
+            days_since_last_result = None
+            if sorted_results:
+                try:
+                    last_result_date = datetime.fromisoformat(sorted_results[-1]['performed_on'].replace('Z', '+00:00'))
+                    days_since_last_result = (datetime.utcnow() - last_result_date).days
+                except Exception as date_error:
+                    logger.warning(f"Failed to calculate days since last result: {date_error}")
             
             # Get squad improvement rate for this event if available
             squad_rate = squad_improvement_rates.get(event_key)
@@ -840,7 +859,9 @@ async def get_swimmer_predictions(
                 attempts_until_target=attempts_until_target,
                 attendance_rate=attendance_rate,
                 squad_improvement_rate=squad_rate,
-                recent_workouts=recent_workouts if recent_workouts else None
+                recent_workouts=recent_workouts if recent_workouts else None,
+                days_since_last_result=days_since_last_result,
+                swimmer_age=swimmer_age
             )
             
             predictions.append({

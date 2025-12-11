@@ -756,19 +756,28 @@ class PredictionService:
         """
         # Elite times (approximate world records/top performances)
         elite_times = {
-            50: {"free": 20.9, "back": 23.7, "breast": 25.9, "fly": 22.2},
-            100: {"free": 46.8, "back": 51.6, "breast": 56.9, "fly": 49.8},
-            200: {"free": 102.0, "back": 111.5, "breast": 125.9, "fly": 110.7},
-            400: {"free": 220.0, "back": 240.0, "breast": 270.0, "fly": 240.0},
-            800: {"free": 450.0, "back": 500.0, "breast": 540.0, "fly": 500.0},
-            1500: {"free": 870.0, "back": 970.0, "breast": 1020.0, "fly": 970.0}
+            50: {"free": 20.9, "back": 23.7, "breast": 25.9, "fly": 22.2, "im": 24.0},
+            100: {"free": 46.8, "back": 51.6, "breast": 56.9, "fly": 49.8, "im": 51.3},
+            200: {"free": 102.0, "back": 111.5, "breast": 125.9, "fly": 110.7, "im": 113.0},
+            400: {"free": 220.0, "back": 240.0, "breast": 270.0, "fly": 240.0, "im": 240.0},
+            800: {"free": 450.0, "back": 500.0, "breast": 540.0, "fly": 500.0, "im": 500.0},
+            1500: {"free": 870.0, "back": 970.0, "breast": 1020.0, "fly": 970.0, "im": 970.0}
         }
         
-        stroke_key = stroke.lower()[:4]  # Handle "freestyle" -> "free"
-        if stroke_key not in ["free", "back", "brea", "fly"]:
+        # Normalize stroke name for lookup
+        stroke_lower = stroke.lower()
+        if stroke_lower in ['im', 'individualmedley', 'individual medley', 'medley']:
+            stroke_key = "im"
+        elif stroke_lower.startswith('free'):
             stroke_key = "free"
-        if stroke_key == "brea":
+        elif stroke_lower.startswith('back'):
+            stroke_key = "back"
+        elif stroke_lower.startswith('brea'):
             stroke_key = "breast"
+        elif stroke_lower.startswith('fly') or stroke_lower.startswith('butt'):
+            stroke_key = "fly"
+        else:
+            stroke_key = "free"  # Default fallback
         
         elite = elite_times.get(distance, {}).get(stroke_key, 60.0)
         
@@ -806,9 +815,21 @@ class PredictionService:
         improvement = current_best - predicted_time
         improvement_pct = improvement / current_best
         
-        # Cap maximum improvement at 5% per prediction cycle
-        if improvement_pct > limits["max_improvement_rate"]:
-            predicted_time = current_best * (1 - limits["max_improvement_rate"])
+        # Cap maximum improvement at 5% per prediction cycle (more conservative for slower swimmers)
+        # Swimmers far from elite (>150% of elite) should have even stricter caps
+        elite_ratio = current_best / limits["elite_time"]
+        if elite_ratio > 2.0:
+            # Very beginner swimmers (>200% of elite time) - cap at 3%
+            max_rate = 0.03
+        elif elite_ratio > 1.5:
+            # Intermediate swimmers (150-200% of elite time) - cap at 4%
+            max_rate = 0.04
+        else:
+            # Advanced swimmers (<150% of elite time) - standard 5% cap
+            max_rate = limits["max_improvement_rate"]
+        
+        if improvement_pct > max_rate:
+            predicted_time = current_best * (1 - max_rate)
             improvement = current_best - predicted_time
         
         # Apply diminishing returns near elite performance
@@ -875,7 +896,9 @@ class PredictionService:
         attempts_until_target: int = 3,
         attendance_rate: Optional[float] = None,
         squad_improvement_rate: Optional[float] = None,
-        recent_workouts: Optional[List[WorkoutContext]] = None
+        recent_workouts: Optional[List[WorkoutContext]] = None,
+        days_since_last_result: Optional[int] = None,
+        swimmer_age: Optional[int] = None
     ) -> ImprovementPrediction:
         """
         Predict improvement for a single swimmer in a specific event.
@@ -888,6 +911,8 @@ class PredictionService:
             attendance_rate: Optional attendance percentage (0-100) for last 30 days
             squad_improvement_rate: Optional squad average improvement rate per attempt
             recent_workouts: Optional list of recent workout contexts (last 30 days)
+            days_since_last_result: Optional days since last competitive result
+            swimmer_age: Optional swimmer age in years (for age-group specific adjustments)
             
         Returns:
             ImprovementPrediction with predicted time and confidence
@@ -918,6 +943,49 @@ class PredictionService:
             attendance_normalized = attendance_rate / 100.0
             factors['attendance_rate'] = round(attendance_rate, 1)
             factors['attendance_factor'] = round(attendance_normalized, 3)
+        
+        # Add time-since-last-result adjustment factor
+        # For age group swimmers (typically <18), longer gaps indicate more potential improvement
+        # due to natural growth/development between competitions
+        time_gap_multiplier = 1.0  # Default: no adjustment
+        if days_since_last_result is not None and swimmer_age is not None:
+            factors['days_since_last_result'] = days_since_last_result
+            factors['swimmer_age'] = swimmer_age
+            
+            # Apply age-group specific adjustments - CONSERVATIVE values to avoid overprediction
+            # Younger swimmers (age 10-17) have more potential for improvement with longer gaps
+            # Senior swimmers (age 18+) don't benefit as much from time gaps
+            if swimmer_age < 18:
+                # Age group swimmer - apply time gap adjustments (reduced from previous values)
+                if days_since_last_result <= 90:  # 0-3 months: normal expectation
+                    time_gap_multiplier = 1.0
+                    factors['time_gap_category'] = '0-3 months (normal)'
+                elif days_since_last_result <= 180:  # 3-6 months: modest boost
+                    # Scale from 1.0 at 90 days to 1.05 at 180 days (reduced from 1.15)
+                    time_gap_multiplier = 1.0 + ((days_since_last_result - 90) / 90) * 0.05
+                    factors['time_gap_category'] = '3-6 months (modest growth expected)'
+                elif days_since_last_result <= 365:  # 6-12 months: moderate boost
+                    # Scale from 1.05 at 180 days to 1.10 at 365 days (reduced from 1.25)
+                    time_gap_multiplier = 1.05 + ((days_since_last_result - 180) / 185) * 0.05
+                    factors['time_gap_category'] = '6-12 months (moderate growth expected)'
+                else:  # 12+ months: maximum boost but capped
+                    time_gap_multiplier = 1.12  # Cap at 12% boost (reduced from 30%)
+                    factors['time_gap_category'] = '12+ months (development expected)'
+            else:
+                # Senior swimmer (18+) - time gaps don't indicate as much natural improvement
+                if days_since_last_result <= 90:
+                    time_gap_multiplier = 1.0
+                    factors['time_gap_category'] = '0-3 months (normal)'
+                elif days_since_last_result <= 180:
+                    # Slight boost for recovery/training time
+                    time_gap_multiplier = 1.02  # Reduced from 1.05
+                    factors['time_gap_category'] = '3-6 months (taper benefit possible)'
+                else:
+                    # Long gaps for seniors might indicate rust, not improvement
+                    time_gap_multiplier = 0.98  # Slightly more conservative from 0.95
+                    factors['time_gap_category'] = '6+ months (possible detraining)'
+            
+            factors['time_gap_multiplier'] = round(time_gap_multiplier, 3)
         
         # Add squad comparison factor if available
         if squad_improvement_rate is not None:
@@ -989,6 +1057,43 @@ class PredictionService:
         if predicted_time is None:
             predicted_time = current_best
         
+        # Extract distance and stroke from event EARLY for stricter caps
+        # Event format: "100m Free Swim SCM" or similar
+        event_distance = None
+        event_stroke = None
+        try:
+            parts = event.lower().split()
+            event_distance = int(parts[0].replace('m', ''))
+            event_stroke = parts[1] if len(parts) > 1 else "free"
+        except (ValueError, IndexError):
+            pass  # Will use default caps
+        
+        # Apply STRICTER caps for swimmers far from elite BEFORE multipliers
+        if event_distance and event_stroke:
+            try:
+                limits = PredictionService.get_physiological_limits(event_distance, event_stroke)
+                elite_ratio = current_best / limits["elite_time"]
+                
+                # More conservative caps based on distance from elite
+                if elite_ratio > 2.0:
+                    # Very beginner swimmers - cap at 3%
+                    max_allowed_improvement = current_best * 0.03
+                elif elite_ratio > 1.5:
+                    # Intermediate swimmers - cap at 4%
+                    max_allowed_improvement = current_best * 0.04
+                else:
+                    # Advanced swimmers - cap at 5%
+                    max_allowed_improvement = current_best * 0.05
+                
+                # Apply the cap
+                actual_improvement = current_best - predicted_time
+                if actual_improvement > max_allowed_improvement:
+                    predicted_time = current_best - max_allowed_improvement
+                    factors['pre_multiplier_cap_applied'] = True
+                    factors['max_allowed_improvement_seconds'] = round(max_allowed_improvement, 2)
+            except Exception:
+                pass  # Continue without early cap
+        
         # Adjust prediction based on attendance if available
         if attendance_rate is not None:
             # Good attendance (>70%) suggests swimmer will achieve or exceed prediction
@@ -1012,6 +1117,17 @@ class PredictionService:
                 adjusted_improvement = improvement * attendance_multiplier
                 predicted_time = current_best - adjusted_improvement
             # If predicting regression, don't make it worse based on attendance
+        
+        # Apply time-since-last-result adjustment
+        # For age group swimmers with longer gaps, expect more improvement
+        if days_since_last_result is not None and time_gap_multiplier != 1.0:
+            improvement = current_best - predicted_time
+            if improvement > 0:  # Predicting improvement
+                # Amplify expected improvement based on time gap
+                adjusted_improvement = improvement * time_gap_multiplier
+                predicted_time = current_best - adjusted_improvement
+                factors['time_gap_improvement_boost_seconds'] = round(adjusted_improvement - improvement, 3)
+            # If predicting regression, don't apply multiplier (keep prediction as-is)
         
         # Extract distance and stroke from event name for physiological constraints
         # Event format: "100m Free Swim SCM" or similar

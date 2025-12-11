@@ -497,6 +497,7 @@ export type PredictionFactors = {
 }
 
 export type SwimmerPrediction = {
+  event_key: string
   event: string
   current_best: number
   predicted_time: number

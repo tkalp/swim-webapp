@@ -212,6 +212,15 @@ export default function SquadQualifiersTab({ squadId }: Props) {
     });
   }, [swimmers, bestTimesMap, selectedStandardsSetId, getStandardTime, poolType]);
 
+  // Filter events to only show those where at least one swimmer has a time
+  const eventsWithData = useMemo(() => {
+    return COMMON_EVENTS.filter(event => {
+      const key = `${event.distance}-${event.stroke}-${poolType}`;
+      // Check if any swimmer has a time for this event
+      return swimmerQualifications.some(sq => sq.bestTimes.has(key));
+    }).map(e => ({ ...e, poolType }));
+  }, [swimmerQualifications, poolType]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -300,7 +309,7 @@ export default function SquadQualifiersTab({ squadId }: Props) {
 
       <QualifiersTable
         swimmers={swimmerQualifications}
-        events={COMMON_EVENTS.map(e => ({ ...e, poolType }))}
+        events={eventsWithData}
         getStandardTime={getStandardTime}
         formatTime={formatTime}
       />

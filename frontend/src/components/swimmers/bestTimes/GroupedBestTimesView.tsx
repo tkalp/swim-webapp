@@ -376,13 +376,31 @@ function TableView({
   const findPrediction = (event: any, anyItem: BestTimeResult, units: string) => {
     return predictions?.predictions.find(p => {
       const eventStr = p.event.toLowerCase();
+      const stroke = anyItem.stroke.toLowerCase();
       const isYards = units === 'scy';
+      
+      // Match distance
       const matchDistance = isYards 
         ? eventStr.includes(`${event.distance}y`)
         : eventStr.includes(`${event.distance}m`);
-      const matchStroke = eventStr.includes(anyItem.stroke.toLowerCase());
+      
+      // Match stroke - be more specific to avoid "im" matching "swim" or partial matches
+      const strokePatterns: Record<string, string[]> = {
+        'free': ['free', 'freestyle'],
+        'back': ['back', 'backstroke'],
+        'breast': ['breast', 'breaststroke'],
+        'fly': ['fly', 'butterfly'],
+        'im': [' im ', 'individual medley', 'individualmedley']
+      };
+      const patterns = strokePatterns[stroke] || [stroke];
+      const matchStroke = patterns.some(pattern => eventStr.includes(pattern));
+      
+      // Match activity
       const matchActivity = event.activity ? eventStr.includes(event.activity.toLowerCase()) : eventStr.includes('swim');
+      
+      // Match units
       const matchUnits = eventStr.includes(units.toLowerCase());
+      
       return matchDistance && matchStroke && matchActivity && matchUnits;
     });
   };
