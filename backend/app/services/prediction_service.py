@@ -987,6 +987,10 @@ class PredictionService:
             
             factors['time_gap_multiplier'] = round(time_gap_multiplier, 3)
         
+        # Calculate improvement rate (needed for squad comparison)
+        improvement_rate = PredictionService.calculate_improvement_per_attempt(all_times)
+        factors['improvement_rate'] = round(improvement_rate, 4)
+        
         # Add squad comparison factor if available
         if squad_improvement_rate is not None:
             factors['squad_avg_improvement_rate'] = round(squad_improvement_rate, 4)
@@ -1001,10 +1005,6 @@ class PredictionService:
             else:
                 squad_comparison = 0.75  # Average
             factors['squad_comparison_score'] = round(squad_comparison, 3)
-        
-        # Calculate improvement rate
-        improvement_rate = PredictionService.calculate_improvement_per_attempt(all_times)
-        factors['improvement_rate'] = round(improvement_rate, 4)
         
         # Calculate consistency (standard deviation of recent times)
         recent_times = all_times[-5:]  # Last 5 attempts

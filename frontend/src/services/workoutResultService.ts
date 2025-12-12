@@ -521,6 +521,23 @@ export type SwimmerPredictionsResponse = {
   }
 }
 
+export type SquadPredictionsResponse = {
+  squad_id: string
+  predictions: {
+    [swimmer_id: string]: {
+      swimmer_id: string
+      swimmer_name: string
+      predictions: SwimmerPrediction[]
+      total_events: number
+      attendance_rate: number | null
+    }
+  }
+  total_swimmers: number
+  swimmers_with_predictions: number
+  total_predictions: number
+  attempts_until_target: number
+}
+
 /**
  * Get improvement predictions for a swimmer
  */
@@ -537,6 +554,27 @@ export async function getSwimmerPredictions(
   
   if (!response.ok) {
     throw new Error(`Failed to fetch predictions: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
+
+/**
+ * Get improvement predictions for all swimmers in a squad
+ */
+export async function getSquadPredictions(
+  squadId: string,
+  attemptsUntilTarget: number = 5,
+  minAttempts: number = 5
+): Promise<SquadPredictionsResponse> {
+  const url = getApiUrl(
+    `squads/${squadId}/predictions?attempts_until_target=${attemptsUntilTarget}&min_attempts=${minAttempts}`
+  )
+  
+  const response = await authenticatedFetch(url)
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch squad predictions: ${response.statusText}`)
   }
   
   return response.json()

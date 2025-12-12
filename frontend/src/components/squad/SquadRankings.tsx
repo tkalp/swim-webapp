@@ -8,10 +8,12 @@ import {
   type EventQuery
 } from '@/services/workoutResultService';
 import { useAvailableDistances, useSquadRankings } from '@/hooks/useSquadRankings';
+import { useSquadPredictions } from '@/hooks/useSquadPredictions';
 import { SquadPageHeader } from '@/components/squad/SquadPageHeader';
-import { Trophy, Medal, Award, Timer, Eye, EyeOff, Clock, ExternalLink } from "lucide-react";
+import { Trophy, Medal, Award, Timer, Eye, EyeOff, Clock, ExternalLink, Sparkles } from "lucide-react";
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
 import EventStatisticsSection from '@/components/squad/rankings/EventStatisticsSection';
+import { PredictionBadge } from '@/components/shared/PredictionBadge';
 
 const STROKES: { value: StrokeType; label: string }[] = [
   { value: "free", label: "Freestyle" },
@@ -38,6 +40,7 @@ export default function SquadRankings({ squadId }: Props) {
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
   const [attemptsModalOpen, setAttemptsModalOpen] = useState(false);
   const [selectedEventQuery, setSelectedEventQuery] = useState<EventQuery | null>(null);
+  const [showPredictions, setShowPredictions] = useState(false);
 
   // Use cached queries for distances
   const { 
@@ -64,6 +67,12 @@ export default function SquadRankings({ squadId }: Props) {
     isLoading: scyLoading,
     refetch: refetchScy
   } = useSquadRankings(squadId, stroke, activity, selectedDistance, 'SCY');
+
+  // Fetch predictions data (enabled only when showPredictions is true)
+  const { 
+    data: predictionsData,
+    isLoading: predictionsLoading 
+  } = useSquadPredictions(squadId, showPredictions);
 
   const loading = scmLoading || lcmLoading || scyLoading;
   const error = distancesError ? String(distancesError) : '';
@@ -148,6 +157,50 @@ export default function SquadRankings({ squadId }: Props) {
     // Sort by best overall time
     return Array.from(swimmerMap.values()).sort((a, b) => a.bestTime - b.bestTime);
   }, [scmRankings, lcmRankings, scyRankings]);
+
+  // Helper function to find prediction for specific swimmer/event/pool type
+  const findPrediction = (swimmerId: string, poolType: string) => {
+    if (!predictionsData?.predictions || !selectedDistance) return null;
+    
+    const swimmerPredictions = predictionsData.predictions[swimmerId];
+    if (!swimmerPredictions?.predictions) return null;
+
+    // Build event string to match: "100m Free Swim SCM"
+    const strokeLabel = STROKES.find(s => s.value === stroke)?.label || stroke;
+    const activityLabel = ACTIVITIES.find(a => a.value === activity)?.label || activity;
+    const eventString = `${selectedDistance}m ${strokeLabel} ${activityLabel} ${poolType}`;
+
+    // Stroke patterns for matching (same as best times)
+    const strokePatterns: Record<string, string[]> = {
+      'free': ['free', 'freestyle'],
+      'back': ['back', 'backstroke'],
+      'breast': ['breast', 'breaststroke'],
+      'fly': ['fly', 'butterfly'],
+      'im': [' im ', 'individual medley', 'individualmedley']
+    };
+
+    return swimmerPredictions.predictions.find(pred => {
+      const predLower = pred.event.toLowerCase();
+      const eventLower = eventString.toLowerCase();
+      
+      // Match distance
+      const distanceMatch = predLower.includes(`${selectedDistance}m`);
+      if (!distanceMatch) return false;
+      
+      // Match stroke
+      const patterns = strokePatterns[stroke] || [stroke];
+      const strokeMatch = patterns.some(pattern => predLower.includes(pattern));
+      if (!strokeMatch) return false;
+      
+      // Match activity
+      const activityMatch = predLower.includes(activity);
+      if (!activityMatch) return false;
+      
+      // Match pool type
+      const poolMatch = predLower.includes(poolType.toLowerCase());
+      return poolMatch;
+    });
+  };
 
   const hasScyResults = scyRankings.length > 0;
 
@@ -257,6 +310,24 @@ export default function SquadRankings({ squadId }: Props) {
         </div>
       </div>
 
+      {/* Toggle Controls */}
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={() => setShowPredictions(!showPredictions)}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+            showPredictions
+              ? "bg-linear-to-r from-purple-500 to-pink-500 text-white shadow-md shadow-purple-500/30"
+              : "bg-slate-800/60 text-slate-400 hover:bg-slate-700/70 hover:text-slate-200 border border-slate-700/40"
+          }`}
+        >
+          <Sparkles size={16} className={showPredictions ? "text-white" : "text-purple-400"} />
+          <span>AI Predictions</span>
+          {predictionsLoading && showPredictions && (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          )}
+        </button>
+      </div>
+
       {/* Event Statistics Section */}
       <div className="mb-6">
         <EventStatisticsSection
@@ -295,13 +366,21 @@ export default function SquadRankings({ squadId }: Props) {
 
       {/* Rankings Table */}
       {!loading && combinedRankings.length > 0 && (
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-xl shadow-lg">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-slate-800">
                 <tr className="border-b border-slate-700/50">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rank</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Swimmer</th>
+                  {showPredictions && (
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-purple-400" />
+                        <span>Predicted</span>
+                      </div>
+                    </th>
+                  )}
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SCM</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">LCM</th>
                   {hasScyResults && (
@@ -354,6 +433,35 @@ export default function SquadRankings({ squadId }: Props) {
                           </div>
                         </div>
                       </td>
+                      
+                      {/* Predictions Column (conditional) */}
+                      {showPredictions && (
+                        <td className="px-4 py-3">
+                          {(() => {
+                            // Find best prediction across all pool types
+                            const scmPred = findPrediction(ranking.swimmer_id, 'SCM');
+                            const lcmPred = findPrediction(ranking.swimmer_id, 'LCM');
+                            const scyPred = findPrediction(ranking.swimmer_id, 'SCY');
+                            
+                            // Use the prediction with the best (fastest) predicted time
+                            const predictions = [scmPred, lcmPred, scyPred].filter(Boolean);
+                            if (predictions.length === 0) {
+                              return <span className="text-slate-500 text-sm">—</span>;
+                            }
+                            
+                            const bestPrediction = predictions.reduce((best, current) => 
+                              !best || current!.predicted_time < best.predicted_time ? current : best
+                            );
+                            
+                            return (
+                              <PredictionBadge 
+                                prediction={bestPrediction!} 
+                                showTooltipBelow={index > 3}
+                              />
+                            );
+                          })()}
+                        </td>
+                      )}
                       
                       {/* SCM Column */}
                       <td className="px-4 py-3">

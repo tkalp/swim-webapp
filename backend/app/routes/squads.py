@@ -1699,5 +1699,289 @@ async def get_squad_metrics_summary(
         raise HTTPException(status_code=500, detail=f"Failed to fetch squad metrics summary: {str(e)}")
 
 
+@router.get("/{squad_id}/predictions")
+async def get_squad_predictions(
+    squad_id: str,
+    attempts_until_target: int = 5,
+    min_attempts: int = 5,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get improvement predictions for all swimmers in a squad.
+    
+    Returns predicted future times based on historical performance trends for each swimmer.
+    Only events with sufficient data (min_attempts) will have predictions.
+    """
+    try:
+        from app.services.prediction_service import PredictionService, WorkoutContext
+        from app.services.performance_service import PerformanceService
+        from app.domain.value_objects.time import interval_to_seconds
+        
+        supabase = get_supabase_client()
+        
+        # Verify squad exists and user has permission
+        coach_check = supabase.table('coach_squads').select('id').eq(
+            'squad_id', squad_id
+        ).eq('coach_id', user_id).execute()
+        
+        if not coach_check.data:
+            raise HTTPException(status_code=403, detail="Unauthorized to access this squad")
+        
+        # Get all swimmers in the squad
+        swimmers_result = supabase.table('swimmers').select(
+            'id, first_name, last_name, date_of_birth'
+        ).eq('squad_id', squad_id).execute()
+        
+        if not swimmers_result.data:
+            return {
+                'squad_id': squad_id,
+                'predictions': {},
+                'total_swimmers': 0,
+                'total_predictions': 0
+            }
+        
+        swimmers = swimmers_result.data
+        swimmer_ids = [s['id'] for s in swimmers]
+        
+        # Fetch attendance data for last 30 days for all swimmers
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        attendance_result = supabase.table('training_attendance').select(
+            'swimmer_id, status, training_session_id'
+        ).in_('swimmer_id', swimmer_ids).gte('created_at', thirty_days_ago).execute()
+        
+        # Group attendance by swimmer
+        swimmer_attendance = defaultdict(list)
+        swimmer_session_ids = defaultdict(set)
+        for att in attendance_result.data or []:
+            swimmer_id = att.get('swimmer_id')
+            if swimmer_id:
+                swimmer_attendance[swimmer_id].append(att.get('status', ''))
+                if att.get('status') == 'present' and att.get('training_session_id'):
+                    swimmer_session_ids[swimmer_id].add(att['training_session_id'])
+        
+        # Calculate attendance rates
+        swimmer_attendance_rates = {}
+        for swimmer_id, statuses in swimmer_attendance.items():
+            total = len(statuses)
+            present = sum(1 for s in statuses if s.lower() == 'present')
+            if total > 0:
+                swimmer_attendance_rates[swimmer_id] = round((present / total * 100), 1)
+        
+        # Fetch all workout results for all swimmers in one query
+        performance_service = PerformanceService()
+        
+        # We'll use a direct query to get all results efficiently
+        results_response = supabase.table('workout_result').select(
+            'swimmer_id, distance, stroke, activity, units, result_units, time_result, performed_on'
+        ).in_('swimmer_id', swimmer_ids).order('performed_on', desc=False).execute()
+        
+        # Group results by swimmer and event
+        swimmer_events_data = defaultdict(lambda: defaultdict(list))
+        
+        for result in results_response.data or []:
+            swimmer_id = result.get('swimmer_id')
+            distance = str(result.get('distance', ''))
+            stroke = result.get('stroke', '').lower()
+            units = result.get('result_units', 'LCM')
+            activity = result.get('activity', 'swim').lower()
+            
+            event_key = f"{distance}_{stroke}_{units}_{activity}"
+            
+            time_result = result.get('time_result')
+            performed_on = result.get('performed_on')
+            
+            if time_result and performed_on and swimmer_id:
+                try:
+                    # Convert interval to seconds
+                    time_seconds = interval_to_seconds(time_result)
+                    
+                    event_display = f"{distance}m {stroke.title()} {activity.title()} {units}"
+                    
+                    swimmer_events_data[swimmer_id][event_key].append({
+                        'time_seconds': time_seconds,
+                        'performed_on': performed_on,
+                        'event_display': event_display
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to convert time_result '{time_result}': {e}")
+                    continue
+        
+        # Calculate squad improvement rates for comparison
+        squad_improvement_rates = {}
+        start_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
+        
+        # Create a PredictionService instance for calculating improvement rates
+        prediction_service = PredictionService()
+        
+        for swimmer_id, events in swimmer_events_data.items():
+            for event_key, event_results in events.items():
+                if event_key not in squad_improvement_rates:
+                    squad_improvement_rates[event_key] = []
+                
+                if len(event_results) >= 2:
+                    times = [r['time_seconds'] for r in sorted(event_results, key=lambda x: x['performed_on'])]
+                    rate = prediction_service.calculate_improvement_per_attempt(times)
+                    squad_improvement_rates[event_key].append(rate)
+        
+        # Average squad rates
+        for event_key in squad_improvement_rates:
+            if squad_improvement_rates[event_key]:
+                squad_improvement_rates[event_key] = statistics.mean(squad_improvement_rates[event_key])
+            else:
+                squad_improvement_rates[event_key] = None
+        
+        # Fetch workout context for attended sessions
+        all_session_ids = set()
+        for session_ids_set in swimmer_session_ids.values():
+            all_session_ids.update(session_ids_set)
+        
+        session_workouts = {}
+        if all_session_ids:
+            workouts_response = supabase.table('training_sessions').select(
+                'id, start_date, workout_id, workout_template(total_meters, effort_level, json_description)'
+            ).in_('id', list(all_session_ids)).gte('start_date', thirty_days_ago).execute()
+            
+            for session in workouts_response.data or []:
+                workout_template = session.get('workout_template')
+                if workout_template:
+                    effort_level = workout_template.get('effort_level')
+                    json_desc = workout_template.get('json_description', {})
+                    
+                    # Categorize workout type
+                    if effort_level is not None:
+                        if effort_level >= 7:
+                            workout_type = 'sprint'
+                        elif effort_level <= 4:
+                            workout_type = 'endurance'
+                        elif effort_level in [5, 6]:
+                            if isinstance(json_desc, dict):
+                                activity_breakdown = json_desc.get('activity_breakdown', {})
+                                drill_pct = activity_breakdown.get('Drill', 0)
+                                workout_type = 'technique' if drill_pct > 30 else 'mixed'
+                            else:
+                                workout_type = 'mixed'
+                        else:
+                            workout_type = 'mixed'
+                    else:
+                        workout_type = 'mixed'
+                    
+                    session_workouts[session['id']] = WorkoutContext(
+                        total_meters=workout_template.get('total_meters', 0),
+                        effort_level=effort_level,
+                        session_date=session['start_date'],
+                        workout_type=workout_type
+                    )
+        
+        # Generate predictions for each swimmer
+        all_predictions = {}
+        total_predictions_count = 0
+        
+        for swimmer in swimmers:
+            swimmer_id = swimmer['id']
+            swimmer_name = f"{swimmer['first_name']} {swimmer['last_name']}"
+            
+            # Calculate swimmer age
+            swimmer_age = None
+            if swimmer.get('date_of_birth'):
+                try:
+                    dob = datetime.fromisoformat(swimmer['date_of_birth'].replace('Z', '+00:00'))
+                    swimmer_age = (datetime.utcnow() - dob).days // 365
+                except Exception as age_error:
+                    logger.warning(f"Failed to calculate swimmer age: {age_error}")
+            
+            # Get recent workouts for this swimmer
+            recent_workouts = []
+            if swimmer_id in swimmer_session_ids:
+                for session_id in swimmer_session_ids[swimmer_id]:
+                    if session_id in session_workouts:
+                        recent_workouts.append(session_workouts[session_id])
+            
+            # Get attendance rate
+            attendance_rate = swimmer_attendance_rates.get(swimmer_id)
+            
+            # Generate predictions for each event
+            predictions = []
+            events = swimmer_events_data.get(swimmer_id, {})
+            
+            for event_key, event_results in events.items():
+                if len(event_results) < min_attempts:
+                    continue
+                
+                # Sort by date to get chronological order
+                sorted_results = sorted(event_results, key=lambda x: x['performed_on'])
+                
+                # Extract times in chronological order
+                all_times = [r['time_seconds'] for r in sorted_results]
+                current_best = min(all_times)
+                event_display = sorted_results[0]['event_display']
+                
+                # Calculate days since last result
+                days_since_last_result = None
+                if sorted_results:
+                    try:
+                        last_result_date = datetime.fromisoformat(sorted_results[-1]['performed_on'].replace('Z', '+00:00'))
+                        days_since_last_result = (datetime.utcnow() - last_result_date).days
+                    except Exception as date_error:
+                        logger.warning(f"Failed to calculate days since last result: {date_error}")
+                
+                # Get squad improvement rate for this event
+                squad_rate = squad_improvement_rates.get(event_key)
+                
+                # Generate prediction
+                prediction = prediction_service.predict_improvement(
+                    event=event_display,
+                    current_best=current_best,
+                    all_times=all_times,
+                    attempts_until_target=attempts_until_target,
+                    attendance_rate=attendance_rate,
+                    squad_improvement_rate=squad_rate,
+                    recent_workouts=recent_workouts if recent_workouts else None,
+                    days_since_last_result=days_since_last_result,
+                    swimmer_age=swimmer_age
+                )
+                
+                predictions.append({
+                    'event_key': event_key,
+                    'event': prediction.event,
+                    'current_best': prediction.current_best,
+                    'predicted_time': prediction.predicted_time,
+                    'confidence_level': prediction.confidence_level,
+                    'improvement_expected': prediction.improvement_expected,
+                    'factors': prediction.factors
+                })
+            
+            # Sort predictions by distance and time
+            predictions.sort(key=lambda x: (
+                int(x['event_key'].split('_')[0]) if x['event_key'].split('_')[0].isdigit() else 999,
+                x['current_best']
+            ))
+            
+            if predictions:
+                all_predictions[swimmer_id] = {
+                    'swimmer_id': swimmer_id,
+                    'swimmer_name': swimmer_name,
+                    'predictions': predictions,
+                    'total_events': len(predictions),
+                    'attendance_rate': attendance_rate
+                }
+                total_predictions_count += len(predictions)
+        
+        return {
+            'squad_id': squad_id,
+            'predictions': all_predictions,
+            'total_swimmers': len(swimmers),
+            'swimmers_with_predictions': len(all_predictions),
+            'total_predictions': total_predictions_count,
+            'attempts_until_target': attempts_until_target
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching squad predictions: {str(e)}")
+        log_error(e, context="get_squad_predictions", squad_id=squad_id)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch squad predictions: {str(e)}")
+
 
 
