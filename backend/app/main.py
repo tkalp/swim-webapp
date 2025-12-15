@@ -6,7 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from dotenv import load_dotenv
 import os
 
-from app.routes import ai_coach, workout_analysis, swimrankings, squads, workout_tags, coach_connections, swimmers, admin, training_sessions, beta, coaches, workout_ratings, workout_sharing
+from app.routes import ai_coach, workout_analysis, swimrankings, squads, workout_tags, coach_connections, admin, training_sessions, beta, coaches, workout_ratings, workout_sharing
+from app.routes.swimmers import router as swimmers_router
 from app.middleware.logging_middleware import LoggingMiddleware
 from app.utils import logger, log_error
 
@@ -81,7 +82,7 @@ app.include_router(swimrankings.router)
 app.include_router(squads.router)
 app.include_router(workout_tags.router)
 app.include_router(coach_connections.router)
-app.include_router(swimmers.router)
+app.include_router(swimmers_router)
 app.include_router(admin.router)
 app.include_router(training_sessions.router)
 app.include_router(beta.router)

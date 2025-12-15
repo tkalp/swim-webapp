@@ -18,6 +18,8 @@ interface PredictionBadgeProps {
   prediction: {
     predicted_time: number
     current_best: number
+    current_best_is_converted?: boolean
+    current_best_converted_from?: string
     confidence_level: 'high' | 'medium' | 'low'
     factors?: PredictionFactors
   }
@@ -75,7 +77,14 @@ export function PredictionBadge({
         <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Current Best:</span>
-            <span className="font-mono text-slate-200">{formatTime(prediction.current_best)}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-slate-200">{formatTime(prediction.current_best)}</span>
+              {prediction.current_best_is_converted && prediction.current_best_converted_from && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">
+                  from {prediction.current_best_converted_from}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Predicted:</span>

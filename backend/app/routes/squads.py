@@ -1713,7 +1713,7 @@ async def get_squad_predictions(
     Only events with sufficient data (min_attempts) will have predictions.
     """
     try:
-        from app.services.prediction_service import PredictionService, WorkoutContext
+        from app.services.prediction import PredictionService, WorkoutContext, ImprovementAnalyzer
         from app.services.performance_service import PerformanceService
         from app.domain.value_objects.time import interval_to_seconds
         
@@ -1811,9 +1811,6 @@ async def get_squad_predictions(
         squad_improvement_rates = {}
         start_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
         
-        # Create a PredictionService instance for calculating improvement rates
-        prediction_service = PredictionService()
-        
         for swimmer_id, events in swimmer_events_data.items():
             for event_key, event_results in events.items():
                 if event_key not in squad_improvement_rates:
@@ -1821,7 +1818,7 @@ async def get_squad_predictions(
                 
                 if len(event_results) >= 2:
                     times = [r['time_seconds'] for r in sorted(event_results, key=lambda x: x['performed_on'])]
-                    rate = prediction_service.calculate_improvement_per_attempt(times)
+                    rate = ImprovementAnalyzer.calculate_improvement_per_attempt(times)
                     squad_improvement_rates[event_key].append(rate)
         
         # Average squad rates
@@ -1929,7 +1926,7 @@ async def get_squad_predictions(
                 squad_rate = squad_improvement_rates.get(event_key)
                 
                 # Generate prediction
-                prediction = prediction_service.predict_improvement(
+                prediction = PredictionService.predict_improvement(
                     event=event_display,
                     current_best=current_best,
                     all_times=all_times,

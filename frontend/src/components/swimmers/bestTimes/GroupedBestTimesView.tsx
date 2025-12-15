@@ -451,7 +451,7 @@ function TableView({
                       {showPredictions && (
                         <td className="px-2 py-3 text-center">
                           {!predictionsLoading && scmPrediction ? (
-                            <PredictionBadge prediction={scmPrediction} showTooltipBelow={showTooltipBelow} compact />
+                            <PredictionBadge prediction={scmPrediction} compact />
                           ) : (
                             <span className="text-slate-600 text-xs">—</span>
                           )}

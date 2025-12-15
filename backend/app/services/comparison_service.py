@@ -6,7 +6,7 @@ import statistics
 
 from app.utils.age_calculator import calculate_age, calculate_age_whole_years
 from app.services.trend_analysis_service import TrendAnalysisService, ComparativeTrend
-from app.services.prediction_service import PredictionService
+from app.services.prediction import PredictionService
 
 
 class SwimmerComparisonService:
