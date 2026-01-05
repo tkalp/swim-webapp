@@ -263,15 +263,21 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`font-semibold ${
-                              isImproving ? 'text-green-400' : 'text-red-400'
+                              swimmer.avg_improvement_pct < -0.1 ? 'text-green-400' : 
+                              swimmer.avg_improvement_pct > 0.1 ? 'text-red-400' : 
+                              'text-slate-400'
                             }`}>
+                              {swimmer.avg_improvement_pct < -0.1 ? '' : swimmer.avg_improvement_pct > 0.1 ? '+' : ''}
                               {swimmer.avg_improvement_pct.toFixed(1)}%
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`font-semibold ${
-                              swimmer.best_improvement_pct < 0 ? 'text-green-400' : 'text-red-400'
+                              swimmer.best_improvement_pct < -0.1 ? 'text-green-400' : 
+                              swimmer.best_improvement_pct > 0.1 ? 'text-red-400' : 
+                              'text-slate-400'
                             }`}>
+                              {swimmer.best_improvement_pct < -0.1 ? '' : swimmer.best_improvement_pct > 0.1 ? '+' : ''}
                               {swimmer.best_improvement_pct.toFixed(1)}%
                             </span>
                           </td>
@@ -365,7 +371,7 @@ const SquadPerformanceTab: React.FC<SquadPerformanceTabProps> = ({ squadId }) =>
                                               </div>
                                             </div>
                                           </div>
-                                        </div>
+                                        </div>f
                                       </div>
                                     );
                                   })}

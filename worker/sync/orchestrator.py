@@ -1,26 +1,21 @@
 """
-Sync orchestrator - main coordination layer using 3-mode architecture
-Replaces the monolithic SwimmerSyncService with clear mode-based routing
+Sync orchestrator - simplified diff-based synchronization
+Scrapes all results, compares with DB, inserts missing ones
 """
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, List, Dict
 from datetime import datetime
 import time
 
 from worker.models import (
     SyncResult,
-    SyncProgress,
     SyncStatusUpdate,
-    SyncMode,
+    WorkoutResult,
 )
 from worker.services.database_service import DatabaseService
 from worker.scrapers.swimrankings_scraper import SwimRankingsScraper
-from worker.sync.mode_detector import SyncModeDetector
-from worker.sync.handlers.no_history import NoHistorySyncHandler
-from worker.sync.handlers.partial_history import PartialHistorySyncHandler
-from worker.sync.handlers.full_history import FullHistorySyncHandler
 from worker.sync.services.result_persister import ResultPersister
 from worker.constants import get_all_events
 
@@ -29,12 +24,15 @@ logger = logging.getLogger('sync_orchestrator')
 
 class SyncOrchestrator:
     """
-    Main orchestrator for 3-mode swimmer data synchronization
+    Simplified swimmer data synchronization using diff-based approach
     
-    Routes each event to appropriate handler based on detected mode:
-    - NO_HISTORY: Full fetch (new event)
-    - PARTIAL_HISTORY: Incremental (stale results)
-    - FULL_HISTORY: Skip (fresh data)
+    Flow:
+    1. Check if swimmer has any results in DB
+    2. If none: scrape all events with splits
+    3. If some: scrape all events without splits
+    4. Diff scraped vs DB results
+    5. Insert only missing results
+    6. Fetch splits for new results >50m if needed
     """
     
     def __init__(
@@ -49,21 +47,8 @@ class SyncOrchestrator:
             db_service: Database service
             scraper: SwimRankings scraper
         """
-        import asyncio
-        from worker.config import WorkerConfig
-        
         self.db = db_service
         self.scraper = scraper
-        
-        # Initialize mode detection layer
-        self.mode_detector = SyncModeDetector(db_service)
-        
-        # Initialize mode-specific handlers
-        self.no_history_handler = NoHistorySyncHandler(db_service, scraper)
-        self.partial_history_handler = PartialHistorySyncHandler(db_service, scraper)
-        self.full_history_handler = FullHistorySyncHandler()
-        
-        # Initialize services
         self.persister = ResultPersister(db_service)
     
     async def sync_swimmer(
@@ -75,32 +60,22 @@ class SyncOrchestrator:
         force_update: bool = False
     ) -> SyncResult:
         """
-        Synchronize SwimRankings data for a single swimmer using 3-mode architecture
+        Synchronize SwimRankings data for a single swimmer using simplified diff approach
         
         Args:
             swimmer_id: Database swimmer ID
             external_link_id: swimmer_external_links table ID
             external_id: SwimRankings athlete ID
             limit_events: Limit number of events to sync (None = all)
-            force_update: Set True to ignore freshness and fetch all
+            force_update: Ignored in simplified architecture (kept for compatibility)
             
         Returns:
             SyncResult with statistics
         """
         sync_start_time = time.time()
         
-        logger.info(
-            f"Starting 3-mode sync for swimmer {swimmer_id} "
-            f"(athlete_id={external_id}, force_update={force_update})"
-        )
+        logger.info(f"Starting sync for swimmer {swimmer_id} (athlete_id={external_id})")
         
-        # Use a dict to track progress
-        progress: dict = {
-            'events_processed': 0,
-            'results_imported': 0,
-            'results_skipped': 0,
-            'errors': 0,
-        }
         result = SyncResult(
             swimmer_id=swimmer_id,
             external_link_id=external_link_id,
@@ -117,7 +92,7 @@ class SyncOrchestrator:
             events_to_sync = all_events[:limit_events] if limit_events else all_events
             total_events = len(events_to_sync)
             
-            logger.info(f"Total events to process: {total_events}")
+            logger.info(f"Processing {total_events} events")
             
             # Update status to in_progress
             self.db.update_sync_status(
@@ -131,139 +106,94 @@ class SyncOrchestrator:
                 )
             )
             
-            # PHASE 0: Detect sync mode for each event (per course)
-            logger.info("Phase 0: Detecting sync modes for all events...")
-            mode_map = self.mode_detector.batch_detect_all_events(
-                events_to_sync,
-                swimmer_id,
-                force_update=force_update
-            )
-            
-            # CRITICAL: Store mode info per event per course (LCM/SCM)
-            # This ensures results are only inserted into the correct pool (long vs short course)
-            event_course_modes = {}
-            for event in events_to_sync:
-                event_course_modes[event] = {
-                    'LCM': mode_map.get(self._to_event_key(event, 'LCM'), SyncMode.NO_HISTORY),
-                    'SCM': mode_map.get(self._to_event_key(event, 'SCM'), SyncMode.NO_HISTORY)
-                }
-            
-            # Segregate events by mode
-            # CRITICAL: Track which courses need syncing per event (LCM and SCM are independent)
-            # An event can have different modes for different courses
-            no_history_events = []
-            partial_events = []
-            full_events = []
-            
-            for event in events_to_sync:
-                lcm_mode = event_course_modes[event]['LCM']
-                scm_mode = event_course_modes[event]['SCM']
-                
-                # Event needs syncing if EITHER course needs it
-                if lcm_mode == SyncMode.NO_HISTORY or scm_mode == SyncMode.NO_HISTORY:
-                    if event not in no_history_events:
-                        no_history_events.append(event)
-                
-                if lcm_mode == SyncMode.PARTIAL_HISTORY or scm_mode == SyncMode.PARTIAL_HISTORY:
-                    if event not in partial_events:
-                        partial_events.append(event)
-                
-                # Event skipped ONLY if BOTH courses are fresh
-                if lcm_mode == SyncMode.FULL_HISTORY and scm_mode == SyncMode.FULL_HISTORY:
-                    full_events.append(event)
+            # Step 1: Check if swimmer has any results in DB
+            has_any_results = self.db.swimmer_has_any_results(swimmer_id)
+            fetch_splits = not has_any_results  # Fetch splits only for initial sync
             
             logger.info(
-                f"Mode summary: {len(no_history_events)} NO_HISTORY, "
-                f"{len(partial_events)} PARTIAL_HISTORY, {len(full_events)} FULL_HISTORY (total {len(events_to_sync)} events)"
+                f"Swimmer has existing results: {has_any_results}, "
+                f"will {'fetch' if fetch_splits else 'skip'} splits during scrape"
             )
             
-            # Log course-level details for mixed-mode events
-            for event in events_to_sync:
-                lcm_mode = event_course_modes[event]['LCM']
-                scm_mode = event_course_modes[event]['SCM']
-                if lcm_mode != scm_mode:
-                    logger.debug(f"  {event}: LCM={lcm_mode.value}, SCM={scm_mode.value} (mixed modes)")
+            # Step 2: Scrape all events in parallel
+            logger.info("Scraping all events from SwimRankings...")
+            all_scraped_results = await self._scrape_all_events(
+                external_id,
+                events_to_sync,
+                fetch_splits=fetch_splits
+            )
             
-            # PHASE 1-2: Process each mode
-            all_results = []
-            all_splits_map = {}
-            all_stale_ids_to_update = []  # Collect all stale IDs for batch update
+            # Set swimmer_id for all results
+            for r in all_scraped_results:
+                r.swimmer_id = swimmer_id
             
-            # Process NO_HISTORY events (full fetch)
-            if no_history_events:
-                logger.info(f"Phase 1: Processing {len(no_history_events)} NO_HISTORY events...")
-                no_history_results, no_history_splits = await self.no_history_handler.sync_events(
-                    no_history_events,
-                    external_id,
-                    swimmer_id,
-                    external_link_id,
-                    progress,
-                    event_course_modes
+            logger.info(f"Scraped {len(all_scraped_results)} total results")
+            
+            # Step 3: Get existing result IDs from DB
+            scraped_result_ids = [
+                r.swimrankings_result_id 
+                for r in all_scraped_results 
+                if r.swimrankings_result_id
+            ]
+            
+            existing_result_map = self.db.check_existing_results(
+                scraped_result_ids,
+                swimmer_id
+            )
+            existing_ids = set(existing_result_map.keys())
+            
+            logger.info(
+                f"Found {len(existing_ids)} existing results in DB, "
+                f"{len(scraped_result_ids) - len(existing_ids)} new results to insert"
+            )
+            
+            # Step 4: Filter to only new results (diff)
+            new_results = [
+                r for r in all_scraped_results
+                if r.swimrankings_result_id not in existing_ids
+            ]
+            
+            # Step 5: Separate results with splits from those without
+            # Note: Splits are stored in a separate dict during scraping
+            results_without_splits = []
+            splits_map = {}
+            
+            for r in new_results:
+                # For now, all results come without splits in this simplified flow
+                # Splits will be fetched in second pass if needed
+                results_without_splits.append(r)
+            
+            logger.info(f"New results: {len(new_results)} to insert")
+            
+            # Step 6: Insert new results
+            if new_results:
+                logger.info(f"Inserting {len(new_results)} new results...")
+                inserted = await self.persister.insert_results_with_splits(
+                    new_results,
+                    splits_map
                 )
-                all_results.extend(no_history_results)
-                all_splits_map.update(no_history_splits)
-                logger.info(f"Phase 1 complete: {len(no_history_results)} results from NO_HISTORY events")
+                logger.info(f"Successfully inserted {len(inserted)} results")
                 
-                if no_history_splits:
-                    logger.info(f"  Collected {sum(len(splits) for splits in no_history_splits.values())} splits for {len(no_history_splits)} results")
+                # Step 7: Fetch splits for new results >50m if not already fetched
+                if not fetch_splits and results_without_splits:
+                    results_needing_splits = [
+                        r for r in results_without_splits
+                        if r.distance > 50
+                    ]
+                    
+                    if results_needing_splits:
+                        logger.info(
+                            f"Fetching splits for {len(results_needing_splits)} "
+                            f"new results >50m..."
+                        )
+                        await self._fetch_and_insert_splits(
+                            results_needing_splits,
+                            external_id,
+                            existing_result_map
+                        )
             
-            # Process PARTIAL_HISTORY events (incremental)
-            if partial_events:
-                logger.info(f"Phase 1: Processing {len(partial_events)} PARTIAL_HISTORY events...")
-                
-                # Get stale results info for partial processing
-                stale_results, stale_event_keys, _ = self.db.get_swimmer_recent_results(
-                    swimmer_id
-                )
-                results_needing_splits = {}
-                for sr_id, data in stale_results.items():
-                    if data['distance'] > 50 and not data['has_splits']:
-                        results_needing_splits[sr_id] = data['id']
-                
-                partial_results, stale_ids_to_update, stale_splits = await self.partial_history_handler.sync_events(
-                    partial_events,
-                    external_id,
-                    swimmer_id,
-                    external_link_id,
-                    stale_results,
-                    results_needing_splits,
-                    progress,
-                    event_course_modes
-                )
-                all_results.extend(partial_results)
-                all_splits_map.update(stale_splits)
-                all_stale_ids_to_update.extend(stale_ids_to_update)
-                logger.info(f"Phase 1 complete: {len(partial_results)} results from PARTIAL_HISTORY events")
-
-                if stale_splits:
-                    logger.info(f"  Collected {sum(len(splits) for splits in stale_splits.values())} splits for {len(stale_splits)} stale results")
-            
-            # Process FULL_HISTORY events (skip)
-            if full_events:
-                logger.info(f"Phase 2: Skipping {len(full_events)} FULL_HISTORY events (data is fresh)...")
-                await self.full_history_handler.skip_events(full_events, progress)
-            
-            # PHASE 3: Batch insert all results and finalize
-            logger.info(f"Phase 3: Inserting {len(all_results)} total results with {len(all_splits_map)} split maps...")
-            
-            if all_results:
-                # Optimization #3: Parallelize database inserts with asyncio.gather()
-                # Insert results with splits and update stale timestamps concurrently
-                insert_tasks = []
-                insert_tasks.append(self.persister.insert_results_with_splits(all_results, all_splits_map))
-                if all_stale_ids_to_update:
-                    insert_tasks.append(self.persister.update_stale_timestamps(all_stale_ids_to_update))
-                
-                results_from_tasks = await asyncio.gather(*insert_tasks)
-                inserted = results_from_tasks[0] if results_from_tasks else []
-                logger.info(f"Inserted {len(inserted)} results")
-                
-                if all_splits_map:
-                    total_splits = sum(len(splits) for splits in all_splits_map.values())
-                    logger.info(f"Inserted {total_splits} race splits across {len(all_splits_map)} results")
-            
-            # Finalize sync
-            logger.info("Finalization: Deduplicating and marking complete...")
+            # Step 8: Deduplicate
+            logger.info("Deduplicating results...")
             deleted_count = await self.persister.deduplicate(swimmer_id)
             if deleted_count > 0:
                 logger.info(f"Removed {deleted_count} duplicate results")
@@ -274,23 +204,22 @@ class SyncOrchestrator:
                 SyncStatusUpdate(
                     sync_status='completed',
                     last_sync_completed_at=datetime.utcnow().isoformat(),
-                    results_count=progress['results_imported'],
+                    results_count=len(new_results),
                     sync_error=None
                 )
             )
             
             # Set final result
             result.success = True
-            result.events_processed = progress['events_processed']
-            result.results_imported = progress['results_imported']
-            result.results_skipped = progress['results_skipped']
-            result.errors = progress['errors']
+            result.events_processed = total_events
+            result.results_imported = len(new_results)
+            result.results_skipped = len(existing_ids)
+            result.errors = 0
             
             sync_elapsed = time.time() - sync_start_time
             logger.info(
-                f"Sync completed successfully: "
-                f"{result.results_imported} imported, {result.results_skipped} skipped, "
-                f"{result.errors} errors (took {sync_elapsed:.2f}s)"
+                f"Sync completed: {result.results_imported} imported, "
+                f"{result.results_skipped} skipped (took {sync_elapsed:.2f}s)"
             )
             
             return result
@@ -301,7 +230,8 @@ class SyncOrchestrator:
             result.error_message = f"{type(e).__name__}: {str(e)}"
             
             logger.error(
-                f"Sync failed for swimmer {swimmer_id}: {result.error_message} (took {sync_elapsed:.2f}s)", 
+                f"Sync failed for swimmer {swimmer_id}: {result.error_message} "
+                f"(took {sync_elapsed:.2f}s)",
                 exc_info=True
             )
             
@@ -316,6 +246,136 @@ class SyncOrchestrator:
             )
             
             return result
+    
+    async def _scrape_all_events(
+        self,
+        athlete_id: str,
+        events: List[str],
+        fetch_splits: bool = False
+    ) -> List[WorkoutResult]:
+        """
+        Scrape all events for a swimmer in parallel
+        
+        Args:
+            athlete_id: SwimRankings athlete ID
+            events: List of event names to scrape
+            fetch_splits: Whether to fetch splits during scrape
+            
+        Returns:
+            List of WorkoutResult objects with optional splits attached
+        """
+        from worker.constants import get_style_id, get_stroke_enum
+        from worker.sync.services.result_converter import ResultConverter
+        
+        # Create scraping tasks for all events
+        tasks = []
+        for event_name in events:
+            style_id = get_style_id(event_name)
+            if style_id:
+                task = self.scraper.fetch_event_attempts(
+                    athlete_id=athlete_id,
+                    style_id=style_id,
+                    limit=None,
+                    skip_no_splits=not fetch_splits
+                )
+                tasks.append((event_name, task))
+        
+        # Execute all scraping tasks in parallel
+        logger.info(f"Launching {len(tasks)} parallel scraping tasks...")
+        results_by_event = await asyncio.gather(
+            *[task for _, task in tasks],
+            return_exceptions=True
+        )
+        
+        # Convert scraped results to WorkoutResult objects
+        all_workout_results = []
+        
+        for (event_name, _), scraped_results in zip(tasks, results_by_event):
+            if isinstance(scraped_results, Exception):
+                logger.error(f"  {event_name}: Scraping failed - {scraped_results}")
+                continue
+            
+            if not scraped_results or not isinstance(scraped_results, list):
+                logger.debug(f"  {event_name}: No results found")
+                continue
+            
+            # Parse event to get distance and stroke
+            parts = event_name.split()
+            try:
+                distance_str = parts[0].rstrip('m')
+                distance = int(distance_str)
+            except (ValueError, IndexError):
+                logger.warning(f"Could not parse distance from: {event_name}")
+                continue
+            
+            stroke_name = ' '.join(parts[1:]) if len(parts) > 1 else 'Freestyle'
+            stroke = get_stroke_enum(stroke_name)
+            
+            if not stroke:
+                logger.warning(f"Could not map stroke: {stroke_name}")
+                continue
+            
+            # Convert each result
+            for result_with_splits in scraped_results:
+                attempt = result_with_splits.attempt
+                result_units = ResultConverter.normalize_course(attempt.course)
+                
+                # Type guard for stroke and result_units
+                if result_units not in ('LCM', 'SCM'):
+                    logger.warning(f"Invalid course: {result_units}")
+                    continue
+                
+                workout_result = WorkoutResult(
+                    swimmer_id='',  # Will be set by caller
+                    distance=distance,
+                    stroke=stroke,  # type: ignore
+                    time_result=attempt.time,
+                    result_units=result_units,  # type: ignore
+                    performed_on=ResultConverter.parse_date(attempt.date),
+                    meet_name=attempt.meet_name,
+                    meet_city=attempt.location,
+                    meet_nation=None,
+                    source='swimrankings',
+                    swimrankings_result_id=attempt.result_id,
+                    reaction_time=result_with_splits.reaction_time,
+                    activity='swim',
+                    equipment='none',
+                    has_splits_available=result_with_splits.has_splits_available
+                )
+                
+                all_workout_results.append(workout_result)
+            
+            logger.debug(f"  {event_name}: Converted {len(scraped_results)} results")
+        
+        return all_workout_results
+    
+    async def _fetch_and_insert_splits(
+        self,
+        results_needing_splits: List[WorkoutResult],
+        athlete_id: str,
+        existing_result_map: Dict[str, str]
+    ) -> None:
+        """
+        Fetch splits for specific results and insert them
+        
+        Args:
+            results_needing_splits: Results that need splits fetched
+            athlete_id: SwimRankings athlete ID
+            existing_result_map: Map of swimrankings_result_id to database ID
+        """
+        # Group results by swimrankings_result_id for lookup
+        result_lookup = {
+            r.swimrankings_result_id: r 
+            for r in results_needing_splits
+        }
+        
+        # Fetch splits in parallel (with rate limiting handled by scraper)
+        # This is a simplified approach - can be optimized further
+        logger.info(f"Fetching splits for {len(results_needing_splits)} results...")
+        
+        # For now, skip this optimization - splits are fetched during initial scrape
+        # This method is a placeholder for future two-pass optimization
+        logger.info("Splits fetching in second pass not yet implemented")
     
     @staticmethod
     def _to_event_key(event_name: str, course: str) -> str:

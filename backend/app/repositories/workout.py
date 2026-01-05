@@ -49,22 +49,60 @@ class WorkoutResultRepository(BaseRepository):
             distance: Distance filter in meters
             
         Returns:
-            List of best time records grouped by event
+            List of best time records
         """
         try:
-            query = self.db.rpc(
-                "get_best_times",
-                {
-                    "p_swimmer_id": swimmer_id,
-                    "p_interval": interval,
-                    "p_stroke": stroke,
-                    "p_distance": distance
-                }
-            )
+            # Build query
+            query = self.db.table(self.table_name).select("*").eq("swimmer_id", swimmer_id)
+            
+            # Apply time interval filter
+            if interval:
+                cutoff_date = self._get_interval_cutoff(interval)
+                if cutoff_date:
+                    query = query.gte("performed_on", cutoff_date.isoformat())
+            
+            # Apply stroke filter
+            if stroke:
+                query = query.eq("stroke", stroke)
+            
+            # Apply distance filter
+            if distance:
+                query = query.eq("distance", distance)
+            
+            # Only get results with actual times
+            query = query.not_.is_("time_result", "null")
+            
+            # Order by performed_on descending
+            query = query.order("performed_on", desc=True)
+            
             response = query.execute()
             return cast(List[Dict[str, Any]], response.data or [])
         except Exception as e:
             raise DatabaseError(f"Failed to fetch best times for swimmer {swimmer_id}") from e
+    
+    def _get_interval_cutoff(self, interval: str) -> Optional[datetime]:
+        """Get cutoff date for time interval filter.
+        
+        Args:
+            interval: Time interval (week, month, 3months, 6months, year, all)
+            
+        Returns:
+            Cutoff datetime or None for 'all'
+        """
+        now = datetime.now()
+        
+        if interval == "week":
+            return now - timedelta(days=7)
+        elif interval == "month":
+            return now - timedelta(days=30)
+        elif interval == "3months":
+            return now - timedelta(days=90)
+        elif interval == "6months":
+            return now - timedelta(days=180)
+        elif interval == "year":
+            return now - timedelta(days=365)
+        else:  # "all" or invalid
+            return None
     
     def find_best_splits(
         self,

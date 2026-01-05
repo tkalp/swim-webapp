@@ -25,6 +25,7 @@ import AddEditSessionModal from "@/components/squad/sessions/AddEditSessionModal
 import CreateFromScheduleModal from "@/components/squad/sessions/CreateFromScheduleModal";
 import AttendanceModal from "@/components/squad/sessions/AttendanceModal";
 import PracticeNotesModal from "@/components/squad/sessions/PracticeNotesModal";
+import { SelectWorkoutToAssignModal } from "@/components/workouts/SelectWorkoutToAssignModal";
 import { SquadPageHeader } from "@/components/squad/SquadPageHeader";
 import {
   createSessionsFromSchedules,
@@ -36,7 +37,7 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useToast } from "@/contexts/ToastContext"; // if using alerts
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
-type Session = {
+export type Session = {
   id: string;
   training_type: string;
   start_date: string;
@@ -133,6 +134,11 @@ export default function SessionsList({
   const [ratingSessionId, setRatingSessionId] = useState<string | null>(null);
   const [ratingWorkoutId, setRatingWorkoutId] = useState<string | null>(null);
   const [ratingWorkoutName, setRatingWorkoutName] = useState<string>('');
+
+  // Assign workout modal state
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignSquadId, setAssignSquadId] = useState<string | null>(null);
+  const [assignSession, setAssignSession] = useState<Session | null>(null);
 
   // Filter sessions by date range
   const filteredSessions = useMemo(() => {
@@ -276,6 +282,12 @@ export default function SessionsList({
     setNotesSessionDate(sessionDate);
     setPracticeNotesType(type);
     setPracticeNotesModalOpen(true);
+  };
+
+  const handleAssignExistingWorkout = (session: Session) => {
+    setAssignSquadId(squadId);
+    setAssignSession(session);
+    setAssignModalOpen(true);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -729,13 +741,22 @@ export default function SessionsList({
                           Add a workout to track training details
                         </p>
                         {canManage && (
-                          <button
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-md transition-all duration-200 text-xs font-medium"
-                            onClick={() => navigate(`/workouts/create?sessionId=${s.id}`)}
-                          >
-                            <Plus size={14} />
-                            <span>Create Workout</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400 rounded-md transition-all duration-200 text-xs font-medium"
+                              onClick={() => navigate(`/workouts/create?sessionId=${s.id}`)}
+                            >
+                              <Plus size={14} />
+                              <span>Create Workout</span>
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 hover:border-purple-500/50 text-purple-400 rounded-md transition-all duration-200 text-xs font-medium"
+                              onClick={() => handleAssignExistingWorkout(s)}
+                            >
+                              <Calendar size={14} />
+                              <span>Assign Existing</span>
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}
@@ -909,6 +930,25 @@ export default function SessionsList({
         cancelText={confirmDialog.options.cancelText}
         variant={confirmDialog.options.variant}
       />
+
+      {/* Assign Workout to Session Modal */}
+      {assignModalOpen && assignSquadId && (
+        <SelectWorkoutToAssignModal
+          squadId={assignSquadId}
+          session={assignSession || undefined}
+          isOpen={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false);
+            setAssignSquadId(null);
+            setAssignSession(null);
+          }}
+          onAssigned={() => {
+            if (onRefresh) {
+              onRefresh();
+            }
+          }}
+        />
+      )}
     </>
   );
 }

@@ -114,10 +114,14 @@ def log_error(error: Exception, context: Optional[str] = None, **kwargs):
     context_str = f" | context={context}" if context else ""
     extra_info = " | ".join(f"{k}={v}" for k, v in kwargs.items() if v is not None)
     
+    # Log error message first
     logger.error(
         f"ERROR {error_type}: {error_msg}{context_str}{' | ' + extra_info if extra_info else ''}"
     )
-    logger.debug(f"Traceback:\n{traceback.format_exc()}")
+    
+    # Log full traceback at ERROR level so it's always visible
+    tb = traceback.format_exc()
+    logger.error(f"Traceback:\n{tb}")
 
 
 def log_database_query(operation: str, table: str, filters: Optional[dict] = None, **kwargs):

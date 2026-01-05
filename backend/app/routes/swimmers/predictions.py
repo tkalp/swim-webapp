@@ -1,11 +1,11 @@
 """Prediction routes for swimmers."""
 from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from collections import defaultdict
 
 from app.services.performance_service import PerformanceService
-from app.services.prediction import PredictionService, WorkoutContext
+from app.services.prediction import PredictionService, WorkoutContext, AchievementValidator, GapAnalyzer
 from app.middleware.auth import get_current_user_id
 from app.infrastructure.database import get_supabase_client
 from app.domain.value_objects.time import interval_to_seconds
@@ -34,6 +34,11 @@ async def get_swimmer_predictions(
         # Get attendance data
         attendance_rate = _get_attendance_rate(supabase, swimmer_id)
         
+        # Get squad attendance average for comparison
+        squad_avg_attendance = None
+        if swimmer.get('squad_id'):
+            squad_avg_attendance = _get_squad_avg_attendance(supabase, swimmer['squad_id'])
+        
         # Get workout results
         results = performance_service.get_workout_results(
             swimmer_id=swimmer_id,
@@ -56,6 +61,15 @@ async def get_swimmer_predictions(
         # Get recent workouts
         recent_workouts = _get_recent_workouts(supabase, swimmer_id)
         
+        # Calculate training volume metrics
+        recent_training_volume = _calculate_recent_volume(recent_workouts) if recent_workouts else None
+        squad_avg_volume = None
+        if swimmer.get('squad_id'):
+            squad_avg_volume = _get_squad_avg_volume(supabase, swimmer['squad_id'])
+        
+        # Calculate average workout effort
+        avg_workout_effort = _calculate_avg_effort(recent_workouts) if recent_workouts else None
+        
         # Generate predictions
         predictions = []
         for event_key, event_results in events_data.items():
@@ -64,6 +78,7 @@ async def get_swimmer_predictions(
             
             sorted_results = sorted(event_results, key=lambda x: x['performed_on'])
             all_times = [r['time_seconds'] for r in sorted_results]
+            all_dates = [r['performed_on'] for r in sorted_results]
             current_best = min(all_times)
             event_display = sorted_results[0]['event_display']
             
@@ -74,6 +89,27 @@ async def get_swimmer_predictions(
             
             days_since_last = _calculate_days_since_last_result(sorted_results)
             squad_rate = squad_improvement_rates.get(event_key)
+            
+            # Calculate achievement rate for this event
+            achievement_metrics = AchievementValidator.calculate_achievement_rate(
+                all_times=all_times,
+                all_dates=all_dates,
+                prediction_window=5,
+                attempts_horizon=10
+            )
+            
+            # Perform gap analysis
+            gap_analysis = GapAnalyzer.analyze_prediction_gap(
+                achievement_rate=achievement_metrics['achievement_rate'],
+                predictions_tested=achievement_metrics['total_predictions'],
+                swimmer_attendance_rate=attendance_rate,
+                squad_avg_attendance=squad_avg_attendance,
+                recent_training_volume=recent_training_volume,
+                squad_avg_volume=squad_avg_volume,
+                recent_workouts=recent_workouts,
+                days_since_last_result=days_since_last,
+                avg_workout_effort=avg_workout_effort
+            )
             
             prediction = PredictionService.predict_improvement(
                 event=event_display,
@@ -96,7 +132,12 @@ async def get_swimmer_predictions(
                 'predicted_time': prediction.predicted_time,
                 'confidence_level': prediction.confidence_level,
                 'improvement_expected': prediction.improvement_expected,
-                'factors': prediction.factors
+                'factors': prediction.factors,
+                'achievement_rate': achievement_metrics['achievement_rate'],
+                'achievement_confidence': achievement_metrics['confidence'],
+                'avg_attempts_to_achieve': achievement_metrics['avg_attempts_to_achieve'],
+                'predictions_tested': achievement_metrics['total_predictions'],
+                'gap_analysis': gap_analysis
             })
         
         # Sort predictions
@@ -464,3 +505,151 @@ def _calculate_days_since_last_result(sorted_results: list) -> Optional[int]:
     except Exception as e:
         logger.warning(f"Failed to calculate days since last result: {e}")
         return None
+
+
+def _get_squad_avg_attendance(supabase, squad_id: str) -> Optional[float]:
+    """Get squad average attendance rate for last 30 days."""
+    try:
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        # Get all swimmers in squad
+        swimmers_result = supabase.table('swimmers').select('id').eq('squad_id', squad_id).execute()
+        
+        if not swimmers_result.data:
+            return None
+        
+        swimmer_ids = [s['id'] for s in swimmers_result.data]
+        
+        # Get attendance for all squad swimmers
+        attendance_result = supabase.table('training_attendance').select(
+            'swimmer_id, status'
+        ).in_('swimmer_id', swimmer_ids).gte('created_at', thirty_days_ago).execute()
+        
+        if not attendance_result.data:
+            return None
+        
+        # Calculate squad average
+        swimmer_rates = {}
+        for record in attendance_result.data:
+            swimmer_id = record['swimmer_id']
+            if swimmer_id not in swimmer_rates:
+                swimmer_rates[swimmer_id] = {'total': 0, 'present': 0}
+            
+            swimmer_rates[swimmer_id]['total'] += 1
+            if record.get('status', '').lower() == 'present':
+                swimmer_rates[swimmer_id]['present'] += 1
+        
+        if not swimmer_rates:
+            return None
+        
+        rates = [
+            (s['present'] / s['total'] * 100) 
+            for s in swimmer_rates.values() if s['total'] > 0
+        ]
+        
+        return round(sum(rates) / len(rates), 1) if rates else None
+    
+    except Exception as e:
+        logger.warning(f"Failed to get squad average attendance: {e}")
+        return None
+
+
+def _calculate_recent_volume(workouts: List[WorkoutContext]) -> Optional[int]:
+    """Calculate total training volume from recent workouts."""
+    if not workouts:
+        return None
+    
+    try:
+        total_meters = sum(w.total_meters for w in workouts if w.total_meters)
+        return int(total_meters) if total_meters > 0 else None
+    except Exception as e:
+        logger.warning(f"Failed to calculate recent volume: {e}")
+        return None
+
+
+def _get_squad_avg_volume(supabase, squad_id: str) -> Optional[int]:
+    """Get squad average training volume for last 30 days."""
+    try:
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        # Get all swimmers in squad
+        swimmers_result = supabase.table('swimmers').select('id').eq('squad_id', squad_id).execute()
+        
+        if not swimmers_result.data:
+            return None
+        
+        swimmer_ids = [s['id'] for s in swimmers_result.data]
+        
+        # Get attendance records for squad swimmers (present or late)
+        attendance_result = supabase.table('training_attendance').select(
+            'swimmer_id, training_session_id, status'
+        ).in_('swimmer_id', swimmer_ids).gte('created_at', thirty_days_ago).execute()
+        
+        if not attendance_result.data:
+            return None
+        
+        # Get unique training session IDs where swimmers were present or late
+        session_ids = list(set(
+            a['training_session_id'] for a in attendance_result.data 
+            if a.get('status', '').lower() in ['present', 'late']
+        ))
+        
+        if not session_ids:
+            return None
+        
+        # Get workout templates for these sessions
+        sessions_result = supabase.table('training_sessions').select(
+            'id, workout_template(total_meters)'
+        ).in_('id', session_ids).execute()
+        
+        if not sessions_result.data:
+            return None
+        
+        # Build session_id -> meters mapping
+        session_meters = {}
+        for session in sessions_result.data:
+            workout_template = session.get('workout_template')
+            if workout_template and workout_template.get('total_meters'):
+                session_meters[session['id']] = workout_template['total_meters']
+        
+        # Calculate total volume per swimmer
+        swimmer_volumes = {}
+        for record in attendance_result.data:
+            if record.get('status', '').lower() not in ['present', 'late']:
+                continue
+            
+            swimmer_id = record['swimmer_id']
+            session_id = record['training_session_id']
+            
+            if session_id in session_meters:
+                if swimmer_id not in swimmer_volumes:
+                    swimmer_volumes[swimmer_id] = 0
+                swimmer_volumes[swimmer_id] += session_meters[session_id]
+        
+        if not swimmer_volumes:
+            return None
+        
+        volumes = list(swimmer_volumes.values())
+        return round(sum(volumes) / len(volumes)) if volumes else None
+    
+    except Exception as e:
+        logger.warning(f"Failed to get squad average volume: {e}")
+        return None
+
+
+def _calculate_avg_effort(workouts: List[WorkoutContext]) -> Optional[float]:
+    """Calculate average effort level from recent workouts."""
+    if not workouts:
+        return None
+    
+    try:
+        efforts = [w.effort_level for w in workouts if w.effort_level is not None]
+        
+        if not efforts:
+            return None
+        
+        return round(sum(efforts) / len(efforts), 1)
+    except Exception as e:
+        logger.warning(f"Failed to calculate average effort: {e}")
+        return None
+

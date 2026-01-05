@@ -17,17 +17,17 @@ class WorkerConfig:
     REDIS_URL: str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Scraper configuration
-    MAX_WORKERS: int = int(os.getenv('MAX_WORKERS', '8'))  # Increased from 2: network I/O bound, safe to parallelize
-    MIN_DELAY: float = float(os.getenv('SCRAPER_MIN_DELAY', '0.1'))
-    MAX_DELAY: float = float(os.getenv('SCRAPER_MAX_DELAY', '0.5'))
-    BASE_RETRY_DELAY: float = float(os.getenv('SCRAPER_RETRY_DELAY', '1.0'))
-    MAX_RETRIES: int = int(os.getenv('SCRAPER_MAX_RETRIES', '3'))
+    MAX_WORKERS: int = int(os.getenv('MAX_WORKERS') or '16')  # Increased from 2: network I/O bound, safe to parallelize
+    MIN_DELAY: float = float(os.getenv('SCRAPER_MIN_DELAY') or '0.1')
+    MAX_DELAY: float = float(os.getenv('SCRAPER_MAX_DELAY') or '0.5')
+    BASE_RETRY_DELAY: float = float(os.getenv('SCRAPER_RETRY_DELAY') or '1.0')
+    MAX_RETRIES: int = int(os.getenv('SCRAPER_MAX_RETRIES') or '3')
     
     # Pipeline configuration
-    PIPELINE_QUEUE_SIZE: int = int(os.getenv('PIPELINE_QUEUE_SIZE', '3'))  # Max events in queue
-    SPLIT_BATCH_SIZE: int = int(os.getenv('SPLIT_BATCH_SIZE', '3'))  # Splits per batch - reduced from 5 for better concurrency (network-bound, not CPU-bound)
-    SPLITS_MAX_WORKERS: int = int(os.getenv('SPLITS_MAX_WORKERS', '8'))  # Max concurrent split fetches (increased from 2, network I/O bound)
-    GLOBAL_SPLITS_SEMAPHORE_SIZE: int = int(os.getenv('GLOBAL_SPLITS_SEMAPHORE_SIZE', '16'))  # Global concurrent splits across all events (optimization #1)
+    PIPELINE_QUEUE_SIZE: int = int(os.getenv('PIPELINE_QUEUE_SIZE') or '3')  # Max events in queue
+    SPLIT_BATCH_SIZE: int = int(os.getenv('SPLIT_BATCH_SIZE') or '3')  # Splits per batch - reduced from 5 for better concurrency (network-bound, not CPU-bound)
+    SPLITS_MAX_WORKERS: int = int(os.getenv('SPLITS_MAX_WORKERS') or '8')  # Max concurrent split fetches (increased from 2, network I/O bound)
+    GLOBAL_SPLITS_SEMAPHORE_SIZE: int = int(os.getenv('GLOBAL_SPLITS_SEMAPHORE_SIZE') or '16')  # Global concurrent splits across all events (optimization #1)
     RESULT_BATCH_SIZE: int = int(os.getenv('RESULT_BATCH_SIZE', '50'))  # Results per existence check query
     EVENT_BATCH_SIZE: int = int(os.getenv('EVENT_BATCH_SIZE', '5'))  # Events per parallel batch fetch
     

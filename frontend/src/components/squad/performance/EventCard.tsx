@@ -10,7 +10,9 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const eventImprovement = event.improvement_pct;
-  const eventImproving = eventImprovement < 0;
+  const eventImproving = eventImprovement < -0.1;
+  const eventWorsening = eventImprovement > 0.1;
+  const noChange = !eventImproving && !eventWorsening;
   const trend = formatTrendVelocity(event.trend_velocity_per_day);
 
   return (
@@ -59,14 +61,19 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
         <div className="bg-slate-900/40 rounded px-1.5 py-1">
           <div className="text-slate-500 font-medium mb-0.5">Change</div>
           <div className={`font-bold text-xs flex items-center gap-0.5 ${
-            eventImproving ? 'text-emerald-400' : 'text-orange-400'
+            eventImproving ? 'text-emerald-400' : 
+            eventWorsening ? 'text-orange-400' : 
+            'text-slate-400'
           }`}>
             {eventImproving ? (
               <TrendingDown className="w-2.5 h-2.5" />
-            ) : (
+            ) : eventWorsening ? (
               <TrendingUp className="w-2.5 h-2.5" />
-            )}
-            <span>{eventImprovement.toFixed(1)}%</span>
+            ) : null}
+            <span>
+              {eventImproving ? '' : eventWorsening ? '+' : ''}
+              {eventImprovement.toFixed(1)}%
+            </span>
           </div>
         </div>
         

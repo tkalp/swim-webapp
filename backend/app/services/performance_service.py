@@ -4,6 +4,7 @@ import statistics
 from datetime import datetime
 from app.repositories.workout import WorkoutResultRepository, RaceSplitRepository
 from app.services.authorization_service import AuthorizationService
+from app.services.prediction.time_utils import PoolConverter
 from app.domain.value_objects.time import interval_to_seconds
 
 
@@ -54,7 +55,11 @@ class PerformanceService:
         stroke: Optional[str] = None,
         distance: Optional[int] = None
     ) -> List[Dict[str, Any]]:
-        """Get best times for a swimmer with filters.
+        """Get best times for a swimmer with filters, including converted times for missing courses.
+        
+        When a swimmer has a best time in one course (SCM or LCM) but not the other,
+        this method automatically converts the time to provide an estimated time for
+        the missing course. Converted times are marked with is_converted=True.
         
         Args:
             swimmer_id: Swimmer identifier (UUID)
@@ -64,7 +69,7 @@ class PerformanceService:
             distance: Distance in meters
             
         Returns:
-            List of best time records with FINA points
+            List of best time records with FINA points and course conversions
         """
         self._verify_swimmer_access(swimmer_id, user_id)
         
@@ -75,7 +80,10 @@ class PerformanceService:
             distance=distance
         )
         
-        return results
+        # Add converted times for missing courses
+        results_with_conversions = self._add_course_conversions(results)
+        
+        return results_with_conversions
     
     def get_best_splits(
         self,
@@ -177,6 +185,129 @@ class PerformanceService:
             List of created records
         """
         return self.split_repo.bulk_insert(splits)
+    
+    def get_overall_rankings(
+        self,
+        squad_id: str,
+        result_units: str,
+        user_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get overall pentathlon rankings for a squad.
+        
+        Ranks swimmers by combined time across 5 events:
+        50 Fly, 100 Back, 100 Breast, 200 Free, 200 IM
+        
+        Args:
+            squad_id: Squad identifier (UUID)
+            result_units: Course type (SCM or LCM)
+            user_id: User ID for authorization
+            
+        Returns:
+            List of rankings with swimmer info and event times
+        """
+        from app.infrastructure.database import get_supabase_client
+        
+        # Define the pentathlon events
+        PENTATHLON_EVENTS = [
+            {'distance': 50, 'stroke': 'fly'},
+            {'distance': 100, 'stroke': 'back'},
+            {'distance': 100, 'stroke': 'breast'},
+            {'distance': 200, 'stroke': 'free'},
+            {'distance': 200, 'stroke': 'im'}
+        ]
+        
+        supabase = get_supabase_client()
+        
+        # Get all swimmers in the squad
+        swimmers_response = supabase.table('swimmers').select(
+            'id, first_name, last_name, date_of_birth, sex'
+        ).eq('squad_id', squad_id).execute()
+        
+        if not swimmers_response.data:
+            return []
+        
+        swimmers = {s['id']: s for s in swimmers_response.data}
+        swimmer_ids = list(swimmers.keys())
+        
+        # Get best times for all pentathlon events
+        results_response = supabase.table('workout_result').select(
+            'swimmer_id, distance, stroke, time_result'
+        ).in_('swimmer_id', swimmer_ids).eq(
+            'activity', 'swim'
+        ).eq('equipment', 'none').eq(
+            'result_units', result_units
+        ).not_.is_('time_result', 'null').execute()
+        
+        if not results_response.data:
+            return []
+        
+        # Group results by swimmer and event
+        swimmer_events: Dict[str, Dict[str, float]] = {}
+        
+        for result in results_response.data:
+            swimmer_id = result['swimmer_id']
+            distance = result['distance']
+            stroke = result['stroke']
+            
+            # Check if this is a pentathlon event
+            event_key = f"{distance}_{stroke}"
+            is_pentathlon = any(
+                e['distance'] == distance and e['stroke'] == stroke 
+                for e in PENTATHLON_EVENTS
+            )
+            
+            if not is_pentathlon:
+                continue
+            
+            if swimmer_id not in swimmer_events:
+                swimmer_events[swimmer_id] = {}
+            
+            # Parse time and keep best (lowest)
+            time_seconds = interval_to_seconds(result['time_result'])
+            if time_seconds and time_seconds > 0:
+                if event_key not in swimmer_events[swimmer_id]:
+                    swimmer_events[swimmer_id][event_key] = time_seconds
+                else:
+                    swimmer_events[swimmer_id][event_key] = min(
+                        swimmer_events[swimmer_id][event_key],
+                        time_seconds
+                    )
+        
+        # Build rankings
+        rankings = []
+        for swimmer_id, events in swimmer_events.items():
+            # Check if swimmer has all 5 events
+            required_events = {f"{e['distance']}_{e['stroke']}" for e in PENTATHLON_EVENTS}
+            has_all_events = required_events.issubset(events.keys())
+            
+            swimmer = swimmers[swimmer_id]
+            swimmer_name = f"{swimmer.get('first_name', '')} {swimmer.get('last_name', '')}".strip()
+            
+            # Calculate total time
+            total_time = sum(events.values()) if has_all_events else None
+            
+            rankings.append({
+                'swimmer_id': swimmer_id,
+                'swimmer_name': swimmer_name,
+                'date_of_birth': swimmer.get('date_of_birth'),
+                'sex': swimmer.get('sex'),
+                'fifty_fly': events.get('50_fly'),
+                'hundred_back': events.get('100_back'),
+                'hundred_breast': events.get('100_breast'),
+                'two_hundred_free': events.get('200_free'),
+                'two_hundred_im': events.get('200_im'),
+                'total_time': total_time,
+                'events_completed': len(events),
+                'has_all_events': has_all_events
+            })
+        
+        # Sort by total time (fastest first), then by events completed
+        rankings.sort(key=lambda x: (
+            not x['has_all_events'],  # Complete pentathlons first
+            x['total_time'] if x['total_time'] else float('inf')
+        ))
+        
+        return rankings
     
     @staticmethod
     def calculate_consistency_score(improvements: List[float]) -> float:
@@ -327,3 +458,148 @@ class PerformanceService:
         # Convert to 0-100 scale (values typically 0-0.2 for swimming)
         consistency = max(0, 100 * (1 - min(coefficient_of_variation, 1.0)))
         return round(consistency, 2)
+    
+    def _add_course_conversions(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Add converted times for events missing in LCM or SCM.
+        
+        Groups results by event (distance, stroke, activity, equipment) and checks
+        if both LCM and SCM times exist. If only one exists, converts it to the other
+        course and adds a new result with is_converted=True.
+        
+        Args:
+            results: List of best time records from database
+            
+        Returns:
+            Original results plus converted times for missing courses
+        """
+        try:
+            # Group by event (distance, stroke, activity, equipment)
+            # Store both result and parsed time to avoid re-parsing
+            events_map: Dict[str, Dict[str, Any]] = {}
+            
+            for result in results:
+                distance = result.get('distance')
+                stroke = result.get('stroke')
+                activity = result.get('activity')
+                equipment = result.get('equipment')
+                result_units = result.get('result_units', 'SCM')
+                
+                # Skip if missing required fields
+                if not all([distance, stroke, activity, equipment]):
+                    continue
+                
+                # Create event key without result_units
+                event_key = f"{distance}-{stroke}-{activity}-{equipment}"
+                
+                if event_key not in events_map:
+                    events_map[event_key] = {
+                        'distance': distance,
+                        'stroke': stroke,
+                        'activity': activity,
+                        'equipment': equipment,
+                        'SCM': None,
+                        'SCM_seconds': None,
+                        'LCM': None,
+                        'LCM_seconds': None
+                    }
+                
+                # Parse time to seconds for comparison (only once per result)
+                try:
+                    time_seconds = interval_to_seconds(result.get('time_result'))
+                    if not time_seconds or time_seconds <= 0:
+                        continue
+                    
+                    # Store the BEST (fastest) result for this course type
+                    current_best_seconds = events_map[event_key][f'{result_units}_seconds']
+                    if current_best_seconds is None or time_seconds < current_best_seconds:
+                        events_map[event_key][result_units] = result
+                        events_map[event_key][f'{result_units}_seconds'] = time_seconds
+                except Exception:
+                    continue
+            
+            # Build output list with conversions
+            output_results = list(results)  # Start with all original results
+            
+            for event_key, event_data in events_map.items():
+                scm_result = event_data['SCM']
+                scm_seconds = event_data['SCM_seconds']
+                lcm_result = event_data['LCM']
+                lcm_seconds = event_data['LCM_seconds']
+                distance = event_data['distance']
+                
+                # Convert SCM to LCM if LCM is missing
+                if scm_result and not lcm_result and distance and scm_seconds:
+                    try:
+                        converted_seconds = PoolConverter.convert(
+                            time_seconds=scm_seconds,
+                            distance=distance,
+                            from_pool='SCM',
+                            to_pool='LCM'
+                        )
+                        
+                        if converted_seconds:
+                            # Create converted result
+                            converted_result = {
+                                **scm_result,
+                                'result_units': 'LCM',
+                                'time_result': self._seconds_to_interval_string(converted_seconds),
+                                'is_converted': True,
+                                'converted_from': 'SCM',
+                                'original_time_seconds': scm_seconds,
+                                'converted_time_seconds': converted_seconds
+                            }
+                            output_results.append(converted_result)
+                    except Exception as e:
+                        # Log but don't fail - just skip this conversion
+                        print(f"Warning: Failed to convert SCM to LCM for event {event_key}: {e}")
+                        continue
+                
+                # Convert LCM to SCM if SCM is missing
+                elif lcm_result and not scm_result and distance and lcm_seconds:
+                    try:
+                        converted_seconds = PoolConverter.convert(
+                            time_seconds=lcm_seconds,
+                            distance=distance,
+                            from_pool='LCM',
+                            to_pool='SCM'
+                        )
+                        
+                        if converted_seconds:
+                            # Create converted result
+                            converted_result = {
+                                **lcm_result,
+                                'result_units': 'SCM',
+                                'time_result': self._seconds_to_interval_string(converted_seconds),
+                                'is_converted': True,
+                                'converted_from': 'LCM',
+                                'original_time_seconds': lcm_seconds,
+                                'converted_time_seconds': converted_seconds
+                            }
+                            output_results.append(converted_result)
+                    except Exception as e:
+                        # Log but don't fail - just skip this conversion
+                        print(f"Warning: Failed to convert LCM to SCM for event {event_key}: {e}")
+                        continue
+            
+            return output_results
+            
+        except Exception as e:
+            # If conversion fails entirely, just return original results
+            print(f"Warning: Course conversion failed, returning original results: {e}")
+            return results
+    
+    @staticmethod
+    def _seconds_to_interval_string(seconds: float) -> str:
+        """Convert seconds to PostgreSQL interval string format.
+        
+        Args:
+            seconds: Time in seconds
+            
+        Returns:
+            Interval string like '00:01:23.45'
+        """
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = seconds % 60
+        
+        return f"{hours:02d}:{minutes:02d}:{secs:06.3f}"

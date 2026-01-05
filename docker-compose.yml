@@ -96,6 +96,7 @@ services:
       - AUTO_GEN_DAYS_AHEAD=${AUTO_GEN_DAYS_AHEAD}
       - AUTO_GEN_SCHEDULE_HOUR=${AUTO_GEN_SCHEDULE_HOUR}
       - AUTO_GEN_SCHEDULE_MINUTE=${AUTO_GEN_SCHEDULE_MINUTE}
+      - MAX_WORKERS=${MAX_WORKERS}
     depends_on:
       - redis
     restart: unless-stopped

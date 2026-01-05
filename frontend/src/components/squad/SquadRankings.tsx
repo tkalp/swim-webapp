@@ -14,6 +14,8 @@ import { Trophy, Medal, Award, Timer, Eye, EyeOff, Clock, ExternalLink, Sparkles
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
 import EventStatisticsSection from '@/components/squad/rankings/EventStatisticsSection';
 import { PredictionBadge } from '@/components/shared/PredictionBadge';
+import { OverallRankingsTable } from '@/components/squad/OverallRankingsTable';
+import { Tabs } from '@/components/ui/Tabs';
 
 const STROKES: { value: StrokeType; label: string }[] = [
   { value: "free", label: "Freestyle" },
@@ -33,8 +35,11 @@ type Props = {
   squadId: string;
 };
 
+type RankingMode = 'events' | 'overall';
+
 export default function SquadRankings({ squadId }: Props) {
   const navigate = useNavigate();
+  const [rankingMode, setRankingMode] = useState<RankingMode>('events');
   const [stroke, setStroke] = useState<StrokeType>("free");
   const [activity, setActivity] = useState<ActivityType>("swim");
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
@@ -198,6 +203,17 @@ export default function SquadRankings({ squadId }: Props) {
       
       // Match pool type
       const poolMatch = predLower.includes(poolType.toLowerCase());
+      if (poolMatch) {
+        // Debug: Log gap analysis data
+        if (pred.gap_analysis) {
+          console.log(`[${swimmerId}] ${pred.event}:`, {
+            status: pred.gap_analysis.status,
+            severity: pred.gap_analysis.severity,
+            achievement_rate: pred.achievement_rate,
+            causes: pred.gap_analysis.likely_causes?.length || 0
+          });
+        }
+      }
       return poolMatch;
     });
   };
@@ -234,9 +250,24 @@ export default function SquadRankings({ squadId }: Props) {
         subtitle="Compare swimmer performance by stroke and activity"
       />
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
-        {/* Stroke Selection Card */}
+      {/* Mode Toggle */}
+      <div className="mb-6">
+        <Tabs
+          active={rankingMode}
+          onChange={setRankingMode}
+          items={['events', 'overall'] as const}
+          labelize={(mode) => mode === 'events' ? 'Event Rankings' : 'Overall Rankings'}
+        />
+      </div>
+
+      {/* Render Overall Rankings or Event Rankings */}
+      {rankingMode === 'overall' ? (
+        <OverallRankingsTable squadId={squadId} />
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
+            {/* Stroke Selection Card */}
         <div className="relative bg-slate-900/90 backdrop-blur-xl rounded-xl border border-slate-800/60 p-4 shadow-lg overflow-hidden group hover:border-cyan-500/40 transition-all duration-300">
           <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div className="relative">
@@ -548,6 +579,8 @@ export default function SquadRankings({ squadId }: Props) {
             No workout results found for {selectedDistance}m {STROKES.find(s => s.value === stroke)?.label} {ACTIVITIES.find(a => a.value === activity)?.label}
           </p>
         </div>
+      )}
+        </>
       )}
 
       {/* Attempts Modal */}

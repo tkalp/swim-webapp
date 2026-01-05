@@ -608,6 +608,51 @@ async def get_squad_performance(
         
         logger.debug(f"Found {len(results_response.data)} workout results in date range")
         
+        # Get best times BEFORE start_date for baseline comparison
+        baseline_response = supabase.table('workout_result')\
+            .select('swimmer_id, performed_on, time_result, distance, stroke, activity, units, equipment, result_units')\
+            .in_('swimmer_id', swimmer_ids)\
+            .lt('performed_on', start_date)\
+            .eq("activity", "swim")\
+            .execute()
+        
+        logger.debug(f"Found {len(baseline_response.data or [])} baseline results before start date")
+        
+        # Group baseline results by swimmer and event, keeping only the best time
+        baseline_by_swimmer_event = {}
+        for result in (baseline_response.data or []):
+            swimmer_id = result['swimmer_id']
+            
+            if not result.get('stroke') or not result.get('activity') or not result.get('distance'):
+                continue
+            
+            result_units = result.get('result_units', 'SCM') or 'SCM'
+            event_key = f"{result['distance']}M_{result['stroke']}_{result['activity']}_{result_units}"
+            if result['equipment'] and result['equipment'] != 'none':
+                event_key += f"_{result['equipment']}"
+            
+            time_seconds = _time_to_seconds(result['time_result'])
+            if time_seconds == 0:
+                continue
+            
+            key = (swimmer_id, event_key)
+            
+            # Keep only the best (fastest) baseline time for each swimmer/event
+            if key not in baseline_by_swimmer_event or time_seconds < baseline_by_swimmer_event[key]['time_seconds']:
+                baseline_by_swimmer_event[key] = {
+                    'date': result['performed_on'],
+                    'time_seconds': time_seconds,
+                    'time_display': result['time_result'],
+                    'distance': result['distance'],
+                    'stroke': result['stroke'],
+                    'activity': result['activity'],
+                    'units': result['units'],
+                    'result_units': result_units,
+                    'is_baseline': True
+                }
+        
+        logger.debug(f"Processed {len(baseline_by_swimmer_event)} unique baseline times")
+        
         # Group results by swimmer and event
         swimmer_data = defaultdict(lambda: {
             'swimmer_id': None,
@@ -653,8 +698,17 @@ async def get_squad_performance(
                 'stroke': result['stroke'],
                 'activity': result['activity'],
                 'units': result['units'],
-                'result_units': result_units
+                'result_units': result_units,
+                'is_baseline': False
             })
+        
+        # Add baseline results to swimmer data
+        for (swimmer_id, event_key), baseline in baseline_by_swimmer_event.items():
+            if swimmer_id in swimmer_data:
+                # Only add baseline if we have results in the period for this event
+                if event_key in swimmer_data[swimmer_id]['events']:
+                    swimmer_data[swimmer_id]['events'][event_key].append(baseline)
+                    logger.debug(f"Added baseline for {swimmer_id} {event_key}: {baseline['time_seconds']}s on {baseline['date']}")
         
         # Calculate metrics for each swimmer
         swimmers_performance = []
@@ -720,6 +774,20 @@ async def get_squad_performance(
                     [{'date': a['date'], 'time': a['time_seconds']} for a in sorted_attempts]
                 )
                 
+                # Build timeline - for each date, keep only the fastest attempt
+                timeline_by_date = {}
+                for a in sorted_attempts:
+                    date_key = a['date']
+                    if date_key not in timeline_by_date or a['time_seconds'] < timeline_by_date[date_key]['time']:
+                        timeline_by_date[date_key] = {
+                            'date': a['date'],
+                            'time': a['time_seconds'],
+                            'is_baseline': a.get('is_baseline', False)
+                        }
+                
+                # Convert back to sorted list
+                deduplicated_timeline = sorted(timeline_by_date.values(), key=lambda x: x['date'])
+                
                 events_summary.append({
                     'event': event_key,
                     'attempts': len(sorted_attempts),
@@ -734,7 +802,7 @@ async def get_squad_performance(
                     'consistency_score': event_consistency,
                     'weighted_improvement_pct': event_weighted_improvement,
                     'trend_velocity_per_day': event_trend_velocity,
-                    'timeline': [{'date': a['date'], 'time': a['time_seconds']} for a in sorted_attempts]
+                    'timeline': deduplicated_timeline
                 })
             
             # Calculate average improvement for swimmer (negative = faster)
@@ -1451,6 +1519,39 @@ async def get_squad_benchmarks(
         raise HTTPException(status_code=500, detail=f"Failed to fetch squad benchmarks: {str(e)}")
 
 
+@router.get("/{squad_id}/overall-rankings")
+async def get_squad_overall_rankings(
+    squad_id: str,
+    result_units: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get overall pentathlon rankings for a squad.
+    Ranks swimmers by combined time across 5 events:
+    50 Fly, 100 Back, 100 Breast, 200 Free, 200 IM
+    
+    Args:
+        squad_id: Squad identifier
+        result_units: Course type (SCM or LCM)
+        user_id: Current user ID for authorization
+        
+    Returns:
+        List of rankings with swimmer info and individual event times
+    """
+    try:
+        performance_service = PerformanceService()
+        rankings = performance_service.get_overall_rankings(
+            squad_id=squad_id,
+            result_units=result_units,
+            user_id=user_id
+        )
+        return rankings
+    except Exception as e:
+        logger.error(f"Error fetching overall rankings: {str(e)}")
+        log_error(e, context="get_overall_rankings", squad_id=squad_id, result_units=result_units)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch overall rankings: {str(e)}")
+
+
 @router.get("/{squad_id}/qualifiers")
 async def get_squad_qualifiers(
     squad_id: str,
@@ -1713,7 +1814,7 @@ async def get_squad_predictions(
     Only events with sufficient data (min_attempts) will have predictions.
     """
     try:
-        from app.services.prediction import PredictionService, WorkoutContext, ImprovementAnalyzer
+        from app.services.prediction import PredictionService, WorkoutContext, ImprovementAnalyzer, AchievementValidator, GapAnalyzer
         from app.services.performance_service import PerformanceService
         from app.domain.value_objects.time import interval_to_seconds
         
@@ -1767,6 +1868,12 @@ async def get_squad_predictions(
             present = sum(1 for s in statuses if s.lower() == 'present')
             if total > 0:
                 swimmer_attendance_rates[swimmer_id] = round((present / total * 100), 1)
+        
+        # Calculate squad average attendance
+        squad_avg_attendance = None
+        if swimmer_attendance_rates:
+            rates = list(swimmer_attendance_rates.values())
+            squad_avg_attendance = round(sum(rates) / len(rates), 1)
         
         # Fetch all workout results for all swimmers in one query
         performance_service = PerformanceService()
@@ -1870,6 +1977,22 @@ async def get_squad_predictions(
                         workout_type=workout_type
                     )
         
+        # Calculate squad average training volume
+        swimmer_volumes = {}
+        for swimmer_id, session_ids in swimmer_session_ids.items():
+            total_volume = sum(
+                session_workouts[sid].total_meters 
+                for sid in session_ids 
+                if sid in session_workouts and session_workouts[sid].total_meters
+            )
+            if total_volume > 0:
+                swimmer_volumes[swimmer_id] = total_volume
+        
+        squad_avg_volume = None
+        if swimmer_volumes:
+            volumes = list(swimmer_volumes.values())
+            squad_avg_volume = round(sum(volumes) / len(volumes))
+        
         # Generate predictions for each swimmer
         all_predictions = {}
         total_predictions_count = 0
@@ -1897,6 +2020,14 @@ async def get_squad_predictions(
             # Get attendance rate
             attendance_rate = swimmer_attendance_rates.get(swimmer_id)
             
+            # Calculate training volume and effort for this swimmer
+            recent_training_volume = swimmer_volumes.get(swimmer_id)
+            avg_workout_effort = None
+            if recent_workouts:
+                efforts = [w.effort_level for w in recent_workouts if w.effort_level is not None]
+                if efforts:
+                    avg_workout_effort = round(sum(efforts) / len(efforts), 1)
+            
             # Generate predictions for each event
             predictions = []
             events = swimmer_events_data.get(swimmer_id, {})
@@ -1910,8 +2041,17 @@ async def get_squad_predictions(
                 
                 # Extract times in chronological order
                 all_times = [r['time_seconds'] for r in sorted_results]
+                all_dates = [r['performed_on'] for r in sorted_results]
                 current_best = min(all_times)
                 event_display = sorted_results[0]['event_display']
+                
+                # Calculate achievement rate for this event
+                achievement_metrics = AchievementValidator.calculate_achievement_rate(
+                    all_times=all_times,
+                    all_dates=all_dates,
+                    prediction_window=5,
+                    attempts_horizon=10
+                )
                 
                 # Calculate days since last result
                 days_since_last_result = None
@@ -1924,6 +2064,19 @@ async def get_squad_predictions(
                 
                 # Get squad improvement rate for this event
                 squad_rate = squad_improvement_rates.get(event_key)
+                
+                # Perform gap analysis
+                gap_analysis = GapAnalyzer.analyze_prediction_gap(
+                    achievement_rate=achievement_metrics['achievement_rate'],
+                    predictions_tested=achievement_metrics['total_predictions'],
+                    swimmer_attendance_rate=attendance_rate,
+                    squad_avg_attendance=squad_avg_attendance,
+                    recent_training_volume=recent_training_volume,
+                    squad_avg_volume=squad_avg_volume,
+                    recent_workouts=recent_workouts,
+                    days_since_last_result=days_since_last_result,
+                    avg_workout_effort=avg_workout_effort
+                )
                 
                 # Generate prediction
                 prediction = PredictionService.predict_improvement(
@@ -1945,7 +2098,12 @@ async def get_squad_predictions(
                     'predicted_time': prediction.predicted_time,
                     'confidence_level': prediction.confidence_level,
                     'improvement_expected': prediction.improvement_expected,
-                    'factors': prediction.factors
+                    'factors': prediction.factors,
+                    'achievement_rate': achievement_metrics['achievement_rate'],
+                    'achievement_confidence': achievement_metrics['confidence'],
+                    'avg_attempts_to_achieve': achievement_metrics['avg_attempts_to_achieve'],
+                    'predictions_tested': achievement_metrics['total_predictions'],
+                    'gap_analysis': gap_analysis
                 })
             
             # Sort predictions by distance and time

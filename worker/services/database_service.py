@@ -74,6 +74,22 @@ class DatabaseService:
         
         return result.data.get('sync_status')
     
+    def swimmer_has_any_results(self, swimmer_id: str) -> bool:
+        """
+        Check if swimmer has any results in the database
+        
+        Args:
+            swimmer_id: Database swimmer ID
+            
+        Returns:
+            True if swimmer has at least one result, False otherwise
+        """
+        result = self.supabase.table('workout_result').select(
+            'id'
+        ).eq('swimmer_id', swimmer_id).limit(1).execute()
+        
+        return bool(result.data)
+    
     def check_existing_results(
         self, 
         swimrankings_result_ids: List[str],

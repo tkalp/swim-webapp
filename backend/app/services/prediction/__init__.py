@@ -13,6 +13,8 @@ from .models import (
 
 from .prediction_service import PredictionService
 from .statistical_analysis import ImprovementAnalyzer
+from .achievement_validator import AchievementValidator
+from .gap_analyzer import GapAnalyzer
 
 __all__ = [
     'RacePrediction',
@@ -20,5 +22,7 @@ __all__ = [
     'WorkoutContext',
     'ImprovementPrediction',
     'PredictionService',
-    'ImprovementAnalyzer'
+    'ImprovementAnalyzer',
+    'AchievementValidator',
+    'GapAnalyzer'
 ]

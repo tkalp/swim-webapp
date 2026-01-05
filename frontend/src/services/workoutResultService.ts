@@ -34,6 +34,21 @@ export type SwimmerRanking = {
   result_units: string
 }
 
+export type OverallRanking = {
+  swimmer_id: string
+  swimmer_name: string
+  date_of_birth?: string
+  sex?: string
+  fifty_fly?: number
+  hundred_back?: number
+  hundred_breast?: number
+  two_hundred_free?: number
+  two_hundred_im?: number
+  total_time?: number
+  events_completed: number
+  has_all_events: boolean
+}
+
 /**
  * Get rankings for a squad based on stroke, activity, distance, and result_units
  */
@@ -173,6 +188,23 @@ export function formatTime(seconds: number): string {
 }
 
 /**
+ * Get overall rankings for a squad (pentathlon-style)
+ */
+export async function getSquadOverallRankings(
+  squadId: string,
+  resultUnits: string
+): Promise<OverallRanking[]> {
+  const url = getApiUrl(`squads/${squadId}/overall-rankings?result_units=${resultUnits}`)
+  const response = await authenticatedFetch(url)
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch overall rankings: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
+
+/**
  * Get available distances for a squad, stroke, activity, and result_units
  */
 export async function getAvailableDistances(
@@ -252,6 +284,11 @@ export type BestTimeResult = {
     count: number
     percentage: number
   } | null
+  // Conversion fields
+  isConverted?: boolean
+  convertedFrom?: 'SCM' | 'LCM'
+  originalTimeSeconds?: number
+  convertedTimeSeconds?: number
 }
 
 export type EventQuery = {
@@ -310,86 +347,69 @@ export async function listSwimmerResults(swimmerId: string): Promise<ResultRow[]
 }
 
 /**
- * Group by exact event and take best time with trend analysis
+ * Group by exact event and take best time with trend analysis.
+ * Now uses the backend API which includes automatic course conversions.
  */
 export async function getSwimmerBestTimes(swimmerId: string): Promise<BestTimeResult[]> {
-  const rows = await listSwimmerResults(swimmerId)
-  const map = new Map<string, { best: ResultRow & { seconds: number }, count: number, allTimes: Array<{ seconds: number, date: string | null }> }>()
+  // Use the API endpoint which includes course conversions
+  const apiUrl = getApiUrl(`swimmers/${swimmerId}/best-times`)
+  const response = await authenticatedFetch(apiUrl)
   
-  rows.forEach(r => {
-    const distance = r.distance ?? 0
-    const stroke = (r.stroke ?? 'free').toLowerCase()
-    const activity = (r.activity ?? 'swim').toLowerCase()
-    const equipment = (r.equipment ?? 'none').toLowerCase()
-    const units = (r.units ?? 'meters').toLowerCase()
-    const resultUnits = (r.result_units ?? 'SCM').toUpperCase()
+  if (!response.ok) {
+    throw new Error(`Failed to fetch best times: ${response.statusText}`)
+  }
+  
+  const apiResults = await response.json()
+  
+  // Map API results to BestTimeResult format
+  const resultMap = new Map<string, BestTimeResult[]>()
+  
+  for (const result of apiResults) {
+    const distance = result.distance ?? 0
+    const stroke = (result.stroke ?? 'free').toLowerCase()
+    const activity = (result.activity ?? 'swim').toLowerCase()
+    const equipment = (result.equipment ?? 'none').toLowerCase()
+    const resultUnits = (result.result_units ?? 'SCM').toUpperCase()
     const eventKey = `${distance}-${stroke}-${activity}-${equipment}-${resultUnits}`
-    const sec = intervalToSeconds(r.time_result)
-
-    const candidate = { ...r, seconds: sec }
-    const existing = map.get(eventKey)
     
-    if (!existing) {
-      map.set(eventKey, { best: candidate, count: 1, allTimes: [{ seconds: sec, date: r.performed_on }] })
-    } else {
-      existing.count += 1
-      existing.allTimes.push({ seconds: sec, date: r.performed_on })
-      if (sec < existing.best.seconds) existing.best = candidate
+    // For converted times, use the converted_time_seconds directly from backend
+    // For actual times, parse the time_result
+    const timeSeconds = result.is_converted 
+      ? (result.converted_time_seconds ?? 0)
+      : (result.time_result ? intervalToSeconds(result.time_result) : 0)
+    
+    const bestTime: BestTimeResult = {
+      id: result.id,
+      eventKey,
+      distance,
+      stroke,
+      activity,
+      equipment,
+      units: result.units ?? 'meters',
+      timeResult: result.time_result ?? '',
+      timeSeconds,
+      numberOfResults: 1, // Backend returns best per event
+      resultUnits,
+      performedOn: result.performed_on,
+      recentTrend: null,
+      isConverted: result.is_converted ?? false,
+      convertedFrom: result.converted_from,
+      originalTimeSeconds: result.original_time_seconds,
+      convertedTimeSeconds: result.converted_time_seconds
     }
-  })
-
+    
+    if (!resultMap.has(eventKey)) {
+      resultMap.set(eventKey, [])
+    }
+    resultMap.get(eventKey)!.push(bestTime)
+  }
+  
+  // Flatten and sort
   const out: BestTimeResult[] = []
-  map.forEach((v, k) => {
-    const b = v.best
-    
-    // Calculate recent trend from last 2-5 attempts
-    let recentTrend = null
-    if (v.allTimes.length >= 2) {
-      // Sort by date to get chronological order
-      const sortedTimes = [...v.allTimes].sort((a, b) => {
-        const dateA = a.date ? new Date(a.date).getTime() : 0
-        const dateB = b.date ? new Date(b.date).getTime() : 0
-        return dateA - dateB
-      })
-      
-      const recentCount = Math.min(5, sortedTimes.length)
-      const recentResults = sortedTimes.slice(-recentCount)
-      
-      if (recentResults.length >= 2) {
-        const oldestRecent = recentResults[0].seconds
-        const newestRecent = recentResults[recentResults.length - 1].seconds
-        const trendDelta = newestRecent - oldestRecent
-        const percentage = oldestRecent > 0 ? Math.round((trendDelta / oldestRecent) * 100) : 0
-        
-        recentTrend = {
-          improving: trendDelta < -0.5,
-          declining: trendDelta > 0.5,
-          stable: Math.abs(trendDelta) <= 0.5,
-          delta: trendDelta,
-          count: recentResults.length,
-          percentage
-        }
-      }
-    }
-    
-    out.push({
-      id: b.id,
-      eventKey: k,
-      distance: b.distance ?? 0,
-      stroke: (b.stroke ?? 'free').toLowerCase(),
-      activity: (b.activity ?? 'swim').toLowerCase(),
-      equipment: (b.equipment ?? 'none').toLowerCase(),
-      units: (b.units ?? 'meters').toLowerCase(),
-      timeResult: b.time_result ?? '',
-      timeSeconds: b.seconds,
-      numberOfResults: v.count,
-      performedOn: b.performed_on,
-      resultUnits: (b.result_units ?? 'SCM').toUpperCase(),
-      recentTrend
-    })
+  resultMap.forEach(times => {
+    out.push(...times)
   })
   
-  // Sort: best (lowest time), then distance asc
   out.sort((a, b) => a.timeSeconds - b.timeSeconds || a.distance - b.distance)
   return out
 }
@@ -496,14 +516,45 @@ export type PredictionFactors = {
   recent_form: number
 }
 
+export type GapAnalysisCause = {
+  factor: string
+  swimmer_value: number | null
+  squad_average: number | null
+  impact: 'high' | 'medium' | 'low'
+  description: string
+}
+
+export type GapAnalysisAction = {
+  priority: 'high' | 'medium'
+  action: string
+  category: string
+}
+
+export type GapAnalysis = {
+  status: 'on_track' | 'needs_attention' | 'intervention_required' | 'insufficient_data'
+  status_label: string
+  severity: 'none' | 'warning' | 'critical'
+  likely_causes: GapAnalysisCause[]
+  recommended_actions: GapAnalysisAction[]
+  achievement_rate?: number
+  predictions_tested?: number
+}
+
 export type SwimmerPrediction = {
   event_key: string
   event: string
   current_best: number
+  current_best_is_converted?: boolean
+  current_best_converted_from?: string
   predicted_time: number
   confidence_level: 'high' | 'medium' | 'low'
   improvement_expected: number
   factors: PredictionFactors
+  achievement_rate?: number
+  achievement_confidence?: string
+  avg_attempts_to_achieve?: number
+  predictions_tested?: number
+  gap_analysis?: GapAnalysis
 }
 
 export type SwimmerPredictionsResponse = {

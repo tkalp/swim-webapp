@@ -1,4 +1,4 @@
-import { Sparkles, Info, TrendingDown, TrendingUp } from 'lucide-react'
+import { Sparkles, Info, TrendingDown, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react'
 import { formatTime } from '../../utils/timeUtils'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -14,6 +14,26 @@ interface PredictionFactors {
   attendance_rate?: number
 }
 
+interface GapAnalysis {
+  status: 'on_track' | 'needs_attention' | 'intervention_required' | 'insufficient_data'
+  status_label: string
+  severity: 'none' | 'warning' | 'critical'
+  likely_causes: Array<{
+    factor: string
+    swimmer_value: number | null
+    squad_average: number | null
+    impact: 'high' | 'medium' | 'low'
+    description: string
+  }>
+  recommended_actions: Array<{
+    priority: 'high' | 'medium'
+    action: string
+    category: string
+  }>
+  achievement_rate?: number
+  predictions_tested?: number
+}
+
 interface PredictionBadgeProps {
   prediction: {
     predicted_time: number
@@ -21,7 +41,12 @@ interface PredictionBadgeProps {
     current_best_is_converted?: boolean
     current_best_converted_from?: string
     confidence_level: 'high' | 'medium' | 'low'
+    achievement_rate?: number
+    achievement_confidence?: string
+    avg_attempts_to_achieve?: number
+    predictions_tested?: number
     factors?: PredictionFactors
+    gap_analysis?: GapAnalysis
   }
   showTooltipBelow?: boolean
   compact?: boolean
@@ -103,6 +128,84 @@ export function PredictionBadge({
               </span>
             </div>
           </div>
+          
+          {prediction.achievement_rate !== null && prediction.achievement_rate !== undefined && prediction.predictions_tested && prediction.predictions_tested > 0 && (
+            <div className="pt-2 mt-2 border-t border-purple-500/20">
+              <div className="text-xs text-purple-300 font-medium mb-1">Model Accuracy:</div>
+              <div className={`text-sm font-semibold ${
+                prediction.achievement_rate >= 80 ? 'text-green-400' :
+                prediction.achievement_rate >= 60 ? 'text-yellow-400' :
+                'text-orange-400'
+              }`}>
+                {prediction.achievement_rate.toFixed(0)}% of similar predictions achieved
+              </div>
+              {prediction.avg_attempts_to_achieve && (
+                <div className="text-xs text-slate-400 mt-0.5">
+                  Typically within {Math.round(prediction.avg_attempts_to_achieve)} attempts
+                </div>
+              )}
+              <div className="text-[10px] text-slate-500 mt-1">
+                Based on {prediction.predictions_tested} historical prediction{prediction.predictions_tested !== 1 ? 's' : ''}
+              </div>
+            </div>
+          )}
+          
+          {prediction.gap_analysis && prediction.gap_analysis.status !== 'insufficient_data' && (
+            <div className="pt-2 mt-2 border-t border-purple-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                {prediction.gap_analysis.status === 'on_track' ? (
+                  <CheckCircle size={14} className="text-green-400" />
+                ) : (
+                  <AlertTriangle size={14} className={
+                    prediction.gap_analysis.severity === 'critical' ? 'text-red-400' : 'text-yellow-400'
+                  } />
+                )}
+                <span className={`text-xs font-semibold ${
+                  prediction.gap_analysis.status === 'on_track' ? 'text-green-400' :
+                  prediction.gap_analysis.severity === 'critical' ? 'text-red-400' : 'text-yellow-400'
+                }`}>
+                  {prediction.gap_analysis.status_label}
+                </span>
+              </div>
+              
+              {prediction.gap_analysis.likely_causes && prediction.gap_analysis.likely_causes.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  <div className="text-[10px] text-slate-400 font-medium">Contributing Factors:</div>
+                  {prediction.gap_analysis.likely_causes.map((cause, idx) => (
+                    <div key={idx} className="text-xs bg-slate-800/50 rounded px-2 py-1">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          cause.impact === 'high' ? 'bg-red-400' :
+                          cause.impact === 'medium' ? 'bg-yellow-400' :
+                          'bg-blue-400'
+                        }`} />
+                        <span className="text-slate-300 font-medium capitalize">
+                          {cause.factor.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 ml-2.5">
+                        {cause.description}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {prediction.gap_analysis.recommended_actions && prediction.gap_analysis.recommended_actions.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-[10px] text-slate-400 font-medium">Recommendations:</div>
+                  {prediction.gap_analysis.recommended_actions.slice(0, 3).map((action, idx) => (
+                    <div key={idx} className="text-[11px] text-slate-300 flex items-start gap-1.5">
+                      <span className={`inline-block w-1 h-1 rounded-full mt-1.5 shrink-0 ${
+                        action.priority === 'high' ? 'bg-orange-400' : 'bg-blue-400'
+                      }`} />
+                      <span>{action.action}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         {prediction.factors && (
@@ -171,11 +274,25 @@ export function PredictionBadge({
     <>
       <div 
         ref={badgeRef}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-linear-to-br from-purple-500/15 via-purple-500/8 to-transparent border border-purple-500/30 rounded-md hover:border-purple-400/50 hover:shadow-md hover:shadow-purple-500/10 transition-all cursor-help"
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-linear-to-br from-purple-500/15 via-purple-500/8 to-transparent border rounded-md hover:shadow-md transition-all cursor-help ${
+          prediction.gap_analysis?.severity === 'critical' 
+            ? 'border-red-500/40 hover:border-red-400/60 hover:shadow-red-500/10' 
+            : prediction.gap_analysis?.severity === 'warning'
+            ? 'border-yellow-500/40 hover:border-yellow-400/60 hover:shadow-yellow-500/10'
+            : 'border-purple-500/30 hover:border-purple-400/50 hover:shadow-purple-500/10'
+        }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Sparkles size={11} className="text-purple-400 transition-colors shrink-0" />
+        {prediction.gap_analysis?.severity === 'critical' && (
+          <AlertTriangle size={11} className="text-red-400 transition-colors shrink-0" />
+        )}
+        {prediction.gap_analysis?.severity === 'warning' && (
+          <AlertTriangle size={11} className="text-yellow-400 transition-colors shrink-0" />
+        )}
+        {(!prediction.gap_analysis || prediction.gap_analysis.severity === 'none') && (
+          <Sparkles size={11} className="text-purple-400 transition-colors shrink-0" />
+        )}
         <span className="text-xs font-bold text-purple-300 font-mono tracking-tight transition-colors">
           {formatTime(prediction.predicted_time)}
         </span>

@@ -490,15 +490,28 @@ function TableView({
                       {/* SCM Actual */}
                       <td className="px-3 py-3 text-center">
                         {scmItem ? (
-                          <button
-                            onClick={() => onCardPress?.(scmItem)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-cyan-500/10 via-cyan-500/5 to-transparent border border-cyan-500/30 rounded-lg hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-200"
-                          >
-                            <Clock size={13} className="text-cyan-400 transition-colors shrink-0" />
-                            <span className="text-sm font-bold text-cyan-300 font-mono tracking-tight transition-colors">
-                              {formatTime(scmItem.timeSeconds)}
-                            </span>
-                          </button>
+                          <div className="relative group/time">
+                            <button
+                              onClick={() => onCardPress?.(scmItem)}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-cyan-500/10 via-cyan-500/5 to-transparent border border-cyan-500/30 rounded-lg hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-200 ${scmItem.isConverted ? 'opacity-70' : ''}`}
+                            >
+                              <Clock size={13} className="text-cyan-400 transition-colors shrink-0" />
+                              <span className={`text-sm font-bold text-cyan-300 font-mono tracking-tight transition-colors ${scmItem.isConverted ? 'italic' : ''}`}>
+                                {formatTime(scmItem.timeSeconds)}
+                              </span>
+                            </button>
+                            {scmItem.isConverted && (
+                              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-slate-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-lg shadow-xl opacity-0 invisible group-hover/time:opacity-100 group-hover/time:visible transition-all duration-200 z-50 pointer-events-none">
+                                <div className="text-xs text-slate-300">
+                                  <div className="font-semibold text-cyan-400 mb-1">Converted from {scmItem.convertedFrom}</div>
+                                  <div className="text-slate-400">Estimated using standard conversion formula</div>
+                                </div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2">
+                                  <div className="border-4 border-transparent border-t-cyan-500/30"></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-slate-600 text-xs">—</span>
                         )}
@@ -529,15 +542,28 @@ function TableView({
                       {/* LCM Actual */}
                       <td className="px-3 py-3 text-center">
                         {lcmItem ? (
-                          <button
-                            onClick={() => onCardPress?.(lcmItem)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/30 rounded-lg hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-200"
-                          >
-                            <Clock size={13} className="text-blue-400 transition-colors shrink-0" />
-                            <span className="text-sm font-bold text-blue-300 font-mono tracking-tight transition-colors">
-                              {formatTime(lcmItem.timeSeconds)}
-                            </span>
-                          </button>
+                          <div className="relative group/time">
+                            <button
+                              onClick={() => onCardPress?.(lcmItem)}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-linear-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/30 rounded-lg hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-200 ${lcmItem.isConverted ? 'opacity-70' : ''}`}
+                            >
+                              <Clock size={13} className="text-blue-400 transition-colors shrink-0" />
+                              <span className={`text-sm font-bold text-blue-300 font-mono tracking-tight transition-colors ${lcmItem.isConverted ? 'italic' : ''}`}>
+                                {formatTime(lcmItem.timeSeconds)}
+                              </span>
+                            </button>
+                            {lcmItem.isConverted && (
+                              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-slate-900/95 backdrop-blur-xl border border-blue-500/30 rounded-lg shadow-xl opacity-0 invisible group-hover/time:opacity-100 group-hover/time:visible transition-all duration-200 z-50 pointer-events-none">
+                                <div className="text-xs text-slate-300">
+                                  <div className="font-semibold text-blue-400 mb-1">Converted from {lcmItem.convertedFrom}</div>
+                                  <div className="text-slate-400">Estimated using standard conversion formula</div>
+                                </div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2">
+                                  <div className="border-4 border-transparent border-t-blue-500/30"></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-slate-600 text-xs">—</span>
                         )}

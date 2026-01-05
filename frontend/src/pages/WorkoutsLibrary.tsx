@@ -20,10 +20,12 @@ import {
   X,
   Share2,
   Star,
+  Calendar,
 } from "lucide-react";
 import WorkoutMiniChart from '@/components/workout/WorkoutMiniChart';
 import { WorkoutTag } from '@/components/workout/WorkoutTag';
 import WorkoutRatingStars from '@/components/workouts/WorkoutRatingStars';
+import { AssignWorkoutToSessionModal } from '@/components/workouts/AssignWorkoutToSessionModal';
 import WorkoutVisibilityBadge from '@/components/workouts/WorkoutVisibilityBadge';
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import {
@@ -55,6 +57,8 @@ export default function WorkoutsLibrary() {
   const [allTags, setAllTags] = useState<WorkoutTagType[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [filterMode, setFilterMode] = useState<'OR' | 'AND'>('OR');
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutTemplate | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 12;
 
@@ -270,6 +274,11 @@ export default function WorkoutsLibrary() {
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
     return date.toLocaleDateString();
+  };
+
+  const handleAssignToSession = (workout: WorkoutTemplate) => {
+    setWorkoutToAssign(workout);
+    setAssignModalOpen(true);
   };
 
   return (
@@ -530,6 +539,13 @@ export default function WorkoutsLibrary() {
                     View
                   </button>
                   <button
+                    onClick={() => handleAssignToSession(workout)}
+                    className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/40 text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/50 rounded-lg transition-all duration-200"
+                    title="Assign to session"
+                  >
+                    <Calendar size={14} />
+                  </button>
+                  <button
                     onClick={() => handleEditWorkout(workout.id)}
                     className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/40 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 rounded-lg transition-all duration-200"
                     title="Edit workout"
@@ -630,6 +646,24 @@ export default function WorkoutsLibrary() {
           </div>
         )}
       </div>
+
+      {/* Assign Workout to Session Modal */}
+      {workoutToAssign && (
+        <AssignWorkoutToSessionModal
+          workout={{
+            ...workoutToAssign,
+            description: workoutToAssign.description || ''
+          }}
+          isOpen={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false);
+            setWorkoutToAssign(null);
+          }}
+          onAssigned={() => {
+            // Optionally refetch sessions or show success message
+          }}
+        />
+      )}
     </div>
   );
 }

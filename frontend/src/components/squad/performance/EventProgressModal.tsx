@@ -105,9 +105,11 @@ export const EventProgressModal: React.FC<EventProgressModalProps> = ({
           <div className="text-center">
             <div className="text-xs text-slate-400 mb-1">Improvement</div>
             <div className={`text-lg font-bold font-mono ${
-              event.improvement_pct < 0 ? 'text-green-400' : 'text-red-400'
+              event.improvement_pct < -0.1 ? 'text-green-400' : 
+              event.improvement_pct > 0.1 ? 'text-red-400' : 
+              'text-slate-400'
             }`}>
-              {event.improvement_pct < 0 ? '' : '+'}{event.improvement_pct.toFixed(1)}%
+              {event.improvement_pct < -0.1 ? '' : event.improvement_pct > 0.1 ? '+' : ''}{event.improvement_pct.toFixed(1)}%
             </div>
           </div>
         </div>
