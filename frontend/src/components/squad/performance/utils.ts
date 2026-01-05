@@ -60,7 +60,9 @@ export const formatActivity = (activity?: string): string => {
  */
 export const getDefaultDateRange = () => {
   const endDate = new Date();
-  const startDate = new Date(endDate.getFullYear(), 8, 1); // Sept 1 (month is 0-indexed)
+  const startDate = endDate.getMonth() < 8
+    ? new Date(endDate.getFullYear() - 1, 8, 1)
+    : new Date(endDate.getFullYear(), 8, 1);
   
   return {
     start: startDate.toISOString().split('T')[0],
