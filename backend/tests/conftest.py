@@ -44,6 +44,25 @@ def _tables_created(db_url):
         engine = create_async_engine(db_url, poolclass=NullPool)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+            # Create a non-superuser role for RLS testing.
+            # Superusers bypass RLS even with FORCE, so we need a regular role.
+            await conn.execute(text(
+                "DO $$ BEGIN "
+                "  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_user') THEN "
+                "    CREATE ROLE app_user NOLOGIN; "
+                "  END IF; "
+                "END $$"
+            ))
+            await conn.execute(text("GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user"))
+            await conn.execute(text("GRANT USAGE ON SCHEMA public TO app_user"))
+
+            # Apply RLS policies (same SQL used in the Alembic migration)
+            from tests.rls_sql import ENABLE_RLS_SQL
+            for statement in ENABLE_RLS_SQL.split(";"):
+                stmt = statement.strip()
+                if stmt:
+                    await conn.execute(text(stmt))
         await engine.dispose()
 
     asyncio.run(_create())
@@ -66,10 +85,16 @@ async def db(db_url, _tables_created):
 
 @pytest_asyncio.fixture
 async def seeded_db(db):
-    """A database session pre-loaded with deterministic seed data."""
+    """A database session pre-loaded with deterministic seed data.
+
+    Uses SET ROLE app_user so that RLS policies are enforced (superusers
+    bypass RLS even with FORCE ROW LEVEL SECURITY).
+    """
     from tests.seed import seed_database
     await seed_database(db)
     await db.flush()
+    # Switch to non-superuser role so RLS is enforced
+    await db.execute(text("SET LOCAL ROLE app_user"))
     yield db
 
 
