@@ -75,7 +75,7 @@ async def seeded_db(db):
 
 async def set_user_context(session: AsyncSession, user_id: str):
     """Helper to set RLS context variable for testing."""
+    sanitised = str(user_id).replace("'", "''")
     await session.execute(
-        text("SET LOCAL app.current_user_id = :uid"),
-        {"uid": user_id},
+        text(f"SET LOCAL app.current_user_id = '{sanitised}'"),
     )
