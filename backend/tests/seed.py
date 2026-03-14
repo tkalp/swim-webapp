@@ -89,10 +89,30 @@ async def seed_database(session) -> None:
 
     # ── Coach–Squad memberships ────────────────
     memberships = [
-        CoachSquad(id=CS_A_S1_ID, coach_id=COACH_A_ID, squad_id=SQUAD_1_ID, role="owner", can_manage_swimmers=True),
-        CoachSquad(id=CS_B_S1_ID, coach_id=COACH_B_ID, squad_id=SQUAD_1_ID, role="admin", can_manage_swimmers=True),
-        CoachSquad(id=CS_B_S2_ID, coach_id=COACH_B_ID, squad_id=SQUAD_2_ID, role="owner", can_manage_swimmers=True),
-        CoachSquad(id=CS_C_S1_ID, coach_id=COACH_C_ID, squad_id=SQUAD_1_ID, role="member", can_manage_swimmers=False),
+        CoachSquad(
+            id=CS_A_S1_ID, coach_id=COACH_A_ID, squad_id=SQUAD_1_ID, role="owner",
+            can_manage_swimmers=True, can_manage_workouts=True, can_manage_results=True,
+            can_manage_attendance=True, can_manage_schedules=True, can_manage_notes=True,
+            can_view_analytics=True, can_manage_squad_settings=True,
+        ),
+        CoachSquad(
+            id=CS_B_S1_ID, coach_id=COACH_B_ID, squad_id=SQUAD_1_ID, role="admin",
+            can_manage_swimmers=True, can_manage_workouts=True, can_manage_results=True,
+            can_manage_attendance=True, can_manage_schedules=True, can_manage_notes=True,
+            can_view_analytics=True, can_manage_squad_settings=False,
+        ),
+        CoachSquad(
+            id=CS_B_S2_ID, coach_id=COACH_B_ID, squad_id=SQUAD_2_ID, role="owner",
+            can_manage_swimmers=True, can_manage_workouts=True, can_manage_results=True,
+            can_manage_attendance=True, can_manage_schedules=True, can_manage_notes=True,
+            can_view_analytics=True, can_manage_squad_settings=True,
+        ),
+        CoachSquad(
+            id=CS_C_S1_ID, coach_id=COACH_C_ID, squad_id=SQUAD_1_ID, role="member",
+            can_manage_swimmers=False, can_manage_workouts=False, can_manage_results=False,
+            can_manage_attendance=False, can_manage_schedules=False, can_manage_notes=False,
+            can_view_analytics=True, can_manage_squad_settings=False,
+        ),
     ]
     session.add_all(memberships)
 
