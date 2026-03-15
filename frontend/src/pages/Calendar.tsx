@@ -6,6 +6,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import { CalendarView, EventFormModal, EventDetailsModal, CalendarSkeleton } from '@/components/calendar'
 import { useCalendarStore } from '@/stores/calendarStore'
+import { useSquadStore } from '@/stores/squadStore'
 import { getAllCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/services/calendarService'
 import type { CalendarEvent, CreateCalendarEvent } from '@/types/calendar'
 
@@ -29,6 +30,10 @@ export default function CalendarPage() {
     isDetailsOpen,
     setDetailsOpen
   } = useCalendarStore()
+
+  const { selectedSquadId, getAllSquads } = useSquadStore()
+  // Resolve squad ID: prefer the user's selected squad, fall back to first squad
+  const activeSquadId = selectedSquadId ?? getAllSquads()[0]?.id ?? ''
   
   // Load events for current month
   useEffect(() => {
@@ -194,6 +199,7 @@ export default function CalendarPage() {
         }}
         onSubmit={selectedEvent ? handleUpdateEvent : handleCreateEvent}
         event={selectedEvent}
+        squadId={activeSquadId}
         initialDate={clickedDate}
       />
       

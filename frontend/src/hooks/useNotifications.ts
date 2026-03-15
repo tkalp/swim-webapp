@@ -42,7 +42,7 @@ export function useNotifications() {
               ? `You've been invited to join ${item.squad.name}`
               : 'New squad invitation',
             link: `/squads/${item.squad_id}`,
-            read: false,
+            read: item.read === true,
             created_at: item.created_at,
             data: item,
           });
@@ -56,7 +56,7 @@ export function useNotifications() {
               ? `${requester.first_name} ${requester.last_name} wants to connect with you`
               : 'New connection request',
             link: '/network',
-            read: false,
+            read: item.read === true,
             created_at: item.created_at,
             data: item,
           });
@@ -97,16 +97,50 @@ export function useNotifications() {
     };
   }, [user?.id, loadNotifications]);
 
-  const markAsRead = (notificationId: string) => {
+  const markAsRead = async (notificationId: string) => {
+    // Optimistically update local state
     setNotifications((prev) =>
       prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
+
+    // Persist to backend
+    try {
+      // notificationId is like "invitation-<uuid>" or "connection-<uuid>"
+      const dashIdx = notificationId.indexOf('-');
+      const prefix = notificationId.slice(0, dashIdx);
+      const rawId = notificationId.slice(dashIdx + 1);
+
+      const notificationType = prefix === 'invitation' ? 'invitation' : 'connection_request';
+
+      await apiClient.put(`/notifications/${rawId}/read?notification_type=${notificationType}`, {});
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      // On failure, revert the optimistic update by reloading
+      loadNotifications();
+    }
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    // Optimistically update local state
+    const unread = notifications.filter((n) => !n.read);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
+
+    // Persist each unread notification to backend
+    await Promise.allSettled(
+      unread.map(async (n) => {
+        try {
+          const dashIdx = n.id.indexOf('-');
+          const prefix = n.id.slice(0, dashIdx);
+          const rawId = n.id.slice(dashIdx + 1);
+          const notificationType = prefix === 'invitation' ? 'invitation' : 'connection_request';
+          await apiClient.put(`/notifications/${rawId}/read?notification_type=${notificationType}`, {});
+        } catch (error) {
+          console.error('Error marking notification as read:', error);
+        }
+      })
+    );
   };
 
   return {
