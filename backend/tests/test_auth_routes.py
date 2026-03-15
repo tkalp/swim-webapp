@@ -253,3 +253,158 @@ async def test_strong_password_accepted():
         auth_service._validate_password("Abcdefg1")
     except ValidationError:
         pytest.fail("_validate_password() raised ValidationError for a valid password 'Abcdefg1'")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Login / credential verification
+# ──────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_login_valid_credentials(seeded_db):
+    """Login with correct email/password returns access and refresh tokens."""
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    result = await auth_service.login(seeded_db, "coach_a@test.com", "testpass123")
+
+    assert "access_token" in result
+    assert "refresh_token" in result
+    assert result["user"]["email"] == "coach_a@test.com"
+    assert result["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_login_wrong_password(seeded_db):
+    """Login with an incorrect password raises UnauthorizedError."""
+    from app.domain.exceptions import UnauthorizedError
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    with pytest.raises(UnauthorizedError):
+        await auth_service.login(seeded_db, "coach_a@test.com", "wrongpassword")
+
+
+@pytest.mark.asyncio
+async def test_login_nonexistent_email(seeded_db):
+    """Login with an unknown email raises UnauthorizedError."""
+    from app.domain.exceptions import UnauthorizedError
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    with pytest.raises(UnauthorizedError):
+        await auth_service.login(seeded_db, "nonexistent@test.com", "testpass123")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Signup
+# ──────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_signup_creates_new_user(seeded_db):
+    """Signup with a fresh email creates a user and returns tokens."""
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    result = await auth_service.signup(seeded_db, "newuser@test.com", "ValidPass1!", "New User")
+
+    assert "access_token" in result
+    assert "refresh_token" in result
+    assert result["user"]["email"] == "newuser@test.com"
+
+
+@pytest.mark.asyncio
+async def test_signup_duplicate_email_rejected(seeded_db):
+    """Signup with an already-registered email raises ConflictError."""
+    from app.domain.exceptions import ConflictError
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    with pytest.raises(ConflictError):
+        await auth_service.signup(seeded_db, "coach_a@test.com", "ValidPass1!", "Duplicate")
+
+
+@pytest.mark.asyncio
+async def test_signup_weak_password_rejected(seeded_db):
+    """Signup with a password that fails complexity rules raises ValidationError."""
+    from app.domain.exceptions import ValidationError
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    with pytest.raises(ValidationError):
+        await auth_service.signup(seeded_db, "weak@test.com", "abc", "Weak")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Token refresh / rotation
+# ──────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_refresh_token_rotation(seeded_db):
+    """Refresh returns new tokens, and the old refresh token is then revoked."""
+    from app.domain.exceptions import UnauthorizedError
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    login_result = await auth_service.login(seeded_db, "coach_a@test.com", "testpass123")
+    old_refresh = login_result["refresh_token"]
+
+    refresh_result = await auth_service.refresh_tokens(seeded_db, old_refresh)
+
+    # Refresh token must be different (rotated)
+    assert refresh_result["refresh_token"] != old_refresh
+    # Access token may be identical if generated in same second (same iat/exp)
+    assert "access_token" in refresh_result
+
+    # The old refresh token must now be rejected
+    with pytest.raises(UnauthorizedError):
+        await auth_service.refresh_tokens(seeded_db, old_refresh)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Logout
+# ──────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_logout_revokes_refresh_token(seeded_db):
+    """Logout marks the refresh token as revoked; subsequent refresh raises UnauthorizedError."""
+    from app.domain.exceptions import UnauthorizedError
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    login_result = await auth_service.login(seeded_db, "coach_a@test.com", "testpass123")
+    refresh_token = login_result["refresh_token"]
+
+    await auth_service.logout(seeded_db, refresh_token)
+
+    with pytest.raises(UnauthorizedError):
+        await auth_service.refresh_tokens(seeded_db, refresh_token)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# get_user_by_id
+# ──────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_get_user_by_id(seeded_db):
+    """get_user_by_id returns the correct user profile dict for a known user."""
+    from tests.seed import USER_A_ID
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    user = await auth_service.get_user_by_id(seeded_db, str(USER_A_ID))
+
+    assert user is not None
+    assert user["email"] == "coach_a@test.com"
+    assert user["id"] == str(USER_A_ID)
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_id_unknown_returns_none(seeded_db):
+    """get_user_by_id returns None for an ID that doesn't exist."""
+    import uuid
+    from sqlalchemy import text
+    await seeded_db.execute(text("RESET ROLE"))
+
+    result = await auth_service.get_user_by_id(seeded_db, str(uuid.uuid4()))
+
+    assert result is None
