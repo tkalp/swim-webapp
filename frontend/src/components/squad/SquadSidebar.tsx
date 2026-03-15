@@ -1,7 +1,7 @@
 // components/squad/SquadSidebar.tsx
 import { LayoutDashboard, Users, Calendar, UserCog, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
-import type { TabKey, TrainingSubTab } from '@/hooks/useSquadData';
+import type { TabKey } from '@/pages/Squad';
 
 interface SquadSidebarProps {
   activeTab: TabKey;

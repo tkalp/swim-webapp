@@ -16,7 +16,7 @@ import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Swimmer API hooks with automatic store synchronization
- * Uses Supabase services with Zustand store updates
+ * Uses backend API services with Zustand store updates
  */
 export const useSwimmerApi = () => {
   const { addSwimmer, updateSwimmer: updateSwimmerInStore, removeSwimmer, setSwimmers } = useSwimmerStore()

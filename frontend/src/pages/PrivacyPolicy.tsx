@@ -122,7 +122,7 @@ export default function PrivacyPolicy() {
           </li>
           <li className="flex items-start gap-3">
             <span className="text-cyan-400 mt-1">•</span>
-            <span><strong className="text-white">Secure Infrastructure:</strong> Data is stored on Supabase's secure cloud infrastructure with encryption at rest</span>
+            <span><strong className="text-white">Secure Infrastructure:</strong> Data is stored on our self-hosted PostgreSQL database with encryption at rest</span>
           </li>
           <li className="flex items-start gap-3">
             <span className="text-cyan-400 mt-1">•</span>
@@ -147,7 +147,7 @@ export default function PrivacyPolicy() {
         <ul className="space-y-3 text-slate-300">
           <li className="flex items-start gap-3">
             <span className="text-cyan-400 mt-1">•</span>
-            <span><strong className="text-white">Supabase:</strong> Database and authentication services (data stored securely with encryption)</span>
+            <span><strong className="text-white">DigitalOcean:</strong> Cloud hosting and infrastructure (data stored securely with encryption)</span>
           </li>
           <li className="flex items-start gap-3">
             <span className="text-cyan-400 mt-1">•</span>

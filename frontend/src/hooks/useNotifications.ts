@@ -1,6 +1,6 @@
 // hooks/useNotifications.ts
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Notification {
@@ -14,120 +14,53 @@ export interface Notification {
   data?: any;
 }
 
+const POLL_INTERVAL_MS = 30_000; // 30 seconds
+
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (!user?.id) {
-      setNotifications([]);
-      setUnreadCount(0);
-      setLoading(false);
-      return;
-    }
-
-    loadNotifications();
-
-    // Set up real-time subscription for new notifications
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'squad_invitations',
-          filter: `invited_email=eq.${user.email}`,
-        },
-        () => {
-          loadNotifications();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'coach_connections',
-          filter: `recipient_id=eq.${user.id}`,
-        },
-        () => {
-          loadNotifications();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, user?.email]);
-
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!user?.id) return;
 
     try {
       setLoading(true);
+
+      const rawNotifications = await apiClient.get<any[]>('/notifications/all');
       const notificationsList: Notification[] = [];
 
-      // Get pending squad invitations
-      const { data: invitations } = await supabase
-        .from('squad_invitations')
-        .select(`
-          *,
-          squad:squads(id, name),
-          inviter:coach!squad_invitations_inviter_id_fkey(id, first_name, last_name)
-        `)
-        .eq('invited_email', user.email || '')
-        .eq('status', 'pending')
-        .gte('expires_at', new Date().toISOString());
-
-      invitations?.forEach((inv) => {
-        notificationsList.push({
-          id: `invitation-${inv.id}`,
-          type: 'squad_invitation',
-          title: 'Squad Invitation',
-          message: `${inv.inviter?.first_name} ${inv.inviter?.last_name} invited you to join ${inv.squad?.name}`,
-          link: `/squads/${inv.squad_id}`,
-          read: false,
-          created_at: inv.created_at,
-          data: inv,
-        });
-      });
-
-      // Get pending connection requests
-      const { data: connections } = await supabase
-        .from('coach_connections')
-        .select('*')
-        .eq('recipient_id', user.id)
-        .eq('status', 'pending');
-
-      // Fetch requester names
-      if (connections && connections.length > 0) {
-        const requesterIds = connections.map((c) => c.requester_id);
-        const { data: coaches } = await supabase
-          .from('coach')
-          .select('id, first_name, last_name')
-          .in('id', requesterIds);
-
-        const coachMap = new Map(coaches?.map((c) => [c.id, c]) || []);
-
-        connections.forEach((conn) => {
-          const requester = coachMap.get(conn.requester_id);
+      for (const item of rawNotifications) {
+        if (item.type === 'invitation') {
           notificationsList.push({
-            id: `connection-${conn.id}`,
+            id: `invitation-${item.id}`,
+            type: 'squad_invitation',
+            title: 'Squad Invitation',
+            message: item.squad?.name
+              ? `You've been invited to join ${item.squad.name}`
+              : 'New squad invitation',
+            link: `/squads/${item.squad_id}`,
+            read: false,
+            created_at: item.created_at,
+            data: item,
+          });
+        } else if (item.type === 'connection_request') {
+          const requester = item.requester;
+          notificationsList.push({
+            id: `connection-${item.id}`,
             type: 'connection_request',
             title: 'Connection Request',
             message: requester
               ? `${requester.first_name} ${requester.last_name} wants to connect with you`
-              : `New connection request`,
+              : 'New connection request',
             link: '/network',
             read: false,
-            created_at: conn.created_at,
-            data: conn,
+            created_at: item.created_at,
+            data: item,
           });
-        });
+        }
       }
 
       // Sort by date (newest first)
@@ -142,7 +75,27 @@ export function useNotifications() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setLoading(false);
+      return;
+    }
+
+    loadNotifications();
+
+    // Poll for new notifications (no WebSocket real-time)
+    intervalRef.current = setInterval(loadNotifications, POLL_INTERVAL_MS);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [user?.id, loadNotifications]);
 
   const markAsRead = (notificationId: string) => {
     setNotifications((prev) =>

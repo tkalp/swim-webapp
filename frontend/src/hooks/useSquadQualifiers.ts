@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import { getSwimmerBestTimes, type BestTimeResult } from '@/services/workoutResultService';
 
 export type Swimmer = {
@@ -23,14 +23,8 @@ export function useSquadSwimmers(squadId: string) {
   return useQuery({
     queryKey: squadQualifiersKeys.swimmers(squadId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('squad_swimmer')
-        .select('swimmer:swimmers(id, first_name, last_name, date_of_birth, sex)')
-        .eq('squad_id', squadId);
-
-      if (error) throw error;
-
-      return (data?.map((item: any) => item.swimmer).filter(Boolean) || []) as Swimmer[];
+      const data = await apiClient.get<Swimmer[]>(`/squads/${squadId}/swimmers`);
+      return data || [];
     },
     enabled: !!squadId,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -51,14 +45,7 @@ export function useTimeStandards(setId: string | null, poolType: string) {
     queryKey: squadQualifiersKeys.standards(setId ?? 'none', poolType),
     queryFn: async () => {
       if (!setId) return [];
-
-      const { data, error } = await supabase
-        .from('time_standards')
-        .select('distance, stroke, age_group_min, age_group_max, gender, standard_level, scm_time, lcm_time')
-        .eq('set_id', setId)
-        .order('standard_level', { ascending: true });
-
-      if (error) throw error;
+      const data = await apiClient.get<any[]>(`/time-standards/sets/${setId}/standards`);
       return data || [];
     },
     enabled: !!setId,
@@ -67,8 +54,6 @@ export function useTimeStandards(setId: string | null, poolType: string) {
 }
 
 // OPTIMIZED: New combined hook for squad qualifiers
-import { apiClient } from '@/lib/apiClient';
-
 export interface SwimmerBestTimeData {
   distance: number;
   stroke: string;
@@ -94,14 +79,14 @@ export interface SquadQualifiersData {
 
 /**
  * OPTIMIZED hook that eliminates the N+1 query problem.
- * 
+ *
  * Previously:
- * - 1 query for swimmers (direct Supabase)
+ * - 1 query for swimmers (direct API call)
  * - N queries for each swimmer's best times (17 swimmers = 17 API calls)
- * 
+ *
  * Now:
- * - 1 query fetching all swimmers + best times via PostgreSQL RPC
- * 
+ * - 1 query fetching all swimmers + best times via backend API
+ *
  * Performance: 18 requests -> 1 request, ~1800-3600ms -> ~100-200ms
  */
 export function useSquadQualifiersOptimized(squadId: string) {

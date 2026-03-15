@@ -12,7 +12,7 @@ import { useUIStore } from '@/stores/uiStore';
 
 /**
  * Coach API hooks with automatic error handling and user feedback
- * Uses Supabase services with toast notifications
+ * Uses backend API services with toast notifications
  */
 export const useCoachApi = () => {
   const { addToast } = useUIStore();

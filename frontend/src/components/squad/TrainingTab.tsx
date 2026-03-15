@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import { Calendar, List, CalendarDays } from 'lucide-react';
-import type { TrainingSubTab } from '@/hooks/useSquadData';
+export type TrainingSubTab = 'sessions' | 'schedule' | 'calendar';
 
 // Lazy load sub-tab components
 const WeeklyScheduleView = lazy(() => import('@/components/squad/WeeklyScheduleView'));

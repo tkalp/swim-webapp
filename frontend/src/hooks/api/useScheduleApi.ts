@@ -13,7 +13,7 @@ import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Schedule API hooks with automatic store synchronization
- * Wraps existing Supabase service calls with store updates and toast notifications
+ * Wraps backend API service calls with store updates and toast notifications
  */
 export const useScheduleApi = () => {
   const { setSchedules, addSchedule: addScheduleToStore, updateScheduleInStore, removeSchedule: removeScheduleFromStore } = useSquadStore()

@@ -24,7 +24,7 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const pricingRef = useRef<HTMLDivElement>(null);
-  const [betaCount, setBetaCount] = useState(12); // Will be dynamic from Supabase
+  const [betaCount, setBetaCount] = useState(12);
 
   useEffect(() => {
     // Track page view

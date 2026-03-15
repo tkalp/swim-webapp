@@ -13,7 +13,7 @@ import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Squad API hooks with automatic store synchronization
- * Uses Supabase services with Zustand store updates
+ * Uses backend API services with Zustand store updates
  */
 export const useSquadApi = () => {
   const { setSquads, addSquad, updateSquad: updateSquadInStore, removeSquad, setSquadDetails } = useSquadStore()

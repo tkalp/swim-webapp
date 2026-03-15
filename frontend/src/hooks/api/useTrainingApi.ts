@@ -12,7 +12,7 @@ import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Training data API hooks with automatic store synchronization
- * Uses existing Supabase services
+ * Uses existing backend API services
  */
 export const useTrainingApi = () => {
   const { setSchedules, setSessions, setEvents, setSquadDetails } = useSquadStore()

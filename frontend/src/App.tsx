@@ -24,8 +24,6 @@ import TimeStandards from './pages/TimeStandards';
 import SwimmerComparisonPage from './pages/SwimmerComparison';
 import ToolsPage from './pages/Tools';
 import LandingPage from './pages/LandingPage';
-import BetaAccessPage from './pages/BetaAccessPage';
-import AdminBetaWaitlist from './pages/AdminBetaWaitlist';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import { analytics } from './lib/mixpanel';
@@ -44,7 +42,6 @@ export default function App() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={user ? <Navigate to="/squads" replace /> : <LandingPage />} />
-      <Route path="/beta-access" element={<BetaAccessPage />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/login" element={<Login />} />
@@ -152,14 +149,6 @@ export default function App() {
         <Route
           element={
             <GlobalLayout>
-              <SwimmerComparisonPage />
-            </GlobalLayout>
-          }
-          path="/comparison"
-        />
-        <Route
-          element={
-            <GlobalLayout>
               <ToolsPage />
             </GlobalLayout>
           }
@@ -192,27 +181,16 @@ export default function App() {
         <Route
           element={
             <GlobalLayout>
-              <AICoachPage />
-            </GlobalLayout>
-          }
-          path="/ai-coach"
-        />
-        <Route
-          element={
-            <GlobalLayout>
               <CalendarPage />
             </GlobalLayout>
           }
           path="/calendar"
         />
-        <Route
-          element={
-            <GlobalLayout>
-              <TimeStandards />
-            </GlobalLayout>
-          }
-          path="/time-standards"
-        />
+
+        {/* Redirects from legacy paths */}
+        <Route path="/ai-coach" element={<Navigate to="/tools/ai-coach" replace />} />
+        <Route path="/comparison" element={<Navigate to="/tools/comparison" replace />} />
+        <Route path="/time-standards" element={<Navigate to="/tools/standards" replace />} />
       </Route>
 
       {/* Admin Routes - Require admin role */}
@@ -224,14 +202,6 @@ export default function App() {
             </GlobalLayout>
           }
           path="/admin/sync"
-        />
-        <Route
-          element={
-            <GlobalLayout>
-              <AdminBetaWaitlist />
-            </GlobalLayout>
-          }
-          path="/admin/beta-waitlist"
         />
       </Route>
     </Routes>

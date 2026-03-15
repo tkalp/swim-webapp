@@ -15,7 +15,7 @@ import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Session API hooks with automatic store synchronization
- * Wraps existing Supabase service calls with store updates and toast notifications
+ * Wraps backend API service calls with store updates and toast notifications
  */
 export const useSessionApi = () => {
   const { setSessions, addSession: addSessionToStore, updateSessionInStore, removeSession: removeSessionFromStore } = useSquadStore()
