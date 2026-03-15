@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAuthStore } from '../authStore'
 
+
 const API_BASE_URL = 'http://localhost:8000'
 
 const mockBackendUser = {
@@ -31,7 +32,7 @@ function mockFetch(responses: Array<{ ok: boolean; body: unknown; status?: numbe
 
 describe('authStore', () => {
   beforeEach(() => {
-    useAuthStore.setState({ session: null, user: null, loading: false, coachProfile: null })
+    useAuthStore.setState({ session: null, user: null, loading: false, coachProfile: null, coachLoading: false })
     localStorage.clear()
     vi.clearAllMocks()
   })
@@ -60,6 +61,11 @@ describe('authStore', () => {
       let signInResult: { error?: Error }
       await act(async () => {
         signInResult = await result.current.signIn('test@example.com', 'password')
+      })
+
+      // Wait for fire-and-forget fetchCoachProfile to finish so state updates are inside act
+      await waitFor(() => {
+        expect(result.current.coachLoading).toBe(false)
       })
 
       expect(signInResult!.error).toBeUndefined()
@@ -263,6 +269,11 @@ describe('authStore', () => {
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
+      })
+
+      // Wait for fire-and-forget fetchCoachProfile to finish so state updates are inside act
+      await waitFor(() => {
+        expect(result.current.coachLoading).toBe(false)
       })
 
       expect(result.current.user?.email).toBe('test@example.com')

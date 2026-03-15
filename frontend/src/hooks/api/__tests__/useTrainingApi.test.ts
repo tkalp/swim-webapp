@@ -5,6 +5,7 @@ import { useSquadStore } from '@/stores/squadStore'
 import { useSwimmerStore } from '@/stores/swimmerStore'
 import { useUIStore } from '@/stores/uiStore'
 import * as squadService from '@/services/squadService'
+import * as sessionService from '@/services/sessionService'
 import { mockSquad, mockSwimmer, mockSchedule, mockSession } from '@/__tests__/testUtils'
 
 // Mock the squad service
@@ -12,8 +13,12 @@ vi.mock('../../../services/squadService', () => ({
   getSquadById: vi.fn(),
   getSquadSwimmers: vi.fn(),
   getSquadSchedules: vi.fn(),
-  getSquadSessions: vi.fn(),
   getSquadCalendarEvents: vi.fn(),
+}))
+
+// Mock the session service
+vi.mock('../../../services/sessionService', () => ({
+  getVirtualSessions: vi.fn(),
 }))
 
 describe('useTrainingApi', () => {
@@ -54,8 +59,8 @@ describe('useTrainingApi', () => {
       const swimmers = [mockSwimmer, { ...mockSwimmer, id: 'swimmer-2' }]
       const schedules = [mockSchedule]
       const sessions = [mockSession]
-      const events = [{ 
-        id: 'event-1', 
+      const events = [{
+        id: 'event-1',
         name: 'Test Event',
         start_date: '2024-01-15T10:00:00Z',
         end_date: '2024-01-15T12:00:00Z',
@@ -65,7 +70,11 @@ describe('useTrainingApi', () => {
       vi.mocked(squadService.getSquadById).mockResolvedValue(mockSquad)
       vi.mocked(squadService.getSquadSwimmers).mockResolvedValue(swimmers)
       vi.mocked(squadService.getSquadSchedules).mockResolvedValue(schedules)
-      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
+      vi.mocked(sessionService.getVirtualSessions).mockResolvedValue({
+        sessions,
+        materialized_count: 1,
+        virtual_count: 0,
+      })
       vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue(events)
 
       const { result } = renderHook(() => useTrainingApi())
@@ -78,7 +87,7 @@ describe('useTrainingApi', () => {
       expect(squadService.getSquadById).toHaveBeenCalledWith('squad-1')
       expect(squadService.getSquadSwimmers).toHaveBeenCalledWith('squad-1')
       expect(squadService.getSquadSchedules).toHaveBeenCalledWith('squad-1')
-      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(sessionService.getVirtualSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
       expect(squadService.getSquadCalendarEvents).toHaveBeenCalledWith('squad-1', undefined, undefined)
 
       expect(returnedData).toEqual({
@@ -88,7 +97,7 @@ describe('useTrainingApi', () => {
         sessions,
         events,
       })
-      
+
       // Check squad store was updated
       const squadStore = useSquadStore.getState()
       const details = squadStore.squadDetails.get('squad-1')
@@ -96,7 +105,7 @@ describe('useTrainingApi', () => {
       expect(details?.schedules).toEqual(schedules)
       expect(details?.sessions).toEqual(sessions)
       expect(details?.events).toEqual(events)
-      
+
       // Check swimmer store was updated
       const swimmerStore = useSwimmerStore.getState()
       expect(swimmerStore.swimmers.size).toBe(2)
@@ -107,7 +116,11 @@ describe('useTrainingApi', () => {
       vi.mocked(squadService.getSquadById).mockResolvedValue(mockSquad)
       vi.mocked(squadService.getSquadSwimmers).mockResolvedValue([])
       vi.mocked(squadService.getSquadSchedules).mockResolvedValue([])
-      vi.mocked(squadService.getSquadSessions).mockResolvedValue([])
+      vi.mocked(sessionService.getVirtualSessions).mockResolvedValue({
+        sessions: [],
+        materialized_count: 0,
+        virtual_count: 0,
+      })
       vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue([])
 
       const { result } = renderHook(() => useTrainingApi())
@@ -116,7 +129,7 @@ describe('useTrainingApi', () => {
         await result.current.fetchSquadData('squad-1', '2024-01-01', '2024-01-31')
       })
 
-      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(sessionService.getVirtualSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
       expect(squadService.getSquadCalendarEvents).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
     })
 
@@ -124,7 +137,11 @@ describe('useTrainingApi', () => {
       vi.mocked(squadService.getSquadById).mockResolvedValue(null as any)
       vi.mocked(squadService.getSquadSwimmers).mockResolvedValue([])
       vi.mocked(squadService.getSquadSchedules).mockResolvedValue([])
-      vi.mocked(squadService.getSquadSessions).mockResolvedValue([])
+      vi.mocked(sessionService.getVirtualSessions).mockResolvedValue({
+        sessions: [],
+        materialized_count: 0,
+        virtual_count: 0,
+      })
       vi.mocked(squadService.getSquadCalendarEvents).mockResolvedValue([])
 
       const { result } = renderHook(() => useTrainingApi())
@@ -135,7 +152,7 @@ describe('useTrainingApi', () => {
       })
 
       expect(returnedData.squad).toBeNull()
-      
+
       // Store should still have empty arrays for other data
       const squadStore = useSquadStore.getState()
       const details = squadStore.squadDetails.get('squad-1')
@@ -206,7 +223,11 @@ describe('useTrainingApi', () => {
   describe('fetchSessions', () => {
     it('should fetch sessions and update store', async () => {
       const sessions = [mockSession, { ...mockSession, id: 'session-2' }]
-      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
+      vi.mocked(sessionService.getVirtualSessions).mockResolvedValue({
+        sessions,
+        materialized_count: 1,
+        virtual_count: 1,
+      })
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -215,9 +236,9 @@ describe('useTrainingApi', () => {
         returnedSessions = await result.current.fetchSessions('squad-1')
       })
 
-      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
+      expect(sessionService.getVirtualSessions).toHaveBeenCalledWith('squad-1', undefined, undefined)
       expect(returnedSessions).toEqual(sessions)
-      
+
       const store = useSquadStore.getState()
       const details = store.squadDetails.get('squad-1')
       expect(details?.sessions).toEqual(sessions)
@@ -225,7 +246,11 @@ describe('useTrainingApi', () => {
 
     it('should fetch sessions with date range', async () => {
       const sessions = [mockSession]
-      vi.mocked(squadService.getSquadSessions).mockResolvedValue(sessions)
+      vi.mocked(sessionService.getVirtualSessions).mockResolvedValue({
+        sessions,
+        materialized_count: 1,
+        virtual_count: 0,
+      })
 
       const { result } = renderHook(() => useTrainingApi())
 
@@ -233,12 +258,12 @@ describe('useTrainingApi', () => {
         await result.current.fetchSessions('squad-1', '2024-01-01', '2024-01-31')
       })
 
-      expect(squadService.getSquadSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
+      expect(sessionService.getVirtualSessions).toHaveBeenCalledWith('squad-1', '2024-01-01', '2024-01-31')
     })
 
     it('should show error toast on failure', async () => {
       const error = new Error('Failed to fetch sessions')
-      vi.mocked(squadService.getSquadSessions).mockRejectedValue(error)
+      vi.mocked(sessionService.getVirtualSessions).mockRejectedValue(error)
 
       const { result } = renderHook(() => useTrainingApi())
 
