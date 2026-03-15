@@ -1,4 +1,4 @@
-# backend/app/routes/ai_coach.py
+"""AI Coach endpoints -- workout generation, description, and title via Claude + ChromaDB."""
 import asyncio
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any

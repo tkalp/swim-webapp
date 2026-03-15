@@ -1,3 +1,4 @@
+"""Workout-rating endpoints -- submit and retrieve session-level workout feedback."""
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List
 from datetime import datetime

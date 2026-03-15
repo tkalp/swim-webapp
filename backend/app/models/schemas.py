@@ -1,4 +1,4 @@
-# backend/app/models/schemas.py
+"""Pydantic request/response models shared across multiple route modules."""
 from pydantic import BaseModel
 from typing import Optional
 

@@ -1,4 +1,4 @@
-# backend/app/routes/coach_connections.py
+"""Coach connection endpoints -- invite/accept/revoke squad-level coaching access."""
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, List

@@ -1,4 +1,4 @@
-# backend/app/routes/training_sessions.py
+"""Training-session endpoints -- list, create, assign workouts, manage virtual sessions."""
 from fastapi import APIRouter, HTTPException, Query, Body, Depends
 from typing import Optional, List
 from datetime import datetime, timedelta, timezone

@@ -1,4 +1,4 @@
-# backend/app/services/session_service.py
+"""Session service -- materialize virtual training sessions into the database."""
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from sqlalchemy import select, delete, and_

@@ -36,33 +36,39 @@ class ResetPasswordRequest(BaseModel):
 
 @router.post("/login")
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Authenticate a user and return access + refresh tokens."""
     return await auth_service.login(db, body.email, body.password)
 
 
 @router.post("/signup")
 async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
+    """Register a new user account."""
     return await auth_service.signup(db, body.email, body.password, body.full_name)
 
 
 @router.post("/refresh")
 async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    """Exchange a refresh token for a new access + refresh token pair."""
     return await auth_service.refresh_tokens(db, body.refresh_token)
 
 
 @router.post("/logout")
 async def logout(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    """Revoke a refresh token."""
     await auth_service.logout(db, body.refresh_token)
     return {"message": "Logged out"}
 
 
 @router.post("/forgot-password")
 async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """Initiate a password-reset flow by email."""
     await auth_service.forgot_password(db, body.email)
     return {"message": "If an account exists with that email, a reset link has been sent."}
 
 
 @router.post("/reset-password")
 async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """Complete a password reset using the emailed token."""
     await auth_service.reset_password(db, body.token, body.new_password)
     return {"message": "Password reset successfully"}
 
@@ -72,6 +78,7 @@ async def get_me(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Return the currently authenticated user's profile."""
     user = await auth_service.get_user_by_id(db, user_id)
     if not user:
         from fastapi import HTTPException, status

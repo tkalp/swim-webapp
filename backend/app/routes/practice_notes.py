@@ -89,6 +89,7 @@ async def get_pre_notes(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Get pre-practice notes for a training session."""
     squad_id = await _get_session_squad_id(db, session_id)
     await get_coach_membership(db, user_id, squad_id)
 
@@ -106,6 +107,7 @@ async def create_pre_note(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Create a pre-practice note. Requires can_manage_notes permission."""
     squad_id = await _get_session_squad_id(db, body.training_session_id)
     membership = await get_coach_membership(db, user_id, squad_id)
     if not membership.can_manage_notes:
@@ -133,6 +135,7 @@ async def update_pre_note(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Update a pre-practice note. Requires can_manage_notes permission."""
     result = await db.execute(
         select(TrainingSessionPrePracticeNote)
         .where(TrainingSessionPrePracticeNote.id == note_id)
@@ -164,6 +167,7 @@ async def get_post_notes(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Get post-practice notes for a training session."""
     squad_id = await _get_session_squad_id(db, session_id)
     await get_coach_membership(db, user_id, squad_id)
 
@@ -181,6 +185,7 @@ async def create_post_note(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Create a post-practice note. Requires can_manage_notes permission."""
     squad_id = await _get_session_squad_id(db, body.training_session_id)
     membership = await get_coach_membership(db, user_id, squad_id)
     if not membership.can_manage_notes:
@@ -212,6 +217,7 @@ async def update_post_note(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    """Update a post-practice note. Requires can_manage_notes permission."""
     result = await db.execute(
         select(TrainingSessionPostPracticeNote)
         .where(TrainingSessionPostPracticeNote.id == note_id)

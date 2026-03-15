@@ -1,3 +1,4 @@
+"""Workout-sharing endpoints -- share workout templates between coaches."""
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List
 from pydantic import BaseModel

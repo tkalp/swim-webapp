@@ -1,4 +1,4 @@
-# app/routes/workout_tags.py
+"""Workout-tag endpoints -- CRUD for tags and tag-template associations."""
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
