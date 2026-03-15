@@ -4,6 +4,7 @@ import { X, Users, CheckCircle, Clock, XCircle, Save, AlertCircle } from "lucide
 import {
   getSessionAttendanceWithSwimmers,
   bulkUpsertAttendance,
+  markRemainingAsAbsent,
   type AttendanceStatus,
 } from '@/services/attendanceService';
 
@@ -60,7 +61,7 @@ export default function AttendanceModal({
       // Initialize local state from existing attendance
       const statusMap = new Map<string, AttendanceStatus>();
       const notesMap = new Map<string, string>();
-      data.swimmers.forEach(swimmer => {
+      data.swimmers.forEach((swimmer: SwimmerWithAttendance) => {
         if (swimmer.attendance) {
           statusMap.set(swimmer.id, swimmer.attendance.status);
           if (swimmer.attendance.notes) {
@@ -110,6 +111,11 @@ export default function AttendanceModal({
       }
     });
     setLocalAttendance(newMap);
+    try {
+      await markRemainingAsAbsent(sessionId, squadId);
+    } catch (error) {
+      console.error('Error marking remaining absent:', error);
+    }
   };
 
   const handleSave = async () => {

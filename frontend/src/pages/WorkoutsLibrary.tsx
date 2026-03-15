@@ -60,6 +60,8 @@ export default function WorkoutsLibrary() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutTemplate | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const hasMoreRef = useRef(hasMore);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   const PAGE_SIZE = 12;
 
   useEffect(() => {
@@ -593,12 +595,10 @@ export default function WorkoutsLibrary() {
                 <p className="text-sm text-slate-400 mb-3">Filtering is active. Load all workouts to see complete results.</p>
                 <button
                   onClick={() => {
-                    // Load all remaining workouts
+                    // Load all remaining workouts using a ref to avoid stale closure on hasMore
                     const loadAll = async () => {
-                      let currentPage = page + 1;
-                      while (hasMore) {
-                        await loadWorkouts(currentPage, false);
-                        currentPage++;
+                      while (hasMoreRef.current) {
+                        await loadMore();
                       }
                     };
                     loadAll();

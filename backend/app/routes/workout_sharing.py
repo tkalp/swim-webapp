@@ -3,7 +3,10 @@ from typing import Optional, List
 from pydantic import BaseModel
 from uuid import UUID
 
-from app.infrastructure.database import get_supabase_client
+from sqlalchemy import select, and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.infrastructure.db import get_db
+from app.infrastructure.models import WorkoutTemplate, Coach, WorkoutTemplateTag
 from app.middleware.auth import get_current_user_id
 from app.utils import logger
 
@@ -36,27 +39,33 @@ class SharedWorkoutResponse(BaseModel):
 async def update_workout_visibility(
     workout_id: UUID,
     request: UpdateVisibilityRequest,
-    coach_id: str = Depends(get_current_user_id)
+    coach_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
 ):
     """Update visibility of a workout (owner only)."""
     try:
         if request.visibility not in ['private', 'network', 'public']:
             raise HTTPException(400, "Invalid visibility level")
-        
-        supabase = get_supabase_client()
-        
-        result = supabase.table('workout_template')\
-            .update({'visibility': request.visibility})\
-            .eq('id', str(workout_id))\
-            .eq('create_by_coach', coach_id)\
-            .execute()
-        
-        if not result.data:
+
+        result = await db.execute(
+            select(WorkoutTemplate).where(
+                and_(
+                    WorkoutTemplate.id == str(workout_id),
+                    WorkoutTemplate.create_by_coach == coach_id,
+                )
+            )
+        )
+        workout = result.scalar_one_or_none()
+
+        if not workout:
             raise HTTPException(404, "Workout not found or unauthorized")
-        
+
+        workout.visibility = request.visibility
+        await db.commit()
+
         logger.info(f"Coach {coach_id} set workout {workout_id} visibility to {request.visibility}")
         return {"message": "Visibility updated", "visibility": request.visibility}
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -67,50 +76,82 @@ async def update_workout_visibility(
 @router.post("/clone")
 async def clone_workout(
     request: CloneWorkoutRequest,
-    coach_id: str = Depends(get_current_user_id)
+    coach_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
 ):
     """Clone a public/shared workout to your library."""
     try:
-        supabase = get_supabase_client()
-        
-        # Get original workout (RLS ensures we can only see accessible workouts)
-        original = supabase.table('workout_template')\
-            .select('*')\
-            .eq('id', str(request.workout_id))\
-            .single()\
-            .execute()
-        
-        if not original.data:
+        # Get original workout
+        result = await db.execute(
+            select(WorkoutTemplate).where(WorkoutTemplate.id == str(request.workout_id))
+        )
+        original = result.scalar_one_or_none()
+
+        if not original:
             raise HTTPException(404, "Workout not found or not accessible")
-        
+
         # Can't clone your own workout
-        if original.data['create_by_coach'] == coach_id:
+        if str(original.create_by_coach) == coach_id:
             raise HTTPException(400, "Cannot clone your own workout")
-        
+
         # Create clone
-        workout_data = original.data.copy()
-        del workout_data['id']
-        workout_data['create_by_coach'] = coach_id
-        workout_data['name'] = request.new_name or f"{workout_data['name']} (Copy)"
-        workout_data['visibility'] = 'private'  # Clones are private by default
-        workout_data['cloned_from_id'] = str(request.workout_id)
-        workout_data['original_creator_id'] = original.data['create_by_coach']
-        workout_data['effectiveness_rating'] = None
-        workout_data['rating_count'] = 0
-        workout_data['times_used'] = 0
-        workout_data['clone_count'] = 0
-        
-        cloned = supabase.table('workout_template').insert(workout_data).execute()
-        
+        cloned = WorkoutTemplate(
+            name=request.new_name or f"{original.name} (Copy)",
+            description=original.description,
+            raw_description=original.raw_description,
+            total_meters=original.total_meters,
+            estimated_time_minutes=original.estimated_time_minutes,
+            estimated_calories=original.estimated_calories,
+            effort_level=original.effort_level,
+            json_description=original.json_description,
+            create_by_coach=coach_id,
+            visibility='private',
+            cloned_from_id=str(request.workout_id),
+            original_creator_id=original.create_by_coach,
+            effectiveness_rating=None,
+            rating_count=0,
+            times_used=0,
+            clone_count=0,
+        )
+        db.add(cloned)
+        await db.flush()
+
+        # Copy tag associations from the original workout
+        original_tags = await db.execute(
+            select(WorkoutTemplateTag).where(WorkoutTemplateTag.workout_id == str(request.workout_id))
+        )
+        for tag_assoc in original_tags.scalars().all():
+            new_tag = WorkoutTemplateTag(workout_id=cloned.id, tag_id=tag_assoc.tag_id)
+            db.add(new_tag)
+
         # Increment clone count on original
-        supabase.table('workout_template')\
-            .update({'clone_count': (original.data.get('clone_count', 0) + 1)})\
-            .eq('id', str(request.workout_id))\
-            .execute()
-        
+        original.clone_count = (original.clone_count or 0) + 1
+        await db.commit()
+        await db.refresh(cloned)
+
         logger.info(f"Coach {coach_id} cloned workout {request.workout_id}")
-        return cloned.data[0]
-        
+        return {
+            "id": str(cloned.id),
+            "name": cloned.name,
+            "description": cloned.description,
+            "raw_description": cloned.raw_description,
+            "total_meters": cloned.total_meters,
+            "estimated_time_minutes": cloned.estimated_time_minutes,
+            "estimated_calories": cloned.estimated_calories,
+            "effort_level": cloned.effort_level,
+            "json_description": cloned.json_description,
+            "create_by_coach": str(cloned.create_by_coach) if cloned.create_by_coach else None,
+            "visibility": cloned.visibility,
+            "effectiveness_rating": cloned.effectiveness_rating,
+            "rating_count": cloned.rating_count,
+            "times_used": cloned.times_used,
+            "clone_count": cloned.clone_count,
+            "cloned_from_id": str(cloned.cloned_from_id) if cloned.cloned_from_id else None,
+            "original_creator_id": str(cloned.original_creator_id) if cloned.original_creator_id else None,
+            "created_at": cloned.created_at.isoformat() if cloned.created_at else None,
+            "updated_at": cloned.updated_at.isoformat() if cloned.updated_at else None,
+        }
+
     except HTTPException:
         raise
     except Exception as e:
@@ -123,49 +164,56 @@ async def discover_workouts(
     visibility: Optional[str] = 'public',
     sort_by: Optional[str] = 'rating',
     limit: int = 20,
-    coach_id: str = Depends(get_current_user_id)
+    coach_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
 ):
     """Discover public/network workouts from other coaches."""
     try:
-        supabase = get_supabase_client()
-        
-        # Build query - specify the foreign key relationship explicitly
-        query = supabase.table('workout_template')\
-            .select('id, name, create_by_coach, coach!workout_template_create_by_coach_fkey(first_name, last_name), effectiveness_rating, rating_count, clone_count, times_used, visibility')\
-            .neq('create_by_coach', coach_id)  # Exclude own workouts
-        
+        # Build query with a join to Coach for coach name
+        query = (
+            select(WorkoutTemplate, Coach)
+            .outerjoin(Coach, WorkoutTemplate.create_by_coach == Coach.id)
+            .where(WorkoutTemplate.create_by_coach != coach_id)
+        )
+
         if visibility:
-            query = query.eq('visibility', visibility)
-        
+            query = query.where(WorkoutTemplate.visibility == visibility)
+
         # Sort
         if sort_by == 'rating':
-            query = query.order('effectiveness_rating', desc=True)
+            query = query.order_by(WorkoutTemplate.effectiveness_rating.desc())
         elif sort_by == 'popular':
-            query = query.order('clone_count', desc=True)
+            query = query.order_by(WorkoutTemplate.clone_count.desc())
         elif sort_by == 'recent':
-            query = query.order('created_at', desc=True)
-        
+            query = query.order_by(WorkoutTemplate.created_at.desc())
+
         query = query.limit(limit)
-        
-        result = query.execute()
-        
+
+        result = await db.execute(query)
+        rows = result.all()
+
         # Format response
         workouts = []
-        for w in result.data:
-            coach = w.get('coach', {})
+        for workout, coach in rows:
+            coach_name = "Unknown Coach"
+            if coach:
+                first = coach.first_name or ""
+                last = coach.last_name or ""
+                coach_name = f"{first} {last}".strip() or "Unknown Coach"
+
             workouts.append(SharedWorkoutResponse(
-                id=w['id'],
-                name=w['name'],
-                coach_name=f"{coach.get('first_name', '')} {coach.get('last_name', '')}".strip() or "Unknown Coach",
-                effectiveness_rating=w.get('effectiveness_rating'),
-                rating_count=w.get('rating_count', 0),
-                clone_count=w.get('clone_count', 0),
-                times_used=w.get('times_used', 0),
-                visibility=w.get('visibility', 'private')
+                id=workout.id,
+                name=workout.name or "",
+                coach_name=coach_name,
+                effectiveness_rating=workout.effectiveness_rating,
+                rating_count=workout.rating_count or 0,
+                clone_count=workout.clone_count or 0,
+                times_used=workout.times_used or 0,
+                visibility=workout.visibility or 'private',
             ))
-        
+
         return workouts
-        
+
     except Exception as e:
         logger.error(f"Error discovering workouts: {str(e)}")
         raise HTTPException(500, str(e))

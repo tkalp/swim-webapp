@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  getSquadPerformance, 
-  SquadPerformanceData,
-  SwimmerPerformance,
-  formatTimeFromSeconds 
+import {
+  formatTimeFromSeconds
 } from '@/services/metricsService';
+import { useSquadPerformance } from '@/hooks/useSquadPerformance';
 import { SquadSummaryStats } from '@/components/squad-analytics/SquadSummaryStats';
 import { ArrowLeft, Calendar, Loader2, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 
@@ -26,35 +24,15 @@ export const SquadPerformance: React.FC = () => {
   };
 
   const [dateRange, setDateRange] = useState(getDefaultDateRange());
-  const [data, setData] = useState<SquadPerformanceData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [expandedSwimmer, setExpandedSwimmer] = useState<string | null>(null);
 
-  // Fetch performance data
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!squadId) return;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const result = await getSquadPerformance(
-          squadId,
-          dateRange.start,
-          dateRange.end
-        );
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load performance data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [squadId, dateRange]);
+  // Fetch performance data via React Query
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+  } = useSquadPerformance(squadId ?? '', dateRange.start, dateRange.end);
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Failed to load performance data') : null;
 
   const handleDateChange = (field: 'start' | 'end', value: string) => {
     setDateRange(prev => ({ ...prev, [field]: value }));

@@ -31,6 +31,40 @@ async def _get_coach(db: AsyncSession, user_id: str) -> Coach:
     return coach
 
 
+@router.get("/pending")
+async def get_pending_requests(
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get pending connection requests received by the current user."""
+    try:
+        coach_result = await db.execute(select(Coach).where(Coach.user_id == user_id))
+        coach = coach_result.scalar_one_or_none()
+        if not coach:
+            return []
+        result = await db.execute(
+            select(CoachConnection).where(
+                CoachConnection.recipient_id == coach.id,
+                CoachConnection.status == "pending"
+            )
+        )
+        rows = result.scalars().all()
+        return [
+            {
+                "id": str(row.id),
+                "requester_id": str(row.requester_id),
+                "recipient_id": str(row.recipient_id),
+                "status": row.status,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"Error fetching pending requests: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/my-connections")
 async def get_my_connections(
     user_id: str = Depends(get_current_user_id),

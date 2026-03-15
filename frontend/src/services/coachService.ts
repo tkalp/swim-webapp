@@ -1,5 +1,5 @@
 // services/coachService.ts
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient'
 
 export interface Coach {
   id: string;
@@ -14,6 +14,7 @@ export interface CoachConnection {
   recipient_id: string;
   status: 'pending' | 'accepted' | 'declined' | 'blocked';
   created_at: string;
+  updated_at?: string;
   requester?: Coach;
   recipient?: Coach;
 }
@@ -25,116 +26,45 @@ export interface CoachConnectionsResult {
 
 /**
  * Get all coach connections for the authenticated user
- * @param userId - The ID of the authenticated user
+ * @param _userId - The ID of the authenticated user (no longer needed, backend uses JWT)
  * @returns Object containing accepted connections and pending requests
  */
-export async function getCoachConnections(userId: string): Promise<CoachConnectionsResult> {
-  // Get accepted connections
-  const { data: acceptedData, error: acceptedError } = await supabase
-    .from('coach_connections')
-    .select('*')
-    .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`)
-    .eq('status', 'accepted');
+export async function getCoachConnections(_userId: string): Promise<CoachConnectionsResult> {
+  const [connectionsData, pendingData] = await Promise.all([
+    apiClient.get<{ connections: CoachConnection[] }>('/coach-connections/my-connections'),
+    apiClient.get<CoachConnection[]>('/coach-connections/pending').catch(() => [] as CoachConnection[]),
+  ]);
 
-  if (acceptedError) throw acceptedError;
-
-  // Get pending requests (where user is the recipient)
-  const { data: pendingData, error: pendingError } = await supabase
-    .from('coach_connections')
-    .select('*')
-    .eq('recipient_id', userId)
-    .eq('status', 'pending');
-
-  if (pendingError) throw pendingError;
-
-  // Fetch coach names
-  const allCoachIds = new Set<string>();
-  acceptedData?.forEach(conn => {
-    allCoachIds.add(conn.requester_id);
-    allCoachIds.add(conn.recipient_id);
-  });
-  pendingData?.forEach(conn => {
-    allCoachIds.add(conn.requester_id);
-  });
-
-  const { data: coaches } = await supabase
-    .from('coach')
-    .select('id, first_name, last_name')
-    .in('id', Array.from(allCoachIds));
-
-  const coachMap = new Map(coaches?.map(c => [c.id, c]) || []);
-
-  // Attach coach info to connections
-  const connections = acceptedData?.map(conn => ({
-    ...conn,
-    requester: coachMap.get(conn.requester_id),
-    recipient: coachMap.get(conn.recipient_id),
-  })) || [];
-
-  const pendingRequests = pendingData?.map(conn => ({
-    ...conn,
-    requester: coachMap.get(conn.requester_id),
-    recipient: coachMap.get(conn.recipient_id),
-  })) || [];
-
-  return { connections, pendingRequests };
+  return {
+    connections: connectionsData.connections || [],
+    pendingRequests: Array.isArray(pendingData) ? pendingData : [],
+  };
 }
 
 /**
  * Send a connection request to a coach by email
- * @param requesterId - The ID of the user sending the request
+ * @param _requesterId - The ID of the user sending the request (backend uses JWT)
  * @param email - The email address of the coach to connect with
  * @throws Error if email not found, already connected, or validation fails
  */
-export async function sendConnectionRequest(requesterId: string, email: string): Promise<void> {
+export async function sendConnectionRequest(_requesterId: string, email: string): Promise<void> {
   const trimmedEmail = email.toLowerCase().trim();
 
-  // Find the coach by email
-  const { data: coaches, error: searchError } = await supabase
-    .from('coach')
-    .select('id, email')
-    .eq('email', trimmedEmail)
-    .limit(1);
+  // Search for the coach by email using the backend search endpoint
+  const searchResult = await apiClient.get<{ coaches: Array<{ id: string; user_id?: string }> }>(
+    `/coach-connections/search?email=${encodeURIComponent(trimmedEmail)}`
+  );
 
-  if (searchError) throw searchError;
-
-  if (!coaches || coaches.length === 0) {
+  if (!searchResult.coaches || searchResult.coaches.length === 0) {
     throw new Error('No coach found with that email address');
   }
 
-  const recipientId = coaches[0].id;
+  const recipientId = searchResult.coaches[0].id;
 
-  if (recipientId === requesterId) {
-    throw new Error("You can't send a connection request to yourself");
-  }
-
-  // Check if connection already exists
-  const { data: existing } = await supabase
-    .from('coach_connections')
-    .select('id, status')
-    .or(`and(requester_id.eq.${requesterId},recipient_id.eq.${recipientId}),and(requester_id.eq.${recipientId},recipient_id.eq.${requesterId})`)
-    .limit(1);
-
-  if (existing && existing.length > 0) {
-    if (existing[0].status === 'pending') {
-      throw new Error('A connection request is already pending');
-    } else if (existing[0].status === 'accepted') {
-      throw new Error('You are already connected with this coach');
-    } else {
-      throw new Error('Cannot send connection request');
-    }
-  }
-
-  // Create the connection request
-  const { error: insertError } = await supabase
-    .from('coach_connections')
-    .insert({
-      requester_id: requesterId,
-      recipient_id: recipientId,
-      status: 'pending',
-    });
-
-  if (insertError) throw insertError;
+  // Send the connection request
+  await apiClient.post('/coach-connections/request', {
+    recipient_id: recipientId,
+  });
 }
 
 /**
@@ -146,12 +76,10 @@ export async function respondToConnectionRequest(
   connectionId: string,
   accept: boolean
 ): Promise<void> {
-  const { error } = await supabase
-    .from('coach_connections')
-    .update({ status: accept ? 'accepted' : 'declined' })
-    .eq('id', connectionId);
-
-  if (error) throw error;
+  await apiClient.post('/coach-connections/respond', {
+    connection_id: connectionId,
+    accept,
+  });
 }
 
 /**
@@ -159,12 +87,7 @@ export async function respondToConnectionRequest(
  * @param connectionId - The ID of the connection to remove
  */
 export async function removeConnection(connectionId: string): Promise<void> {
-  const { error } = await supabase
-    .from('coach_connections')
-    .delete()
-    .eq('id', connectionId);
-
-  if (error) throw error;
+  await apiClient.delete(`/coach-connections/${connectionId}`);
 }
 
 /**
@@ -179,18 +102,13 @@ export async function addCoachToSquad(
   squadId: string,
   coachId: string,
   role: 'admin' | 'member',
-  createdBy: string,
+  _createdBy: string,
   permissions: Record<string, boolean>
 ): Promise<void> {
-  const { error } = await supabase
-    .from('coach_squads')
-    .insert({
-      squad_id: squadId,
-      coach_id: coachId,
-      role,
-      created_by: createdBy,
-      ...permissions,
-    });
-
-  if (error) throw error;
+  await apiClient.post('/permissions/squad-coach', {
+    squad_id: squadId,
+    coach_id: coachId,
+    role,
+    ...permissions,
+  });
 }
