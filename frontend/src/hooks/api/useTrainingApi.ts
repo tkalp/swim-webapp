@@ -1,11 +1,11 @@
 import { useCallback } from 'react'
-import { 
+import {
   getSquadById,
   getSquadSwimmers,
   getSquadSchedules,
-  getSquadSessions,
   getSquadCalendarEvents
 } from '@/services/squadService'
+import { getVirtualSessions } from '@/services/sessionService'
 import { useSquadStore } from '@/stores/squadStore'
 import { useSwimmerStore } from '@/stores/swimmerStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -24,13 +24,15 @@ export const useTrainingApi = () => {
    */
   const fetchSquadData = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
-      const [squad, swimmers, schedules, sessions, events] = await Promise.all([
+      const [squad, swimmers, schedules, virtualSessionsResponse, events] = await Promise.all([
         getSquadById(squadId),
         getSquadSwimmers(squadId),
         getSquadSchedules(squadId),
-        getSquadSessions(squadId, fromISO, toISO),
+        getVirtualSessions(squadId, fromISO, toISO),
         getSquadCalendarEvents(squadId, fromISO, toISO),
       ])
+
+      const sessions = virtualSessionsResponse.sessions
 
       // Update stores
       if (squad) {
@@ -40,11 +42,11 @@ export const useTrainingApi = () => {
           swimmers_count: swimmers.length
         })
       }
-      
+
       if (swimmers && Array.isArray(swimmers)) {
         setSwimmers(swimmers, squadId)
       }
-      
+
       if (schedules) setSchedules(squadId, schedules)
       if (sessions) setSessions(squadId, sessions)
       if (events) setEvents(squadId, events)
@@ -75,9 +77,9 @@ export const useTrainingApi = () => {
    */
   const fetchSessions = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
-      const sessions = await getSquadSessions(squadId, fromISO, toISO)
-      setSessions(squadId, sessions)
-      return sessions
+      const response = await getVirtualSessions(squadId, fromISO, toISO)
+      setSessions(squadId, response.sessions)
+      return response.sessions
     } catch (error: any) {
       addToast({ message: error.message || 'Failed to fetch sessions', type: 'error' })
       throw error

@@ -10,6 +10,13 @@ export type TrainingSession = {
   workout_id?: string | null
   created_at?: string
   created_by?: string | null
+  is_virtual?: boolean
+}
+
+export type VirtualSessionsResponse = {
+  sessions: TrainingSession[]
+  materialized_count: number
+  virtual_count: number
 }
 
 export type CreateSessionData = {
@@ -30,6 +37,21 @@ export type TrainingSchedule = {
   end_time: string
   training_type: string
   active: boolean
+}
+
+/**
+ * Get virtual + materialized sessions for a squad from the virtual sessions endpoint.
+ * Virtual sessions have IDs like "virtual_{squad_id}_{timestamp}" and is_virtual=true.
+ */
+export async function getVirtualSessions(
+  squadId: string,
+  fromDate?: string,
+  toDate?: string
+): Promise<VirtualSessionsResponse> {
+  const params = new URLSearchParams({ squad_id: squadId })
+  if (fromDate) params.append('from_date', fromDate)
+  if (toDate) params.append('to_date', toDate)
+  return apiClient.get<VirtualSessionsResponse>(`/training-sessions/virtual?${params}`)
 }
 
 /**

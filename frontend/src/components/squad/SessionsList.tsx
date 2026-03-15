@@ -45,6 +45,7 @@ export type Session = {
   workout_id?: string | null;
   workout_name?: string | null;
   workout_template?: { name: string } | null; // kept for backwards-compat; prefer workout_name
+  is_virtual?: boolean;
 };
 
 type DateRange =
@@ -672,6 +673,11 @@ export default function SessionsList({
 
                       {/* Right: Badges */}
                       <div className="flex items-center gap-2 shrink-0">
+                        {s.is_virtual && (
+                          <span className="text-xs bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded">
+                            Scheduled
+                          </span>
+                        )}
                         <div className="px-2.5 py-1 bg-cyan-500/15 border border-cyan-500/30 rounded-md">
                           <span className="text-xs font-bold text-cyan-400">
                             {s.training_type}

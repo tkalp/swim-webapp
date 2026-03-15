@@ -1,15 +1,15 @@
 import { useCallback } from 'react'
-import { 
-  createSession, 
-  updateSession, 
+import {
+  createSession,
+  updateSession,
   deleteSession,
   createSessionFromSchedule,
+  getVirtualSessions,
   type CreateSessionData,
   type UpdateSessionData,
   type TrainingSession,
   type TrainingSchedule
 } from '@/services/sessionService'
-import { getSquadSessions } from '@/services/squadService'
 import { useSquadStore } from '@/stores/squadStore'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -26,9 +26,9 @@ export const useSessionApi = () => {
    */
   const fetchSessions = useCallback(async (squadId: string, fromISO?: string, toISO?: string) => {
     try {
-      const sessions = await getSquadSessions(squadId, fromISO, toISO)
-      setSessions(squadId, sessions)
-      return sessions
+      const response = await getVirtualSessions(squadId, fromISO, toISO)
+      setSessions(squadId, response.sessions)
+      return response.sessions
     } catch (error: any) {
       addToast({ message: error.message || 'Failed to fetch sessions', type: 'error' })
       throw error
