@@ -132,6 +132,7 @@ async def upsert_attendance(
 
     if existing:
         existing.status = body.status
+        existing.notes = body.notes
         await db.commit()
         await db.refresh(existing)
         return _row_to_dict(existing)
@@ -140,6 +141,7 @@ async def upsert_attendance(
             training_session_id=body.training_session_id,
             swimmer_id=body.swimmer_id,
             status=body.status,
+            notes=body.notes,
         )
         db.add(record)
         await db.commit()
@@ -173,6 +175,7 @@ async def bulk_upsert_attendance(
 
         if existing:
             existing.status = rec.status
+            existing.notes = rec.notes
             await db.flush()
             results.append(existing)
         else:
@@ -180,6 +183,7 @@ async def bulk_upsert_attendance(
                 training_session_id=body.session_id,
                 swimmer_id=rec.swimmer_id,
                 status=rec.status,
+                notes=rec.notes,
             )
             db.add(record)
             await db.flush()

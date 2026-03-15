@@ -268,6 +268,7 @@ class TrainingAttendance(Base):
     training_session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("training_sessions.id", ondelete="CASCADE"), nullable=False)
     swimmer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("swimmers.id", ondelete="CASCADE"), nullable=False)
     status: Mapped[Optional[str]] = mapped_column(String(20))
+    notes: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     training_session: Mapped["TrainingSession"] = relationship(back_populates="attendance_records")
