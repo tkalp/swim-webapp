@@ -156,3 +156,125 @@ async def test_swimmer_squad_lookup_cross_squad(seeded_db):
     # User A has no membership in Squad 2
     with pytest.raises(UnauthorizedError):
         await get_coach_membership(seeded_db, str(USER_A_ID), squad_id)
+
+
+# ──────────────────────────────────────────────
+# Swimmer CRUD integration tests
+# ──────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_create_swimmer_in_squad(seeded_db):
+    """Can create a swimmer in a squad and retrieve them by name."""
+    from sqlalchemy import select, text
+    from app.infrastructure.models import Swimmer
+
+    await seeded_db.execute(text("RESET ROLE"))
+
+    swimmer = Swimmer(
+        first_name="New", last_name="Swimmer",
+        squad_id=SQUAD_1_ID, sex="F"
+    )
+    seeded_db.add(swimmer)
+    await seeded_db.flush()
+
+    result = await seeded_db.execute(
+        select(Swimmer).where(Swimmer.first_name == "New")
+    )
+    created = result.scalar_one()
+    assert created is not None
+    assert created.squad_id == SQUAD_1_ID
+    assert created.last_name == "Swimmer"
+
+
+@pytest.mark.asyncio
+async def test_read_swimmers_in_own_squad(seeded_db):
+    """User A (Squad 1 owner) can read all swimmers in Squad 1."""
+    from sqlalchemy import select
+    from app.infrastructure.models import Swimmer
+    from tests.conftest import set_user_context
+
+    await set_user_context(seeded_db, str(USER_A_ID))
+
+    result = await seeded_db.execute(
+        select(Swimmer).where(Swimmer.squad_id == SQUAD_1_ID)
+    )
+    swimmers = result.scalars().all()
+    assert len(swimmers) == 3  # Alice, Bob, Charlie
+
+
+@pytest.mark.asyncio
+async def test_swimmer_rls_cross_squad_isolation(seeded_db):
+    """RLS prevents User A from reading swimmers in Squad 2."""
+    from sqlalchemy import select
+    from app.infrastructure.models import Swimmer
+    from tests.conftest import set_user_context
+
+    await set_user_context(seeded_db, str(USER_A_ID))
+
+    result = await seeded_db.execute(
+        select(Swimmer).where(Swimmer.squad_id == SQUAD_2_ID)
+    )
+    # User A has no membership in Squad 2
+    assert len(result.scalars().all()) == 0
+
+
+@pytest.mark.asyncio
+async def test_swimmer_rls_non_member_sees_nothing(seeded_db):
+    """Non-member (User D) cannot read any swimmers."""
+    from sqlalchemy import select
+    from app.infrastructure.models import Swimmer
+    from tests.conftest import set_user_context
+
+    await set_user_context(seeded_db, str(USER_D_ID))
+
+    result = await seeded_db.execute(select(Swimmer))
+    assert len(result.scalars().all()) == 0
+
+
+@pytest.mark.asyncio
+async def test_update_swimmer(seeded_db):
+    """Can update a swimmer's details."""
+    from sqlalchemy import select, text
+    from app.infrastructure.models import Swimmer
+
+    await seeded_db.execute(text("RESET ROLE"))
+
+    result = await seeded_db.execute(select(Swimmer).where(Swimmer.id == SWIMMER_1_ID))
+    swimmer = result.scalar_one()
+    swimmer.first_name = "Alicia"
+    await seeded_db.flush()
+
+    result = await seeded_db.execute(select(Swimmer).where(Swimmer.id == SWIMMER_1_ID))
+    updated = result.scalar_one()
+    assert updated.first_name == "Alicia"
+
+
+@pytest.mark.asyncio
+async def test_delete_swimmer(seeded_db):
+    """Can delete a swimmer; they no longer appear in subsequent queries."""
+    from sqlalchemy import select, text
+    from app.infrastructure.models import Swimmer
+
+    await seeded_db.execute(text("RESET ROLE"))
+
+    result = await seeded_db.execute(select(Swimmer).where(Swimmer.id == SWIMMER_1_ID))
+    swimmer = result.scalar_one()
+    await seeded_db.delete(swimmer)
+    await seeded_db.flush()
+
+    result = await seeded_db.execute(select(Swimmer).where(Swimmer.id == SWIMMER_1_ID))
+    assert result.scalar_one_or_none() is None
+
+
+@pytest.mark.asyncio
+async def test_coach_b_can_read_both_squads_swimmers(seeded_db):
+    """Coach B is member of both squads — RLS lets them see all 4 swimmers."""
+    from sqlalchemy import select
+    from app.infrastructure.models import Swimmer
+    from tests.conftest import set_user_context
+
+    await set_user_context(seeded_db, str(USER_B_ID))
+
+    result = await seeded_db.execute(select(Swimmer))
+    swimmers = result.scalars().all()
+    assert len(swimmers) == 4
