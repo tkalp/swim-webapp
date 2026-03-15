@@ -44,28 +44,28 @@ class AchievementValidator:
                 'sample_predictions': []
             }
         
-        predictions_tested = []
+        all_predictions: List[Dict[str, Any]] = []
         attempts_to_achieve_list = []
         error_seconds_list = []
-        
+
         # Sliding window: for each point, predict next attempts using prior data
         for i in range(prediction_window, len(all_times) - 1):
             # Use times up to index i for prediction
             training_times = all_times[:i]
-            
+
             # Calculate predicted improvement rate
             improvement_rate = AchievementValidator._calculate_improvement_rate(training_times)
-            
+
             # Predict next time based on trend
             predicted_next = training_times[-1] + improvement_rate
-            
+
             # Check if prediction was achieved in next N attempts
             future_times = all_times[i:min(i + attempts_horizon, len(all_times))]
-            
+
             achieved = False
             attempts_needed = None
             actual_best = None
-            
+
             for attempt_idx, actual_time in enumerate(future_times, start=1):
                 if actual_time <= predicted_next:
                     achieved = True
@@ -73,23 +73,21 @@ class AchievementValidator:
                     actual_best = actual_time
                     error_seconds_list.append(abs(predicted_next - actual_time))
                     break
-            
+
             if achieved:
                 attempts_to_achieve_list.append(attempts_needed)
-            
-            # Store sample prediction for display
-            if len(predictions_tested) < 5:  # Keep first 5 as samples
-                predictions_tested.append({
-                    'predicted': predicted_next,
-                    'achieved': achieved,
-                    'attempts_needed': attempts_needed,
-                    'actual_best': actual_best,
-                    'prediction_date': all_dates[i - 1] if i - 1 < len(all_dates) else None,
-                    'future_times': future_times[:3]  # Show first 3 attempts
-                })
-        
-        total_predictions = len(predictions_tested)
-        predictions_achieved = sum(1 for p in predictions_tested if p['achieved'])
+
+            all_predictions.append({
+                'predicted': predicted_next,
+                'achieved': achieved,
+                'attempts_needed': attempts_needed,
+                'actual_best': actual_best,
+                'prediction_date': all_dates[i - 1] if i - 1 < len(all_dates) else None,
+                'future_times': future_times[:3]  # Show first 3 attempts
+            })
+
+        total_predictions = len(all_predictions)
+        predictions_achieved = sum(1 for p in all_predictions if p['achieved'])
         achievement_rate = (predictions_achieved / total_predictions * 100) if total_predictions > 0 else 0
         
         # Determine confidence based on sample size
@@ -107,7 +105,7 @@ class AchievementValidator:
             'avg_attempts_to_achieve': round(sum(attempts_to_achieve_list) / len(attempts_to_achieve_list), 1) if attempts_to_achieve_list else None,
             'avg_error_seconds': round(sum(error_seconds_list) / len(error_seconds_list), 2) if error_seconds_list else None,
             'confidence': confidence,
-            'sample_predictions': predictions_tested
+            'sample_predictions': all_predictions
         }
     
     @staticmethod

@@ -6,7 +6,7 @@ Scrapes all results, compares with DB, inserts missing ones
 import asyncio
 import logging
 from typing import Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 from worker.models import (
@@ -99,7 +99,7 @@ class SyncOrchestrator:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='in_progress',
-                    last_sync_started_at=datetime.utcnow().isoformat(),
+                    last_sync_started_at=datetime.now(timezone.utc).isoformat(),
                     sync_error=None,
                     sync_progress=0,
                     sync_total=total_events
@@ -203,7 +203,7 @@ class SyncOrchestrator:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='completed',
-                    last_sync_completed_at=datetime.utcnow().isoformat(),
+                    last_sync_completed_at=datetime.now(timezone.utc).isoformat(),
                     results_count=len(new_results),
                     sync_error=None
                 )
@@ -240,7 +240,7 @@ class SyncOrchestrator:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='failed',
-                    last_sync_completed_at=datetime.utcnow().isoformat(),
+                    last_sync_completed_at=datetime.now(timezone.utc).isoformat(),
                     sync_error=result.error_message[:500]
                 )
             )

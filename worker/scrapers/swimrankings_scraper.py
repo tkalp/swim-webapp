@@ -74,9 +74,12 @@ class SwimRankingsScraper(BaseScraper):
             logger.info(f"Successfully fetched page, HTML size: {len(html)} bytes")
             
             soup = BeautifulSoup(html, 'html.parser')
-            
+
+            # Log page title to verify we got the real page (not a block page)
+            page_title = soup.title.string if soup.title else "NO TITLE"
+            logger.info(f"Page title: '{page_title}'")
+
             # Parse attempts
-            logger.info("Parsing event attempts from page...")
             attempts = self.parser.parse_event_attempts(soup)
             logger.info(f"Found {len(attempts)} total attempt(s) on page")
             

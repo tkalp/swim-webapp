@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -6,6 +6,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     curl \
+    libxml2-dev \
+    libxslt-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements

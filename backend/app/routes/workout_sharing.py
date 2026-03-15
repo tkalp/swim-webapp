@@ -3,10 +3,10 @@ from typing import Optional, List
 from pydantic import BaseModel
 from uuid import UUID
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.db import get_db
-from app.infrastructure.models import WorkoutTemplate, Coach, WorkoutTemplateTag
+from app.infrastructure.models import WorkoutTemplate, Coach, WorkoutTemplateTag, CoachConnection
 from app.middleware.auth import get_current_user_id
 from app.utils import logger
 
@@ -176,7 +176,28 @@ async def discover_workouts(
             .where(WorkoutTemplate.create_by_coach != coach_id)
         )
 
-        if visibility:
+        if visibility == 'network':
+            # Only show network workouts from accepted connections
+            query = query.where(
+                WorkoutTemplate.visibility == 'network'
+            ).where(
+                WorkoutTemplate.create_by_coach.in_(
+                    select(CoachConnection.requester_id).where(
+                        and_(
+                            CoachConnection.recipient_id == coach_id,
+                            CoachConnection.status == 'accepted',
+                        )
+                    ).union(
+                        select(CoachConnection.recipient_id).where(
+                            and_(
+                                CoachConnection.requester_id == coach_id,
+                                CoachConnection.status == 'accepted',
+                            )
+                        )
+                    )
+                )
+            )
+        elif visibility:
             query = query.where(WorkoutTemplate.visibility == visibility)
 
         # Sort

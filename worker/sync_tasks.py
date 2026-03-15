@@ -43,7 +43,7 @@ class SyncTask(Task):
                         external_link_id,
                         SyncStatusUpdate(
                             sync_status='failed',
-                            last_sync_completed_at=datetime.utcnow().isoformat(),
+                            last_sync_completed_at=datetime.now(timezone.utc).isoformat(),
                             sync_error=error_msg[:500]
                         )
                     )
@@ -228,7 +228,8 @@ def sync_squad_swimmers_task(
 def bulk_sync_all_swimmers_task(
     self,
     triggered_by_user_id: str,
-    force_update: bool = False
+    force_update: bool = False,
+    job_id: Optional[str] = None,
 ) -> dict:
     """
     Celery task to sync all SwimRankings swimmers in bulk
@@ -236,6 +237,8 @@ def bulk_sync_all_swimmers_task(
     Args:
         triggered_by_user_id: Admin user ID who triggered the sync
         force_update: If True, bypass freshness check and sync all data
+        job_id: Pre-created BulkSyncJob ID (created by API for immediate polling). If not
+                provided, the task creates one after counting swimmers.
 
     Returns:
         Dictionary with job_id and summary
@@ -253,16 +256,22 @@ def bulk_sync_all_swimmers_task(
         total_swimmers = len(swimmer_links)
 
         if total_swimmers == 0:
+            if job_id:
+                bulk_sync_service.update_job_status(job_id, 'failed', error_message='No swimmers with SwimRankings links')
             return {
                 'success': False,
                 'error': 'No swimmers found with SwimRankings links'
             }
 
-        # Create bulk sync job
-        job_id = bulk_sync_service.create_bulk_sync_job(
-            triggered_by_user_id=triggered_by_user_id,
-            total_swimmers=total_swimmers
-        )
+        # Use pre-created job_id or create a new one
+        if not job_id:
+            job_id = bulk_sync_service.create_bulk_sync_job(
+                triggered_by_user_id=triggered_by_user_id,
+                total_swimmers=total_swimmers
+            )
+        else:
+            # Update total_swimmers on the pre-created record now that we know the count
+            bulk_sync_service.update_job_total_swimmers(job_id, total_swimmers)
 
         # Update status to in_progress
         bulk_sync_service.update_job_status(job_id, 'in_progress')

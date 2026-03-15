@@ -37,6 +37,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Playwright browsers
 RUN playwright install chromium
 
+# Copy backend app package (worker imports app.infrastructure.models)
+COPY backend/app /app/app
+
 # Copy worker code
 COPY worker /app/worker
 

@@ -94,7 +94,7 @@ class SwimmerSyncService:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='in_progress',
-                    last_sync_started_at=datetime.utcnow().isoformat(),
+                    last_sync_started_at=datetime.now(timezone.utc).isoformat(),
                     sync_error=None,
                     sync_progress=0,
                     sync_total=total_events
@@ -383,7 +383,7 @@ class SwimmerSyncService:
                     external_link_id,
                     SyncStatusUpdate(
                         sync_status='completed',
-                        last_sync_completed_at=datetime.utcnow().isoformat(),
+                        last_sync_completed_at=datetime.now(timezone.utc).isoformat(),
                         sync_error=None,
                         sync_progress=total_events,
                         sync_total=total_events
@@ -425,7 +425,7 @@ class SwimmerSyncService:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='failed',
-                    last_sync_completed_at=datetime.utcnow().isoformat(),
+                    last_sync_completed_at=datetime.now(timezone.utc).isoformat(),
                     sync_error=result.error_message[:500] if result.error_message else None
                 )
             )
@@ -1300,7 +1300,7 @@ class SwimmerSyncService:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='cancelled',
-                    last_sync_completed_at=datetime.utcnow().isoformat()
+                    last_sync_completed_at=datetime.now(timezone.utc).isoformat()
                 )
             )
         else:
@@ -1322,7 +1322,7 @@ class SwimmerSyncService:
                 external_link_id,
                 SyncStatusUpdate(
                     sync_status='completed',
-                    last_sync_completed_at=datetime.utcnow().isoformat(),
+                    last_sync_completed_at=datetime.now(timezone.utc).isoformat(),
                     results_count=progress.results_imported,
                     sync_error=None
                 )

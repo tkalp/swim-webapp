@@ -1,7 +1,7 @@
 """Sync management routes for external data."""
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, and_  # noqa: F401 (and_ kept for potential future use)
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,7 +46,7 @@ async def trigger_swimmer_sync(
 
         # Update status to pending
         link.sync_status = 'pending'
-        link.last_sync_started_at = datetime.utcnow()
+        link.last_sync_started_at = datetime.now(timezone.utc)
         await db.commit()
 
         # Enqueue sync task

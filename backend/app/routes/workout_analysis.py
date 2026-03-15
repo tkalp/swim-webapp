@@ -88,7 +88,10 @@ async def analyze_workout_text(
         raise HTTPException(status_code=500, detail=f"Error analyzing workout: {str(e)}")
 
 @router.post("/quick-stats")
-async def get_quick_workout_stats(request: WorkoutAnalysisRequest) -> Dict[str, Any]:
+async def get_quick_workout_stats(
+    request: WorkoutAnalysisRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> Dict[str, Any]:
     """
     Get quick stats for display in forms (lighter analysis)
     """

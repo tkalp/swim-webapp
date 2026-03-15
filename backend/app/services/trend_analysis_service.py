@@ -35,7 +35,6 @@ class ComparativeTrend:
     swimmer_a_trend: TrendAnalysis
     swimmer_b_trend: TrendAnalysis
     relative_velocity: float  # How much faster A is improving vs B (per year)
-    catch_up_years: Optional[float]  # Years until slower swimmer catches up (if improving faster)
     velocity_advantage: str  # "swimmer_a", "swimmer_b", or "similar"
 
 
@@ -171,21 +170,11 @@ class TrendAnalysisService:
         else:
             velocity_advantage = "swimmer_b"
         
-        # Calculate catch-up time if applicable
-        catch_up_years = None
-        if relative_velocity != 0:
-            # Simple projection: if slower swimmer is improving faster, when will they catch up?
-            # This assumes current trends continue (simplification)
-            catch_up_years = TrendAnalysisService._calculate_catch_up_years(
-                trend_a, trend_b, relative_velocity
-            )
-        
         return ComparativeTrend(
             swimmer_a_trend=trend_a,
             swimmer_b_trend=trend_b,
             relative_velocity=relative_velocity,
-            catch_up_years=catch_up_years,
-            velocity_advantage=velocity_advantage
+            velocity_advantage=velocity_advantage,
         )
     
     @staticmethod
@@ -288,19 +277,3 @@ class TrendAnalysisService:
         else:
             return "declining"
     
-    @staticmethod
-    def _calculate_catch_up_years(
-        trend_a: TrendAnalysis,
-        trend_b: TrendAnalysis,
-        relative_velocity: float
-    ) -> Optional[float]:
-        """
-        Calculate when slower swimmer will catch up if improving faster.
-        
-        Returns:
-            Years until catch-up or None if won't catch up
-        """
-        # This is a simplified projection
-        # Would need current times to make accurate prediction
-        # For now, return None (can enhance later with actual time comparison)
-        return None

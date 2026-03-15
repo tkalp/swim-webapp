@@ -58,8 +58,8 @@ class SwimmerExternalLink(SwimmerExternalLinkBase):
     swimmer_id: str
     last_sync_at: Optional[datetime] = None
     last_result_date: Optional[datetime] = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     created_by: Optional[str] = None
 
     class Config:

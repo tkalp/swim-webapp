@@ -1,7 +1,7 @@
 """Prediction routes for swimmers."""
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import statistics
 
@@ -240,7 +240,7 @@ async def _get_attendance_rate(
     db: AsyncSession, swimmer_id: str
 ) -> Optional[float]:
     """Get attendance rate for last 30 days."""
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
 
     attendance_result = await db.execute(
         select(TrainingAttendance.status)
@@ -422,7 +422,7 @@ async def _get_squad_improvement_rates(
             return {}
 
         # Get workout results (last 90 days)
-        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+        ninety_days_ago = datetime.now(timezone.utc) - timedelta(days=90)
         squad_results_result = await db.execute(
             select(
                 WorkoutResult.swimmer_id,
@@ -481,7 +481,7 @@ def _calculate_swimmer_age(date_of_birth: Optional[str]) -> Optional[int]:
 
     try:
         dob = datetime.fromisoformat(date_of_birth.replace('Z', '+00:00'))
-        return (datetime.utcnow() - dob).days // 365
+        return (datetime.now(timezone.utc) - dob).days // 365
     except Exception as e:
         logger.warning(f"Failed to calculate swimmer age: {e}")
         return None
@@ -491,7 +491,7 @@ async def _get_recent_workouts(
     db: AsyncSession, swimmer_id: str
 ) -> list:
     """Get recent workout context for predictions."""
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
     recent_workouts = []
 
     try:
@@ -582,7 +582,7 @@ def _calculate_days_since_last_result(sorted_results: list) -> Optional[int]:
         last_result_date = datetime.fromisoformat(
             sorted_results[-1]['performed_on'].replace('Z', '+00:00')
         )
-        return (datetime.utcnow() - last_result_date).days
+        return (datetime.now(timezone.utc) - last_result_date).days
     except Exception as e:
         logger.warning(f"Failed to calculate days since last result: {e}")
         return None
@@ -593,7 +593,7 @@ async def _get_squad_avg_attendance(
 ) -> Optional[float]:
     """Get squad average attendance rate for last 30 days."""
     try:
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
 
         # Get all swimmers in squad
         swimmers_result = await db.execute(
@@ -665,7 +665,7 @@ async def _get_squad_avg_volume(
 ) -> Optional[int]:
     """Get squad average training volume for last 30 days."""
     try:
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
 
         # Get all swimmers in squad
         swimmers_result = await db.execute(

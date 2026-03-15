@@ -1,22 +1,32 @@
-"""
-Database utilities for worker
-"""
+"""Database utilities for worker (synchronous SQLAlchemy)."""
 
 import os
-from supabase import create_client, Client
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
 
-def get_supabase_client() -> Client:
+def get_engine():
+    """Create a synchronous SQLAlchemy engine.
+
+    Reads DATABASE_URL from the environment and converts an async
+    ``postgresql+asyncpg://`` URL to the synchronous ``postgresql://``
+    scheme expected by psycopg2.
     """
-    Create and return a Supabase client
-    
-    Returns:
-        Configured Supabase client instance
-    """
-    supabase_url = os.getenv('SUPABASE_URL')
-    supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-    
-    if not supabase_url or not supabase_key:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
-    
-    return create_client(supabase_url, supabase_key)
+    db_url = os.getenv("DATABASE_URL", "")
+    # Convert async URL to sync if needed
+    sync_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    return create_engine(
+        sync_url,
+        echo=os.getenv("SQL_ECHO", "false").lower() == "true",
+        pool_size=5,
+        max_overflow=10,
+        pool_pre_ping=True,
+    )
+
+
+SessionLocal = sessionmaker(bind=get_engine())
+
+
+def get_db() -> Session:
+    """Return a new synchronous database session."""
+    return SessionLocal()

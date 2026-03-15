@@ -10,6 +10,7 @@ from worker.fetchers.base_fetcher import BaseFetcher
 from worker.fetchers.curl_fetcher import CurlFetcher
 from worker.fetchers.httpx_fetcher import HttpxFetcher
 from worker.fetchers.playwright_fetcher import PlaywrightFetcher
+from worker.fetchers.scraperapi_fetcher import ScraperApiFetcher
 from worker.config import WorkerConfig
 
 logger = logging.getLogger('fetcher_factory')
@@ -64,6 +65,9 @@ class FetcherFactory:
         elif mode == 'playwright':
             logger.info("Creating PlaywrightFetcher")
             return PlaywrightFetcher(**kwargs)
+        elif mode == 'scraperapi':
+            logger.info("Creating ScraperApiFetcher")
+            return ScraperApiFetcher(api_key=WorkerConfig.SCRAPERAPI_KEY, **kwargs)
         else:
             logger.warning(f"Unknown fetch mode '{mode}', defaulting to curl")
             return CurlFetcher(**kwargs)

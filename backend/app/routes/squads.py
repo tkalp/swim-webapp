@@ -1,7 +1,7 @@
 # backend/app/routes/squads.py
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List, Dict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from collections import defaultdict
 import statistics
 import re
@@ -2023,7 +2023,7 @@ async def get_squad_predictions(
         swimmer_ids = [s['id'] for s in swimmers]
 
         # Fetch attendance data for last 30 days for all swimmers
-        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         attendance_query = (
             select(TrainingAttendance.swimmer_id, TrainingAttendance.status, TrainingAttendance.training_session_id)
@@ -2105,7 +2105,7 @@ async def get_squad_predictions(
 
         # Calculate squad improvement rates for comparison
         squad_improvement_rates = {}
-        start_date_pred = (datetime.utcnow() - timedelta(days=90)).isoformat()
+        start_date_pred = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
         for swimmer_id, events_map in swimmer_events_data.items():
             for event_key, event_results in events_map.items():
@@ -2200,7 +2200,7 @@ async def get_squad_predictions(
             if swimmer.get('date_of_birth'):
                 try:
                     dob = datetime.fromisoformat(swimmer['date_of_birth'].replace('Z', '+00:00'))
-                    swimmer_age = (datetime.utcnow() - dob).days // 365
+                    swimmer_age = (datetime.now(timezone.utc) - dob).days // 365
                 except Exception as age_error:
                     logger.warning(f"Failed to calculate swimmer age: {age_error}")
 
@@ -2252,7 +2252,7 @@ async def get_squad_predictions(
                 if sorted_results:
                     try:
                         last_result_date = datetime.fromisoformat(sorted_results[-1]['performed_on'].replace('Z', '+00:00'))
-                        days_since_last_result = (datetime.utcnow() - last_result_date).days
+                        days_since_last_result = (datetime.now(timezone.utc) - last_result_date).days
                     except Exception as date_error:
                         logger.warning(f"Failed to calculate days since last result: {date_error}")
 
@@ -2376,7 +2376,7 @@ async def trigger_squad_sync(
             swimmers_processed=0,
             swimmers_succeeded=0,
             swimmers_failed=0,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
         )
         db.add(job)
         await db.commit()

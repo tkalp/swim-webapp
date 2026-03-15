@@ -1,7 +1,7 @@
 # backend/app/routes/training_sessions.py
 from fastapi import APIRouter, HTTPException, Query, Body, Depends
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import pytz
 from pydantic import BaseModel
@@ -85,14 +85,14 @@ async def get_virtual_sessions(
     try:
         # Parse date range
         if not from_date:
-            start_dt = datetime.utcnow() - timedelta(days=30)
+            start_dt = datetime.now(timezone.utc) - timedelta(days=30)
         else:
             # Handle various ISO formats including .000Z
             from_date_clean = from_date.replace('Z', '+00:00').split('.')[0] + '+00:00' if '.' in from_date else from_date.replace('Z', '+00:00')
             start_dt = datetime.fromisoformat(from_date_clean)
 
         if not to_date:
-            end_dt = datetime.utcnow() + timedelta(days=90)
+            end_dt = datetime.now(timezone.utc) + timedelta(days=90)
         else:
             # Handle various ISO formats including .000Z
             to_date_clean = to_date.replace('Z', '+00:00').split('.')[0] + '+00:00' if '.' in to_date else to_date.replace('Z', '+00:00')
@@ -224,8 +224,10 @@ async def get_virtual_sessions(
                         session_end += timedelta(days=1)
 
                     # Check if this session time already exists in materialized sessions
-                    utc_date = session_start.date().isoformat()
-                    lookup_key = f"{squad_id}_{utc_date}"
+                    # Use local date (not UTC) so a 10pm local session isn't treated as the next day
+                    local_session_start = session_start.astimezone(local_tz)
+                    local_date = local_session_start.date().isoformat()
+                    lookup_key = f"{squad_id}_{local_date}"
 
                     # Check if already materialized by comparing times
                     already_materialized = False

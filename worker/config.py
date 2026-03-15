@@ -10,14 +10,13 @@ class WorkerConfig:
     """Configuration for worker service"""
     
     # Database configuration
-    SUPABASE_URL: str = os.getenv('SUPABASE_URL', '')
-    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
+    DATABASE_URL: str = os.getenv('DATABASE_URL', '')
     
     # Redis configuration
     REDIS_URL: str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Scraper configuration
-    MAX_WORKERS: int = int(os.getenv('MAX_WORKERS') or '16')  # Increased from 2: network I/O bound, safe to parallelize
+    MAX_WORKERS: int = int(os.getenv('SCRAPER_MAX_WORKERS') or os.getenv('MAX_WORKERS') or '3')
     MIN_DELAY: float = float(os.getenv('SCRAPER_MIN_DELAY') or '0.1')
     MAX_DELAY: float = float(os.getenv('SCRAPER_MAX_DELAY') or '0.5')
     BASE_RETRY_DELAY: float = float(os.getenv('SCRAPER_RETRY_DELAY') or '1.0')
@@ -30,6 +29,7 @@ class WorkerConfig:
     GLOBAL_SPLITS_SEMAPHORE_SIZE: int = int(os.getenv('GLOBAL_SPLITS_SEMAPHORE_SIZE') or '16')  # Global concurrent splits across all events (optimization #1)
     RESULT_BATCH_SIZE: int = int(os.getenv('RESULT_BATCH_SIZE', '50'))  # Results per existence check query
     EVENT_BATCH_SIZE: int = int(os.getenv('EVENT_BATCH_SIZE', '5'))  # Events per parallel batch fetch
+    MAX_CONCURRENT_REQUESTS: int = int(os.getenv('MAX_CONCURRENT_REQUESTS', '15'))  # Global concurrent HTTP requests across all fetchers
     
     # Task configuration
     TASK_SOFT_TIME_LIMIT: int = int(os.getenv('TASK_SOFT_TIME_LIMIT', '3600'))
@@ -39,7 +39,11 @@ class WorkerConfig:
     SWIMRANKINGS_BASE_URL: str = 'https://www.swimrankings.net'
     
     # Fetch mode configuration
-    FETCH_MODE: str = os.getenv('FETCH_MODE', 'curl')  # curl, httpx, or playwright
+    FETCH_MODE: str = os.getenv('FETCH_MODE', 'curl')  # curl, httpx, playwright, or scraperapi
+
+    # ScraperAPI configuration (for FETCH_MODE=scraperapi)
+    SCRAPERAPI_KEY: str = os.getenv('SCRAPERAPI_KEY', '')
+    SCRAPERAPI_MAX_CONCURRENT: str = os.getenv('SCRAPERAPI_MAX_CONCURRENT', '1')  # render=true is heavy; 1 at a time for trial
     
     # Proxy configuration
     USE_OXYLABS_PROXY: bool = os.getenv('USE_OXYLABS_PROXY', 'false').lower() == 'true'
@@ -88,16 +92,14 @@ class WorkerConfig:
     @classmethod
     def validate(cls) -> None:
         """Validate required configuration"""
-        if not cls.SUPABASE_URL:
-            raise ValueError("SUPABASE_URL environment variable is required")
-        if not cls.SUPABASE_SERVICE_ROLE_KEY:
-            raise ValueError("SUPABASE_SERVICE_ROLE_KEY environment variable is required")
-        
+        if not cls.DATABASE_URL:
+            raise ValueError("DATABASE_URL environment variable is required")
+
         # Log configuration status
         import logging
         logger = logging.getLogger('config')
         if cls.SKIP_SPLITS:
-            logger.info("⚠️  SKIP_SPLITS is enabled - race splits will NOT be fetched")
+            logger.info("SKIP_SPLITS is enabled - race splits will NOT be fetched")
     
     @classmethod
     def get_max_workers(cls, override: Optional[int] = None) -> int:
