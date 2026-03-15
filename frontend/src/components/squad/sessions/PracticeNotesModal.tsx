@@ -35,6 +35,9 @@ export default function PracticeNotesModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Track the ID of the loaded note so we can PUT instead of POST on update
+  const [noteId, setNoteId] = useState<string | undefined>(undefined);
+
   // Pre-practice fields
   const [announcements, setAnnouncements] = useState('');
   const [reminders, setReminders] = useState('');
@@ -62,10 +65,12 @@ export default function PracticeNotesModal({
   const loadNotes = async () => {
     setLoading(true);
     setError('');
+    setNoteId(undefined); // reset before load
     try {
       if (noteType === 'pre') {
         const data = await getPrePracticeNote(sessionId);
         if (data) {
+          setNoteId(data.id);
           setAnnouncements(data.announcements || '');
           setReminders(data.reminders || '');
           setFocus(data.focus || '');
@@ -75,6 +80,7 @@ export default function PracticeNotesModal({
       } else {
         const data = await getPostPracticeNote(sessionId);
         if (data) {
+          setNoteId(data.id);
           setOverallRating(data.overall_rating);
           setEffortLevel(data.effort_level);
           setTechniqueQuality(data.technique_quality);
@@ -100,6 +106,7 @@ export default function PracticeNotesModal({
     try {
       if (noteType === 'pre') {
         await upsertPrePracticeNote({
+          id: noteId,
           training_session_id: sessionId,
           announcements: announcements || undefined,
           reminders: reminders || undefined,
@@ -109,6 +116,7 @@ export default function PracticeNotesModal({
         });
       } else {
         await upsertPostPracticeNote({
+          id: noteId,
           training_session_id: sessionId,
           overall_rating: overallRating,
           effort_level: effortLevel,

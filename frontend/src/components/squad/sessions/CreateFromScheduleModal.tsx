@@ -17,6 +17,11 @@ type CreateFromScheduleModalProps = {
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// Map integer day_of_week to display name
+function getDayName(dayOfWeek: number): string {
+  return DAY_NAMES[dayOfWeek] ?? String(dayOfWeek);
+}
+
 export default function CreateFromScheduleModal({
   open,
   onClose,
@@ -46,9 +51,8 @@ export default function CreateFromScheduleModal({
     for (let i = 0; i < daysToCreate; i++) {
       const currentDate = new Date(start);
       currentDate.setDate(currentDate.getDate() + i);
-      const dayOfWeekNumber = currentDate.getDay();
-      const dayOfWeekString = DAY_NAMES[dayOfWeekNumber];
-      const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeekString);
+      const dayOfWeekNumber = currentDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+      const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeekNumber);
       count += daySchedules.length;
     }
     
@@ -169,7 +173,7 @@ export default function CreateFromScheduleModal({
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-semibold text-slate-500 uppercase">
-                        {schedule.day_of_week}
+                        {getDayName(schedule.day_of_week)}
                       </span>
                       <span className="text-sm text-slate-100 capitalize">
                         {schedule.training_type.replace('_', ' ')}

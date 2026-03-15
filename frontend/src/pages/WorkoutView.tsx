@@ -22,6 +22,7 @@ import {
 import useWorkout from '@/hooks/useWorkout';
 import WorkoutBreakdownCharts from '@/components/workout/WorkoutBreakdownCharts';
 import { getWorkoutTags } from '@/services/workoutTagService';
+import { deleteWorkoutTemplate } from '@/services/workoutTemplateService';
 import type { WorkoutTag } from '@/types/workoutTags';
 
 // Helper to convert new versioned format to old ParsedWorkout format
@@ -106,10 +107,14 @@ export default function WorkoutViewPage() {
     if (workoutId) navigate(`/workouts/${workoutId}/edit`);
   };
 
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this workout?")) {
-      console.log("Delete workout:", workoutId);
-      navigate(-1);
+  const handleDelete = async () => {
+    if (!workoutId) return;
+    if (!window.confirm("Are you sure you want to delete this workout?")) return;
+    try {
+      await deleteWorkoutTemplate(workoutId);
+      navigate('/workouts');
+    } catch (error) {
+      console.error('Error deleting workout:', error);
     }
   };
 

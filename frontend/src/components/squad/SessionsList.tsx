@@ -43,7 +43,8 @@ export type Session = {
   start_date: string;
   end_date: string;
   workout_id?: string | null;
-  workout_template?: { name: string } | null;
+  workout_name?: string | null;
+  workout_template?: { name: string } | null; // kept for backwards-compat; prefer workout_name
 };
 
 type DateRange =
@@ -322,7 +323,7 @@ export default function SessionsList({
         await updateSession(editingSession.id, squadId, {
           start_date: startDateTime.toISOString(),
           end_date: endDateTime.toISOString(),
-          training_type: "Swim",
+          training_type: formData.training_type || "Swim",
           workout_id: formData.workout_id,
         });
       } else {
@@ -331,7 +332,7 @@ export default function SessionsList({
           squad_id: squadId,
           start_date: startDateTime.toISOString(),
           end_date: endDateTime.toISOString(),
-          training_type: "Swim",
+          training_type: formData.training_type || "Swim",
           workout_id: formData.workout_id,
         });
       }
@@ -680,12 +681,12 @@ export default function SessionsList({
                     </div>
 
                     {/* Workout Name Badge (if exists) */}
-                    {s.workout_template?.name && (
+                    {(s.workout_name || s.workout_template?.name) && (
                       <div className="mt-2.5 pt-2.5 border-t border-slate-700/30">
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-lg w-fit">
                           <FileText size={14} className="text-purple-400" />
                           <span className="text-sm font-medium text-purple-300">
-                            {s.workout_template.name}
+                            {s.workout_name || s.workout_template?.name}
                           </span>
                         </div>
                       </div>
@@ -707,7 +708,7 @@ export default function SessionsList({
                                 onClick={() => {
                                   setRatingSessionId(s.id);
                                   setRatingWorkoutId(s.workout_id!);
-                                  setRatingWorkoutName(s.workout_template?.name || 'Workout');
+                                  setRatingWorkoutName(s.workout_name || s.workout_template?.name || 'Workout');
                                   setRatingModalOpen(true);
                                 }}
                               >

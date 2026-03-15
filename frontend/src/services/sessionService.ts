@@ -1,5 +1,5 @@
 // services/sessionService.ts
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 export type TrainingSession = {
   id: string
@@ -25,7 +25,7 @@ export type UpdateSessionData = Partial<Omit<CreateSessionData, 'squad_id'>>
 export type TrainingSchedule = {
   id: string
   squad_id: string
-  day_of_week: string // 'Sunday', 'Monday', 'Tuesday', etc.
+  day_of_week: number // 0=Sunday, 1=Monday, ..., 6=Saturday (integer from DB)
   start_time: string
   end_time: string
   training_type: string
@@ -37,22 +37,7 @@ export type TrainingSchedule = {
  */
 export async function createSession(data: CreateSessionData): Promise<TrainingSession> {
   console.log('Creating session with payload:', data)
-  
-  const { data: session, error } = await supabase
-    .from('training_sessions')
-    .upsert(data, {
-      onConflict: 'squad_id, start_date',
-      ignoreDuplicates: false,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Error creating training session:', error)
-    console.error('Failed payload was:', data)
-    throw error
-  }
-  return session
+  return apiClient.post<TrainingSession>('/training-sessions/sessions', data)
 }
 
 /**
@@ -62,42 +47,21 @@ export async function updateSession(
   sessionId: string,
   updates: UpdateSessionData
 ): Promise<TrainingSession> {
-  const { data: session, error } = await supabase
-    .from('training_sessions')
-    .update(updates)
-    .eq('id', sessionId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return session
+  return apiClient.put<TrainingSession>(`/training-sessions/sessions/${sessionId}`, updates)
 }
 
 /**
  * Delete a training session
  */
 export async function deleteSession(sessionId: string): Promise<void> {
-  const { error } = await supabase
-    .from('training_sessions')
-    .delete()
-    .eq('id', sessionId)
-
-  if (error) throw error
+  await apiClient.delete(`/training-sessions/sessions/${sessionId}`)
 }
 
 /**
  * Get training schedules for a squad
  */
 export async function getTrainingSchedules(squadId: string): Promise<TrainingSchedule[]> {
-  const { data, error } = await supabase
-    .from('training_schedules')
-    .select('id, squad_id, day_of_week, start_time, end_time, training_type, active')
-    .eq('squad_id', squadId)
-    .eq('active', true)
-    .order('day_of_week')
-
-  if (error) throw error
-  return data ?? []
+  return apiClient.get<TrainingSchedule[]>(`/training-schedules?squad_id=${squadId}&active_only=true`)
 }
 
 /**
@@ -137,7 +101,6 @@ export async function createSessionsFromSchedules(
   daysToCreate: number = 7,
   squadId: string
 ): Promise<{ created: TrainingSession[], errors: Array<{ schedule: TrainingSchedule, date: Date, error: any }> }> {
-  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const created: TrainingSession[] = []
   const errors: Array<{ schedule: TrainingSchedule, date: Date, error: any }> = []
 
@@ -145,11 +108,10 @@ export async function createSessionsFromSchedules(
   for (let dayOffset = 0; dayOffset < daysToCreate; dayOffset++) {
     const currentDate = new Date(startDate)
     currentDate.setDate(currentDate.getDate() + dayOffset)
-    const dayOfWeekNumber = currentDate.getDay()
-    const dayOfWeekString = DAY_NAMES[dayOfWeekNumber]
+    const dayOfWeekNumber = currentDate.getDay() // 0=Sunday, 1=Monday, ..., 6=Saturday
 
-    // Find schedules for this day
-    const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeekString)
+    // Find schedules for this day (DB stores day_of_week as integer)
+    const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeekNumber)
 
     // Create session for each schedule on this day
     for (const schedule of daySchedules) {

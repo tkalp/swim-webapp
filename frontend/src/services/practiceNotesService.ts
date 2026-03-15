@@ -1,126 +1,76 @@
 // services/practiceNotesService.ts
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import type {
   PrePracticeNote,
   PostPracticeNote,
   CreatePrePracticeNoteData,
   CreatePostPracticeNoteData,
-  UpdatePrePracticeNoteData,
-  UpdatePostPracticeNoteData,
 } from '@/types/practiceNotes';
 
 /**
  * Get pre-practice note for a training session
  */
 export async function getPrePracticeNote(trainingSessionId: string): Promise<PrePracticeNote | null> {
-  const { data, error } = await supabase
-    .from("training_session_pre_practice_notes")
-    .select("*")
-    .eq("training_session_id", trainingSessionId)
-    .single();
+  const notes = await apiClient.get<PrePracticeNote[]>(`/practice-notes/pre/${trainingSessionId}`);
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned - this is fine
-      return null;
-    }
-    throw new Error(error.message);
-  }
-
-  return data;
+  // Backend returns an array; return the first note or null
+  if (!notes || notes.length === 0) return null;
+  return notes[0];
 }
 
 /**
  * Get post-practice note for a training session
  */
 export async function getPostPracticeNote(trainingSessionId: string): Promise<PostPracticeNote | null> {
-  const { data, error } = await supabase
-    .from("training_session_post_practice_notes")
-    .select("*")
-    .eq("training_session_id", trainingSessionId)
-    .single();
+  const notes = await apiClient.get<PostPracticeNote[]>(`/practice-notes/post/${trainingSessionId}`);
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned - this is fine
-      return null;
-    }
-    throw new Error(error.message);
-  }
-
-  return data;
+  // Backend returns an array; return the first note or null
+  if (!notes || notes.length === 0) return null;
+  return notes[0];
 }
 
 /**
- * Create or update pre-practice note
+ * Create or update pre-practice note.
+ * Accepts an optional `id` — when present, issues a PUT (update); otherwise POST (create).
  */
 export async function upsertPrePracticeNote(
-  data: CreatePrePracticeNoteData
+  data: CreatePrePracticeNoteData & { id?: string }
 ): Promise<PrePracticeNote> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: result, error } = await supabase
-    .from("training_session_pre_practice_notes")
-    .upsert({
-      ...data,
-      coach_id: user.id,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'training_session_id'
-    })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return result;
+  if (data.id) {
+    // Update existing note
+    const { id, training_session_id, ...updateFields } = data;
+    return apiClient.put<PrePracticeNote>(`/practice-notes/pre/${id}`, updateFields);
+  }
+  // Create new note — backend gets coach_id from JWT
+  return apiClient.post<PrePracticeNote>('/practice-notes/pre', data);
 }
 
 /**
- * Create or update post-practice note
+ * Create or update post-practice note.
+ * Accepts an optional `id` — when present, issues a PUT (update); otherwise POST (create).
  */
 export async function upsertPostPracticeNote(
-  data: CreatePostPracticeNoteData
+  data: CreatePostPracticeNoteData & { id?: string }
 ): Promise<PostPracticeNote> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: result, error } = await supabase
-    .from("training_session_post_practice_notes")
-    .upsert({
-      ...data,
-      coach_id: user.id,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'training_session_id'
-    })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return result;
+  if (data.id) {
+    // Update existing note
+    const { id, training_session_id, ...updateFields } = data;
+    return apiClient.put<PostPracticeNote>(`/practice-notes/post/${id}`, updateFields);
+  }
+  // Create new note — backend gets coach_id from JWT
+  return apiClient.post<PostPracticeNote>('/practice-notes/post', data);
 }
 
 /**
  * Delete pre-practice note
  */
 export async function deletePrePracticeNote(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("training_session_pre_practice_notes")
-    .delete()
-    .eq("id", id);
-
-  if (error) throw new Error(error.message);
+  await apiClient.delete(`/practice-notes/pre/${id}`);
 }
 
 /**
  * Delete post-practice note
  */
 export async function deletePostPracticeNote(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("training_session_post_practice_notes")
-    .delete()
-    .eq("id", id);
-
-  if (error) throw new Error(error.message);
+  await apiClient.delete(`/practice-notes/post/${id}`);
 }
