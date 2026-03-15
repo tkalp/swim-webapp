@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export interface Notification {
   id: string;
-  type: 'squad_invitation' | 'connection_request' | 'connection_accepted';
+  type: 'squad_invitation' | 'connection_request';
   title: string;
   message: string;
   link?: string;

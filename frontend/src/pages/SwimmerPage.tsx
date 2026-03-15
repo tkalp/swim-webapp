@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { usePermissions } from '@/hooks/usePermissions';
 import { getSwimmerSyncStatus, type SwimmerSyncStatus } from '@/services/swimmerService';
@@ -20,6 +21,7 @@ import PageHeader from '@/components/ui/PageHeader';
 
 export default function SwimmerPage() {
   const { swimmerId } = useParams<{ swimmerId: string }>();
+  const queryClient = useQueryClient();
 
   // range state
   const [rangeKey, setRangeKey] = useState<RangeKey>("all_time");
@@ -117,6 +119,9 @@ export default function SwimmerPage() {
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
               pollIntervalRef.current = null;
+            }
+            if (status.sync_status === 'completed') {
+              queryClient.invalidateQueries({ queryKey: ['swimmer', swimmerId] });
             }
           }
         } catch (error) {

@@ -7,9 +7,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import SquadsPage from './pages/Squads';
-import AddSquadPage from './pages/AddSquad';
 import SquadPage from './pages/Squad';
-import EditSquadPage from './pages/EditSquad';
 import SwimmerPage from './pages/SwimmerPage';
 import ExternalSwimmerPage from './pages/ExternalSwimmerPage';
 import AICoachPage from './pages/AICoachPage';
@@ -57,22 +55,6 @@ export default function App() {
             </GlobalLayout>
           }
           path="/squads"
-        />
-        <Route
-          element={
-            <GlobalLayout>
-              <AddSquadPage />
-            </GlobalLayout>
-          }
-          path="/squads/new"
-        />
-        <Route
-          element={
-            <GlobalLayout>
-              <EditSquadPage />
-            </GlobalLayout>
-          }
-          path="/squads/:squadId/edit"
         />
         <Route
           element={

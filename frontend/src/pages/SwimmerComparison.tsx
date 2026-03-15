@@ -597,6 +597,98 @@ export default function SwimmerComparisonPage() {
                 </div>
               )}
             </div>
+
+            {/* Predictions Section */}
+            {comparisonResult.predictions && comparisonResult.predictions.events.length > 0 && (
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-800/90 to-slate-900/90 backdrop-blur-xl border border-slate-700/50 shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5" />
+
+                <button
+                  onClick={() => toggleSection('predictions')}
+                  className="relative w-full px-6 py-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors group"
+                >
+                  <h3 className="text-lg font-semibold flex items-center gap-3 text-slate-100">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 shadow-lg shadow-purple-500/10">
+                      <Target className="w-5 h-5 text-purple-400 drop-shadow-[0_0_6px_rgba(168,85,247,0.5)]" />
+                    </div>
+                    Race Win Probabilities
+                  </h3>
+                  {expandedSections.predictions ?
+                    <ChevronUp className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-colors" /> :
+                    <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                  }
+                </button>
+
+                {expandedSections.predictions && (
+                  <div className="relative px-6 pb-6">
+                    <div className="mb-4 flex items-center gap-6 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-400" />
+                        <span className="text-slate-300">{comparisonResult.swimmer_a.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-purple-400" />
+                        <span className="text-slate-300">{comparisonResult.swimmer_b.name}</span>
+                      </div>
+                      <div className="ml-auto text-xs text-slate-500">
+                        Overall favourite:{' '}
+                        <span className={
+                          comparisonResult.predictions.overall_favorite === 'swimmer_a'
+                            ? 'text-blue-400 font-medium'
+                            : comparisonResult.predictions.overall_favorite === 'swimmer_b'
+                            ? 'text-purple-400 font-medium'
+                            : 'text-slate-400 font-medium'
+                        }>
+                          {comparisonResult.predictions.overall_favorite === 'swimmer_a'
+                            ? comparisonResult.swimmer_a.name
+                            : comparisonResult.predictions.overall_favorite === 'swimmer_b'
+                            ? comparisonResult.swimmer_b.name
+                            : 'Even'}
+                        </span>
+                        {' '}({(comparisonResult.predictions.average_confidence * 100).toFixed(0)}% avg confidence)
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {comparisonResult.predictions.events.map((pred) => (
+                        <div key={pred.event} className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-slate-200">{pred.event}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              pred.confidence_level === 'high'
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                : pred.confidence_level === 'medium'
+                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                            }`}>
+                              {pred.confidence_level} confidence
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-blue-400 w-10 text-right">
+                              {(pred.swimmer_a_probability * 100).toFixed(0)}%
+                            </span>
+                            <div className="flex-1 h-2 bg-slate-700/50 rounded-full overflow-hidden flex">
+                              <div
+                                className="h-full bg-blue-400 transition-all duration-500"
+                                style={{ width: `${pred.swimmer_a_probability * 100}%` }}
+                              />
+                              <div
+                                className="h-full bg-purple-400 transition-all duration-500"
+                                style={{ width: `${pred.swimmer_b_probability * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-purple-400 w-10">
+                              {(pred.swimmer_b_probability * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

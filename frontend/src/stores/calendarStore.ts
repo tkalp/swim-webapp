@@ -66,10 +66,7 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   
   setSelectedEvent: (event) => set({ selectedEvent: event }),
   
-  setSelectedDate: (date) => {
-    console.log('calendarStore: setSelectedDate called with:', date)
-    set({ selectedDate: date })
-  },
+  setSelectedDate: (date) => set({ selectedDate: date }),
   
   setViewMode: (mode) => set({ viewMode: mode }),
   
@@ -77,15 +74,12 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   
   setDetailsOpen: (isOpen) => set({ isDetailsOpen: isOpen }),
   
-  openFormWithDate: (date) => {
-    console.log('calendarStore: openFormWithDate called with:', date)
-    set({ 
-      initialFormDate: date,
-      selectedDate: date, 
-      selectedEvent: null,
-      isFormOpen: true 
-    })
-  },
+  openFormWithDate: (date) => set({
+    initialFormDate: date,
+    selectedDate: date,
+    selectedEvent: null,
+    isFormOpen: true,
+  }),
   
   clearFormState: () => set({
     isFormOpen: false,

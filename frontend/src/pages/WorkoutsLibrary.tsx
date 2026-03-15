@@ -216,7 +216,7 @@ export default function WorkoutsLibrary() {
       setHasMore(true);
       loadWorkouts(0, true);
     } catch (e: any) {
-      alert(e.message || "Failed to duplicate workout");
+      showToast(e.message || "Failed to duplicate workout", "error");
     }
   };
 

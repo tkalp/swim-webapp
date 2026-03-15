@@ -8,7 +8,7 @@ import { SquadSidebar, SquadMobileNav } from '@/components/squad/SquadSidebar'
 import { OverviewTab } from '@/components/squad/OverviewTab'
 import { TrainingTab } from '@/components/squad/TrainingTab'
 import { SquadCoachesTab } from '@/components/squad/SquadCoachesTab'
-import { ScheduleTab } from '@/components/squad/ScheduleTab'
+import { CalendarTab } from '@/components/squad/CalendarTab'
 import { useSwimmerApi } from '@/hooks/api'
 import { useSquadDetails, useSwimmersBySquad, useSquadSchedules, useSquadSessions, useSquadEvents } from '@/hooks/useStores'
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -325,7 +325,7 @@ export default function SquadPage() {
                 />
               )}
               {tab === 'schedule' && squadId && (
-                <ScheduleTab 
+                <CalendarTab
                   squadId={squadId}
                   canManage={hasPermission('can_manage_schedules')}
                 />

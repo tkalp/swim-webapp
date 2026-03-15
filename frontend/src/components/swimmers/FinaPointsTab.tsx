@@ -14,8 +14,18 @@ interface FinaPointsTabProps {
 }
 
 export default function FinaPointsTab({ swimmerId, swimmer }: FinaPointsTabProps) {
-  const gender = swimmer?.sex === "Female" ? "female" : "male";
+  const gender = swimmer?.sex === "Female" ? "female" : swimmer?.sex === "Male" ? "male" : null;
   const [finaCourse, setFinaCourse] = useState<"LCM" | "SCM">("LCM");
+
+  if (!gender) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-slate-400 text-sm">
+          FINA points unavailable — swimmer gender not set.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom duration-500">
