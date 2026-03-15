@@ -1,4 +1,9 @@
-"""Database utilities for worker (synchronous SQLAlchemy)."""
+"""Database utilities for worker (synchronous SQLAlchemy).
+
+The worker uses a separate synchronous psycopg2 connection pool, not the
+backend's async asyncpg pool defined in app/infrastructure/db.py. Celery
+tasks are synchronous, so async SQLAlchemy cannot be used here.
+"""
 
 import os
 from sqlalchemy import create_engine

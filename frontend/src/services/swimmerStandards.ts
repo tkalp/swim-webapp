@@ -38,6 +38,11 @@ export function timeStringToSeconds(timeString: string): number {
   return totalSeconds;
 }
 
+// Per-set cache for standards fetched from the API.
+// Keyed by standardsSetId — avoids re-fetching the full set on every call
+// within the same page session. Cache is module-level (process-local).
+const _standardsCache = new Map<string, TimeStandard[]>();
+
 /**
  * Fetch standards that match the event and swimmer criteria
  * Handles exact age ranges, "X and over", and "X and under" age groups
@@ -50,11 +55,16 @@ export async function getStandardsForEvent(
   gender: 'M' | 'F' | 'X',
   poolType: 'SCM' | 'LCM'
 ): Promise<TimeStandard[]> {
-  // Fetch all standards for this set, then filter client-side
-  // The backend endpoint returns all standards in a set
-  const allStandards = await apiClient.get<TimeStandard[]>(
-    `/time-standards/sets/${standardsSetId}/standards`
-  );
+  // Fetch all standards for this set, then filter client-side.
+  // The backend endpoint returns all standards in a set.
+  // Results are cached per set to avoid redundant network calls.
+  let allStandards = _standardsCache.get(standardsSetId);
+  if (!allStandards) {
+    allStandards = await apiClient.get<TimeStandard[]>(
+      `/time-standards/sets/${standardsSetId}/standards`
+    );
+    _standardsCache.set(standardsSetId, allStandards);
+  }
 
   // Filter to match the event criteria:
   // - distance matches

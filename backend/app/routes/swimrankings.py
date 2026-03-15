@@ -24,7 +24,9 @@ from app.utils.fina_calculator import calculate_fina_points, time_string_to_seco
 
 router = APIRouter(prefix="/swimrankings", tags=["swimrankings"])
 
-# Simple in-memory cache for search results (expires every 15 minutes)
+# Simple in-memory cache for search results (expires every 15 minutes).
+# This cache is process-local — it is NOT shared across multiple Uvicorn
+# worker processes. Each process maintains its own independent copy.
 _search_cache = {}
 CACHE_TTL_SECONDS = 900
 

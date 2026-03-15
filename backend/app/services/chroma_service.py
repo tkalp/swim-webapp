@@ -230,15 +230,19 @@ def build_athlete_context(best_times: Optional[Dict[str, str]] = None) -> str:
     
     for distance_str, time_str in best_times.items():
         distance = int(distance_str)
-        time_seconds = parse_time_to_seconds(time_str)
+        try:
+            time_seconds = parse_time_to_seconds(time_str)
+        except (ValueError, TypeError):
+            logger.warning(f"Could not parse time: {time_str}")
+            continue
         pace_per_100 = calculate_pace_per_100(distance, time_seconds)
-        
+
         pace_data[distance] = {
             'time': time_str,
             'seconds': time_seconds,
             'pace_per_100': pace_per_100
         }
-        
+
         context_parts.append(f"- {distance}y: {time_str} (Pace: {seconds_to_time_str(pace_per_100)} per 100)")
     
     # Calculate recommended intervals for common distances
@@ -287,17 +291,14 @@ def check_chromadb() -> tuple[bool, Optional[str]]:
             collection = client.get_collection(name=COLLECTION_NAME)
             count = collection.count()
             logger.info(f"ChromaDB connected: {count} workouts in collection '{COLLECTION_NAME}'")
-            print(f"✓ ChromaDB connected: {count} workouts in collection")
             return True, None
         else:
             msg = f"Collection '{COLLECTION_NAME}' not found"
             logger.warning(f"ChromaDB collection missing: {msg}")
-            print(f"⚠ {msg}")
             return False, msg
     except Exception as e:
         logger.error(f"ChromaDB connection error")
         log_error(e, context="check_chromadb")
-        print(f"ChromaDB connection error: {str(e)}")
         return False, str(e)
 
 
@@ -308,12 +309,18 @@ def search_similar_workouts(query: str, n_results: int = 5) -> list[dict]:
     try:
         client = get_chroma_client()
         collection = client.get_collection(name=COLLECTION_NAME)
-        
+
+        count = collection.count()
+        n = min(n_results, count) if count > 0 else 0
+        if n == 0:
+            logger.info("ChromaDB collection is empty, returning no results")
+            return []
+
         results = collection.query(
             query_texts=[query],
-            n_results=n_results,
+            n_results=n,
         )
-        
+
         workouts = []
         if results["ids"] and results["ids"][0]:
             for i in range(len(results["ids"][0])):
@@ -323,15 +330,13 @@ def search_similar_workouts(query: str, n_results: int = 5) -> list[dict]:
                     "metadata": results["metadatas"][0][i] if results.get("metadatas") else {},
                     "distance": results["distances"][0][i] if results.get("distances") else 1.0,
                 })
-        
+
         logger.info(f"Found {len(workouts)} similar workouts from ChromaDB")
-        print(f"✓ Found {len(workouts)} similar workouts")
         return workouts
-        
+
     except Exception as e:
         logger.error("ChromaDB search failed")
         log_error(e, context="search_similar_workouts", query_length=len(query))
-        print(f"ChromaDB search error: {str(e)}")
         raise Exception(f"Failed to search workouts: {str(e)}")
 
 
@@ -443,23 +448,20 @@ def generate_workout(
     
     try:
         # Step 1: Search ChromaDB
-        print("Searching ChromaDB for similar workouts...")
         logger.debug("Searching ChromaDB for similar workouts")
         search_results = search_similar_workouts(prompt, num_examples)
-        
+
         # Step 2: Build context from examples
         logger.debug("Building context from search results")
         context = build_context(search_results)
-        
+
         # Step 3: Add athlete performance context
         if best_times:
             logger.debug(f"Adding athlete context with {len(best_times)} best times")
             athlete_context = build_athlete_context(best_times)
             context = athlete_context + "\n\n" + context
-            print(f"✓ Added athlete performance data with {len(best_times)} best times")
-        
+
         # Step 4: Generate workout with Claude
-        print("Generating workout with Claude...")
         logger.info("Calling Anthropic Claude API to generate workout")
         
         workout = generate_with_claude(prompt, context, api_key)

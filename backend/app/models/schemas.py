@@ -1,13 +1,6 @@
 # backend/app/models/schemas.py
 from pydantic import BaseModel
-from typing import Literal, Optional
-
-
-class ExampleWorkout(BaseModel):
-    id: str
-    title: str
-    url: str
-    relevance: float
+from typing import Optional
 
 
 class GenerateWorkoutRequest(BaseModel):
@@ -17,7 +10,7 @@ class GenerateWorkoutRequest(BaseModel):
 
 class GenerateWorkoutResponse(BaseModel):
     workout: str
-    examples: Optional[list[ExampleWorkout]] = None  # Kept for backwards compatibility but not returned
+    athlete_paces: Optional[str] = None
 
 
 class GenerateWorkoutDescriptionRequest(BaseModel):

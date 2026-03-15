@@ -97,7 +97,7 @@ export async function importStandards(
       successCount += result.created;
     } catch (e: any) {
       errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${e.message}`);
-      failedCount += batch.length;
+      failedCount += 1;
     }
   }
 

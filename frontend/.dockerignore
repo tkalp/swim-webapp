@@ -1,3 +1,10 @@
-## ANything with test
-
+## Anything with test
 **/__tests__/**
+
+## Env files (VITE_* vars are set via Docker build args)
+.env
+.env.*
+.env.local
+
+## Dependencies (installed via npm ci in Dockerfile)
+node_modules

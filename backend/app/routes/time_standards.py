@@ -117,21 +117,16 @@ async def list_sets(
     """Get all time standards sets for this coach."""
     coach = await _get_coach(db, user_id)
     result = await db.execute(
-        select(TimeStandardsSet)
+        select(TimeStandardsSet, func.count(TimeStandard.id).label("standards_count"))
+        .outerjoin(TimeStandard, TimeStandard.set_id == TimeStandardsSet.id)
         .where(TimeStandardsSet.created_by == coach.id)
+        .group_by(TimeStandardsSet.id)
         .order_by(TimeStandardsSet.created_at.desc())
     )
-    sets = result.scalars().all()
-
-    # Include standard count per set
     output = []
-    for s in sets:
-        d = _row_to_dict(s)
-        count_result = await db.execute(
-            select(func.count()).select_from(TimeStandard)
-            .where(TimeStandard.set_id == s.id)
-        )
-        d["standards_count"] = count_result.scalar_one()
+    for std_set, standards_count in result.all():
+        d = _row_to_dict(std_set)
+        d["standards_count"] = standards_count
         output.append(d)
 
     return output
