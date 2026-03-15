@@ -46,3 +46,14 @@ async def test_seed_data_loads(seeded_db):
 
     memberships = (await seeded_db.execute(select(CoachSquad))).scalars().all()
     assert len(memberships) == 4  # A in S1, B in S1, B in S2, C in S1
+
+
+@pytest.mark.asyncio
+async def test_workout_template_usage_count_is_integer(db):
+    result = await db.execute(text(
+        "SELECT data_type FROM information_schema.columns "
+        "WHERE table_name = 'workout_template' AND column_name = 'usage_count'"
+    ))
+    row = result.fetchone()
+    assert row is not None
+    assert row[0] == 'integer', f"Expected integer, got {row[0]}"

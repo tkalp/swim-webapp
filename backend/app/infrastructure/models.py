@@ -321,7 +321,7 @@ class WorkoutTemplate(Base):
     effectiveness_rating: Mapped[Optional[float]] = mapped_column(Float)
     rating_count: Mapped[int] = mapped_column(Integer, default=0)
     times_used: Mapped[int] = mapped_column(Integer, default=0)
-    usage_count: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    usage_count: Mapped[int] = mapped_column(Integer, default=0)
     clone_count: Mapped[int] = mapped_column(Integer, default=0)
     cloned_from_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("workout_template.id", ondelete="SET NULL"))
     original_creator_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("coach.id"))
