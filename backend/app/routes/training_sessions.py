@@ -41,7 +41,7 @@ class CleanupRequest(BaseModel):
 
 class SessionCreate(BaseModel):
     squad_id: str
-    start_date: Optional[str] = None
+    start_date: str
     end_date: Optional[str] = None
     training_type: Optional[str] = None
     workout_id: Optional[str] = None

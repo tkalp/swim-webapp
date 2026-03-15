@@ -1,6 +1,7 @@
 """Authentication service — handles login, signup, token management."""
 import hashlib
 import os
+import re
 import secrets
 import smtplib
 from datetime import datetime, timedelta, timezone
@@ -22,6 +23,18 @@ JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET", "dev-refresh-secret-change-
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+
+def _validate_password(password: str) -> None:
+    """Enforce password complexity: 8+ chars, uppercase, lowercase, digit."""
+    if len(password) < 8:
+        raise ValidationError("Password must be at least 8 characters", field="password")
+    if not re.search(r'[A-Z]', password):
+        raise ValidationError("Password must contain at least one uppercase letter", field="password")
+    if not re.search(r'[a-z]', password):
+        raise ValidationError("Password must contain at least one lowercase letter", field="password")
+    if not re.search(r'\d', password):
+        raise ValidationError("Password must contain at least one digit", field="password")
 
 
 def _hash_password(password: str) -> str:
@@ -62,6 +75,8 @@ async def signup(
     full_name: str | None = None,
 ) -> dict:
     """Create a new user account and return tokens."""
+    _validate_password(password)
+
     # Check for existing user
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
@@ -248,6 +263,8 @@ async def forgot_password(db: AsyncSession, email: str) -> None:
 
 async def reset_password(db: AsyncSession, token: str, new_password: str) -> None:
     """Reset password using a valid reset token."""
+    _validate_password(new_password)
+
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except Exception:

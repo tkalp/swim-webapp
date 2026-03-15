@@ -193,6 +193,18 @@ async def create_swimmer_with_external_link(
         if not membership.can_manage_swimmers:
             raise UnauthorizedError("Missing permission: can_manage_swimmers")
 
+        # Check for duplicate external athlete ID
+        existing_link = await db.execute(
+            select(SwimmerExternalLink).where(
+                SwimmerExternalLink.external_athlete_id == request.external_link.external_id
+            )
+        )
+        if existing_link.scalar_one_or_none():
+            raise HTTPException(
+                status_code=409,
+                detail=f"Athlete ID {request.external_link.external_id} is already linked to another swimmer"
+            )
+
         # Create swimmer
         swimmer_id = await _create_swimmer_record(db, request.swimmer)
         logger.info(f"Created swimmer {swimmer_id}")

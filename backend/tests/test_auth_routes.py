@@ -132,7 +132,7 @@ async def test_reset_password_rejects_invalid_token(db):
     from app.domain.exceptions import UnauthorizedError
 
     with pytest.raises(UnauthorizedError):
-        await auth_service.reset_password(db, "not-a-valid-jwt", "SomePass!")
+        await auth_service.reset_password(db, "not-a-valid-jwt", "SomePass1!")
 
 
 @pytest.mark.asyncio
@@ -148,7 +148,7 @@ async def test_reset_password_rejects_wrong_purpose_token(db):
         algorithm=auth_service.JWT_ALGORITHM,
     )
     with pytest.raises(UnauthorizedError):
-        await auth_service.reset_password(db, token, "SomePass!")
+        await auth_service.reset_password(db, token, "SomePass1!")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -220,3 +220,36 @@ async def test_forgot_password_silent_for_unknown_email(db, caplog):
         "Password reset link" in record.message
         for record in caplog.records
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Bug #11: Password validation on signup and reset_password
+# ──────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_weak_password_rejected():
+    """signup() and reset_password() must reject passwords that fail complexity rules."""
+    from app.domain.exceptions import ValidationError
+
+    weak_passwords = [
+        "abc",          # too short
+        "abcdefgh",     # no uppercase, no digit
+        "ABCDEFGH",     # no lowercase, no digit
+        "Abcdefgh",     # no digit
+    ]
+
+    for pw in weak_passwords:
+        with pytest.raises(ValidationError, match="[Pp]assword"):
+            auth_service._validate_password(pw)
+
+
+@pytest.mark.asyncio
+async def test_strong_password_accepted():
+    """_validate_password() must not raise for a password meeting all requirements."""
+    from app.domain.exceptions import ValidationError
+
+    # Should not raise
+    try:
+        auth_service._validate_password("Abcdefg1")
+    except ValidationError:
+        pytest.fail("_validate_password() raised ValidationError for a valid password 'Abcdefg1'")
