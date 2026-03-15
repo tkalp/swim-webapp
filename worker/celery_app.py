@@ -36,4 +36,12 @@ celery_app.conf.update(
     task_ignore_result=False,  # Must store results for callbacks to work
 )
 
+# Beat schedule — periodic tasks
+celery_app.conf.beat_schedule = {
+    'cleanup-expired-tokens': {
+        'task': 'worker.sync_tasks.cleanup_expired_tokens',
+        'schedule': 86400.0,  # Daily (24 hours)
+    },
+}
+
 # ============================================================================

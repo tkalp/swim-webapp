@@ -67,7 +67,7 @@ async def test_password_reset_revokes_refresh_tokens(seeded_db):
     }
     reset_token = jose_jwt.encode(
         reset_payload,
-        auth_service.JWT_SECRET,
+        auth_service.JWT_RESET_SECRET,
         algorithm=auth_service.JWT_ALGORITHM,
     )
 
@@ -115,7 +115,7 @@ async def test_password_reset_updates_password_hash(seeded_db):
     }
     reset_token = jose_jwt.encode(
         reset_payload,
-        auth_service.JWT_SECRET,
+        auth_service.JWT_RESET_SECRET,
         algorithm=auth_service.JWT_ALGORITHM,
     )
 

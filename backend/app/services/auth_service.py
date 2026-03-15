@@ -18,8 +18,25 @@ from app.utils import logger
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
-JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET", "dev-refresh-secret-change-me")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET environment variable is required. "
+        "Set it in backend/.env — see .env.sample for reference."
+    )
+
+JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET")
+if not JWT_REFRESH_SECRET:
+    raise RuntimeError(
+        "JWT_REFRESH_SECRET environment variable is required. "
+        "Set it in backend/.env — see .env.sample for reference."
+    )
+
+JWT_RESET_SECRET = os.getenv("JWT_RESET_SECRET")
+if not JWT_RESET_SECRET:
+    logger.warning("JWT_RESET_SECRET not set, falling back to JWT_SECRET for password reset tokens")
+    JWT_RESET_SECRET = JWT_SECRET
+
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -236,7 +253,7 @@ async def forgot_password(db: AsyncSession, email: str) -> None:
         "iat": now,
         "exp": now + timedelta(hours=1),
     }
-    reset_token = jwt.encode(reset_payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    reset_token = jwt.encode(reset_payload, JWT_RESET_SECRET, algorithm=JWT_ALGORITHM)
 
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
     reset_link = f"{frontend_url}/reset-password?token={reset_token}"
@@ -266,7 +283,7 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Non
     _validate_password(new_password)
 
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, JWT_RESET_SECRET, algorithms=[JWT_ALGORITHM])
     except Exception:
         raise UnauthorizedError("Invalid or expired reset token")
 

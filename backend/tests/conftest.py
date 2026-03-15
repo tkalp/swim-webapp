@@ -1,4 +1,9 @@
 """Shared test fixtures: testcontainers PostgreSQL, async engine, sessions, seeding."""
+import os
+os.environ.setdefault("JWT_SECRET", "test-secret-for-testing-only")
+os.environ.setdefault("JWT_REFRESH_SECRET", "test-refresh-secret-for-testing-only")
+os.environ.setdefault("JWT_RESET_SECRET", "test-reset-secret-for-testing-only")
+
 import pytest
 import pytest_asyncio
 from testcontainers.postgres import PostgresContainer
