@@ -9,7 +9,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db import get_db
-from app.infrastructure.models import Swimmer, SwimmerExternalLink, CoachSquad
+from app.infrastructure.models import Swimmer, SwimmerExternalLink, CoachSquad, Coach
 from app.models.swimrankings import (
     SwimRankingsSearchResult,
     LinkSwimmerRequest,
@@ -116,11 +116,19 @@ async def link_swimmer(
         if not swimmer.squad_id:
             raise HTTPException(status_code=400, detail="Swimmer must belong to a squad")
 
+        # Look up coach record to get coach.id for CoachSquad lookup
+        coach_result = await db.execute(
+            select(Coach).where(Coach.user_id == user_id)
+        )
+        coach = coach_result.scalar_one_or_none()
+        if not coach:
+            raise HTTPException(status_code=404, detail="No coach profile found")
+
         # Verify coach access
         coach_check = await db.execute(
             select(CoachSquad)
             .where(CoachSquad.squad_id == swimmer.squad_id)
-            .where(CoachSquad.coach_id == user_id)
+            .where(CoachSquad.coach_id == coach.id)
         )
         if not coach_check.scalar_one_or_none():
             raise HTTPException(status_code=403, detail="Not authorized to manage this swimmer")
@@ -208,11 +216,19 @@ async def get_swimmer_links(
         if not swimmer.squad_id:
             raise HTTPException(status_code=400, detail="Swimmer must belong to a squad")
 
+        # Look up coach record to get coach.id for CoachSquad lookup
+        coach_result = await db.execute(
+            select(Coach).where(Coach.user_id == user_id)
+        )
+        coach = coach_result.scalar_one_or_none()
+        if not coach:
+            raise HTTPException(status_code=404, detail="No coach profile found")
+
         # Verify coach access
         coach_check = await db.execute(
             select(CoachSquad)
             .where(CoachSquad.squad_id == swimmer.squad_id)
-            .where(CoachSquad.coach_id == user_id)
+            .where(CoachSquad.coach_id == coach.id)
         )
         if not coach_check.scalar_one_or_none():
             raise HTTPException(status_code=403, detail="Not authorized to view this swimmer")
@@ -275,11 +291,19 @@ async def delete_link(
         if not swimmer or not swimmer.squad_id:
             raise HTTPException(status_code=400, detail="Swimmer must belong to a squad")
 
+        # Look up coach record to get coach.id for CoachSquad lookup
+        coach_result = await db.execute(
+            select(Coach).where(Coach.user_id == user_id)
+        )
+        coach = coach_result.scalar_one_or_none()
+        if not coach:
+            raise HTTPException(status_code=404, detail="No coach profile found")
+
         # Verify coach access
         coach_check = await db.execute(
             select(CoachSquad)
             .where(CoachSquad.squad_id == swimmer.squad_id)
-            .where(CoachSquad.coach_id == user_id)
+            .where(CoachSquad.coach_id == coach.id)
         )
         if not coach_check.scalar_one_or_none():
             raise HTTPException(status_code=403, detail="Not authorized to delete this link")

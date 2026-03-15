@@ -18,7 +18,7 @@ from sqlalchemy.orm import selectinload
 
 from app.infrastructure.db import get_db
 from app.infrastructure.models import (
-    Squad, CoachSquad, Swimmer, WorkoutResult,
+    Squad, CoachSquad, Coach, Swimmer, WorkoutResult,
     TrainingSession, TrainingAttendance, WorkoutTemplate,
 )
 from app.middleware.auth import get_current_user_id
@@ -677,6 +677,15 @@ async def compare_swimmers(
     membership = await get_coach_membership(db, user_id, squad_id)
     if not membership.can_view_analytics:
         raise UnauthorizedError("Missing permission: can_view_analytics")
+
+    # Look up coach record so we can use coach.id for CoachSquad lookups
+    coach_result = await db.execute(
+        select(Coach).where(Coach.user_id == user_id)
+    )
+    coach = coach_result.scalar_one_or_none()
+    if not coach:
+        raise HTTPException(status_code=404, detail="No coach profile found")
+
     try:
         logger.info(
             f"User {user_id} comparing swimmers | squad_id={squad_id} | "
@@ -695,7 +704,7 @@ async def compare_swimmers(
         # Verify coach has access to squad
         coach_squad_result = await db.execute(
             select(CoachSquad.squad_id)
-            .where(CoachSquad.coach_id == user_id)
+            .where(CoachSquad.coach_id == coach.id)
             .where(CoachSquad.squad_id == squad_id)
         )
         if not coach_squad_result.first():
@@ -724,7 +733,7 @@ async def compare_swimmers(
         swimmer_a_squad_id = swimmer_a_data['squad_id']
         coach_access_a_result = await db.execute(
             select(CoachSquad.squad_id)
-            .where(CoachSquad.coach_id == user_id)
+            .where(CoachSquad.coach_id == coach.id)
             .where(CoachSquad.squad_id == swimmer_a_squad_id)
         )
         if not coach_access_a_result.first():
@@ -755,7 +764,7 @@ async def compare_swimmers(
         swimmer_b_squad_id = swimmer_b_data['squad_id']
         coach_access_b_result = await db.execute(
             select(CoachSquad.squad_id)
-            .where(CoachSquad.coach_id == user_id)
+            .where(CoachSquad.coach_id == coach.id)
             .where(CoachSquad.squad_id == swimmer_b_squad_id)
         )
         if not coach_access_b_result.first():

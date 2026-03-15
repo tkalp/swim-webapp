@@ -18,7 +18,7 @@ from app.services.prediction.time_utils import PoolConverter
 from app.middleware.auth import get_current_user_id
 from app.infrastructure.db import get_db
 from app.infrastructure.models import (
-    Swimmer, CoachSquad, TrainingAttendance, TrainingSession,
+    Swimmer, Coach, CoachSquad, TrainingAttendance, TrainingSession,
     WorkoutResult,
 )
 from app.domain.value_objects.time import interval_to_seconds
@@ -221,11 +221,18 @@ async def _verify_swimmer_access(
     squad_id = swimmer.get('squad_id')
 
     if squad_id:
+        coach_result = await db.execute(
+            select(Coach).where(Coach.user_id == user_id)
+        )
+        coach = coach_result.scalar_one_or_none()
+        if not coach:
+            raise HTTPException(status_code=404, detail="No coach profile found")
+
         coach_check = await db.execute(
             select(CoachSquad.id).where(
                 and_(
                     CoachSquad.squad_id == squad_id,
-                    CoachSquad.coach_id == user_id
+                    CoachSquad.coach_id == coach.id
                 )
             )
         )

@@ -70,11 +70,17 @@ async def list_swimmers(
             stmt = select(Swimmer).where(Swimmer.squad_id == squad_id)
         else:
             # Get all swimmers across all squads the coach belongs to
-            from app.infrastructure.models import CoachSquad
+            from app.infrastructure.models import CoachSquad, Coach
+            coach_result = await db.execute(
+                select(Coach).where(Coach.user_id == user_id)
+            )
+            coach = coach_result.scalar_one_or_none()
+            if not coach:
+                raise HTTPException(status_code=404, detail="No coach profile found")
             stmt = (
                 select(Swimmer)
                 .join(CoachSquad, CoachSquad.squad_id == Swimmer.squad_id)
-                .where(CoachSquad.coach_id == user_id)
+                .where(CoachSquad.coach_id == coach.id)
                 .order_by(Swimmer.first_name, Swimmer.last_name)
             )
 
