@@ -51,8 +51,9 @@ class Base(DeclarativeBase):
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Yield a database session with RLS context.
 
-    Wraps the session in an explicit transaction so SET LOCAL
-    (transaction-scoped) persists for the entire request.
+    Sets app.current_user_id via SET LOCAL for RLS policies.
+    Routes manage their own commits — SET LOCAL persists within
+    the session's implicit transaction until commit/rollback.
 
     Usage:
         @router.get("/items")
@@ -60,16 +61,16 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             ...
     """
     async with AsyncSessionLocal() as session:
-        async with session.begin():
-            user_id = _current_user_id.get(None)
-            if user_id:
-                # SET LOCAL does not support bind parameters in asyncpg,
-                # so we use format_map with a sanitised UUID string.
-                sanitised = str(user_id).replace("'", "''")
-                await session.execute(
-                    text(f"SET LOCAL app.current_user_id = '{sanitised}'")
-                )
+        user_id = _current_user_id.get(None)
+        if user_id:
+            sanitised = str(user_id).replace("'", "''")
+            await session.execute(
+                text(f"SET LOCAL app.current_user_id = '{sanitised}'")
+            )
+        try:
             yield session
+        finally:
+            await session.close()
 
 
 async def init_db() -> None:
