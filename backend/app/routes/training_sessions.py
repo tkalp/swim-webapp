@@ -182,11 +182,13 @@ async def get_virtual_sessions(
         end_date_obj = end_dt.date()
 
         while current_date <= end_date_obj:
-            day_of_week = current_date.strftime('%A')
+            # Convert Python weekday (0=Mon, 6=Sun) to JS day convention (0=Sun, 1=Mon, 6=Sat)
+            python_weekday = current_date.weekday()
+            js_day = (python_weekday + 1) % 7
 
             # Find schedules for this day
             for schedule in schedules:
-                if schedule['day_of_week'] == day_of_week:
+                if schedule['day_of_week'] == js_day:
                     # Get timezone from schedule
                     tz_name = schedule.get('timezone', 'America/Denver') or 'America/Denver'
                     local_tz = pytz.timezone(tz_name)

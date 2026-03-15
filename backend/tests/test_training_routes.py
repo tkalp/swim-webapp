@@ -53,3 +53,42 @@ async def test_admin_can_manage_all_training(seeded_db):
     assert m.can_manage_schedules is True
     assert m.can_manage_attendance is True
     assert m.can_manage_notes is True
+
+
+@pytest.mark.asyncio
+async def test_day_of_week_js_python_mapping():
+    """Verify JS-style day_of_week maps correctly to Python weekday."""
+    from datetime import date
+
+    # Monday March 16, 2026
+    monday = date(2026, 3, 16)
+    python_wd = monday.weekday()  # 0 (Monday)
+    js_day = (python_wd + 1) % 7  # 1 (Monday in JS)
+    assert js_day == 1
+
+    # Sunday March 15, 2026
+    sunday = date(2026, 3, 15)
+    python_wd = sunday.weekday()  # 6 (Sunday)
+    js_day = (python_wd + 1) % 7  # 0 (Sunday in JS)
+    assert js_day == 0
+
+    # Saturday March 21, 2026
+    saturday = date(2026, 3, 21)
+    python_wd = saturday.weekday()  # 5 (Saturday)
+    js_day = (python_wd + 1) % 7  # 6 (Saturday in JS)
+    assert js_day == 6
+
+    # Full week coverage: verify all 7 days
+    test_cases = [
+        # (date, expected_js_day)
+        (date(2026, 3, 15), 0),  # Sunday
+        (date(2026, 3, 16), 1),  # Monday
+        (date(2026, 3, 17), 2),  # Tuesday
+        (date(2026, 3, 18), 3),  # Wednesday
+        (date(2026, 3, 19), 4),  # Thursday
+        (date(2026, 3, 20), 5),  # Friday
+        (date(2026, 3, 21), 6),  # Saturday
+    ]
+    for d, expected in test_cases:
+        computed = (d.weekday() + 1) % 7
+        assert computed == expected, f"{d.strftime('%A')} should map to JS day {expected}, got {computed}"
