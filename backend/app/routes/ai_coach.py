@@ -1,4 +1,5 @@
 # backend/app/routes/ai_coach.py
+import asyncio
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 from app.models.schemas import (
@@ -38,11 +39,11 @@ async def generate_workout_endpoint(
     )
     
     try:
-        result = generate_workout(
-            prompt=request.prompt,
-            best_times=request.bestTimes,
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None, lambda: generate_workout(prompt=request.prompt, best_times=request.bestTimes)
         )
-        
+
         logger.info(f"Successfully generated workout for user {user_id}")
         return result
         
@@ -77,13 +78,17 @@ async def generate_description_endpoint(
     )
     
     try:
-        description = generate_workout_description(
-            workout_name=request.workout_name,
-            raw_description=request.raw_description,
-            total_meters=request.total_meters,
-            effort_level=request.effort_level,
+        loop = asyncio.get_event_loop()
+        description = await loop.run_in_executor(
+            None,
+            lambda: generate_workout_description(
+                workout_name=request.workout_name,
+                raw_description=request.raw_description,
+                total_meters=request.total_meters,
+                effort_level=request.effort_level,
+            ),
         )
-        
+
         logger.info(f"Successfully generated description for user {user_id}")
         return GenerateWorkoutDescriptionResponse(
             description=description,
@@ -122,13 +127,17 @@ async def generate_title_endpoint(
     )
     
     try:
-        title = generate_workout_title(
-            raw_description=request.raw_description,
-            total_meters=request.total_meters,
-            effort_level=request.effort_level,
-            analysis=request.analysis,
+        loop = asyncio.get_event_loop()
+        title = await loop.run_in_executor(
+            None,
+            lambda: generate_workout_title(
+                raw_description=request.raw_description,
+                total_meters=request.total_meters,
+                effort_level=request.effort_level,
+                analysis=request.analysis,
+            ),
         )
-        
+
         logger.info(f"Successfully generated title for user {user_id}")
         return GenerateWorkoutTitleResponse(
             title=title,
