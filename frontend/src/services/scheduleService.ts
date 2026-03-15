@@ -4,10 +4,10 @@ import { apiClient } from '@/lib/apiClient'
 export type TrainingSchedule = {
   id: string
   squad_id: string
-  day_of_week: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+  day_of_week: number // 0=Sunday, 1=Monday, ..., 6=Saturday (JS convention)
   start_time: string
   end_time: string
-  training_type: 'Swim' | 'Dryland'
+  training_type: string
   active: boolean
   until?: string | null
   created_at?: string
@@ -15,10 +15,10 @@ export type TrainingSchedule = {
 
 export type CreateScheduleData = {
   squad_id: string
-  day_of_week: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+  day_of_week: number // 0=Sunday, 1=Monday, ..., 6=Saturday
   start_time: string
   end_time: string
-  training_type: 'Swim' | 'Dryland'
+  training_type: string
   active?: boolean
   until?: string | null
 }

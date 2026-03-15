@@ -5,10 +5,10 @@ import { useScheduleApi } from '@/hooks/api'
 type TrainingSchedule = {
   id: string
   squad_id: string
-  day_of_week: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+  day_of_week: number // 0=Sunday, 1=Monday, ..., 6=Saturday
   start_time: string
   end_time: string
-  training_type: 'Swim' | 'Dryland'
+  training_type: string
   active: boolean
   until: string | null
   created_at: string
@@ -41,11 +41,13 @@ export default function ScheduleFormModal({
   onSave 
 }: ScheduleFormModalProps) {
   const { createSchedule, updateSchedule } = useScheduleApi()
+  // Convert initialDay string to index if provided
+  const initialDayIndex = initialDay ? DAYS_OF_WEEK.indexOf(initialDay as any) : 1 // Default Monday=1
   const [formData, setFormData] = useState({
-    day_of_week: (initialDay as any) || 'Monday',
+    day_of_week: initialDayIndex >= 0 ? initialDayIndex : 1,
     start_time: '17:00',
     end_time: '18:00',
-    training_type: 'Swim' as 'Swim' | 'Dryland',
+    training_type: 'Swim' as string,
     active: true,
     until: '' as string
   })
@@ -181,16 +183,16 @@ export default function ScheduleFormModal({
                 Day of Week
               </label>
               <div className="flex gap-2 flex-wrap">
-                {DAYS_OF_WEEK.map(day => (
+                {DAYS_OF_WEEK.map((day, index) => (
                   <button
                     key={day}
                     type="button"
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border ${
-                      formData.day_of_week === day 
-                        ? 'bg-primary text-white border-primary' 
+                      formData.day_of_week === index
+                        ? 'bg-primary text-white border-primary'
                         : 'bg-slate-800/70 text-slate-400 border-slate-700 hover:border-primary/50 hover:bg-primary/10'
                     }`}
-                    onClick={() => setFormData(prev => ({ ...prev, day_of_week: day }))}
+                    onClick={() => setFormData(prev => ({ ...prev, day_of_week: index }))}
                   >
                     {day.slice(0, 3)}
                   </button>

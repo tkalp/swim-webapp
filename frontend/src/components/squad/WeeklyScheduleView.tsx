@@ -7,10 +7,10 @@ import { SquadPageHeader } from '@/components/squad/SquadPageHeader'
 type TrainingSchedule = {
   id: string
   squad_id: string
-  day_of_week: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+  day_of_week: number // 0=Sunday, 1=Monday, ..., 6=Saturday
   start_time: string
   end_time: string
-  training_type: 'Swim' | 'Dryland'
+  training_type: string
   active: boolean
   until: string | null
   created_at: string
@@ -34,9 +34,9 @@ export default function WeeklyScheduleView({ squadId, schedules, canManage, onUp
   // Group schedules by day
   const schedulesByDay = useMemo(() => {
     const grouped: Record<string, TrainingSchedule[]> = {}
-    DAYS_OF_WEEK.forEach(day => {
+    DAYS_OF_WEEK.forEach((day, index) => {
       grouped[day] = schedules
-        .filter(s => s.day_of_week === day && s.active)
+        .filter(s => s.day_of_week === index && s.active)
         .sort((a, b) => a.start_time.localeCompare(b.start_time))
     })
     return grouped
