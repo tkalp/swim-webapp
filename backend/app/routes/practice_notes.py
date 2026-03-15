@@ -18,13 +18,46 @@ from app.domain.exceptions import UnauthorizedError
 router = APIRouter(prefix="/practice-notes", tags=["practice-notes"])
 
 
-class NoteCreate(BaseModel):
+class PreNoteCreate(BaseModel):
     training_session_id: str
-    notes: str
+    notes: Optional[str] = None
+    announcements: Optional[str] = None
+    reminders: Optional[str] = None
+    focus: Optional[str] = None
+    equipment_needed: Optional[str] = None
 
 
-class NoteUpdate(BaseModel):
-    notes: str
+class PreNoteUpdate(BaseModel):
+    notes: Optional[str] = None
+    announcements: Optional[str] = None
+    reminders: Optional[str] = None
+    focus: Optional[str] = None
+    equipment_needed: Optional[str] = None
+
+
+class PostNoteCreate(BaseModel):
+    training_session_id: str
+    notes: Optional[str] = None
+    overall_rating: Optional[int] = None
+    effort_level: Optional[int] = None
+    technique_quality: Optional[int] = None
+    positivity: Optional[int] = None
+    what_went_well: Optional[str] = None
+    areas_for_improvement: Optional[str] = None
+    next_session_focus: Optional[str] = None
+    individual_highlights: Optional[str] = None
+
+
+class PostNoteUpdate(BaseModel):
+    notes: Optional[str] = None
+    overall_rating: Optional[int] = None
+    effort_level: Optional[int] = None
+    technique_quality: Optional[int] = None
+    positivity: Optional[int] = None
+    what_went_well: Optional[str] = None
+    areas_for_improvement: Optional[str] = None
+    next_session_focus: Optional[str] = None
+    individual_highlights: Optional[str] = None
 
 
 def _row_to_dict(row) -> dict:
@@ -69,7 +102,7 @@ async def get_pre_notes(
 
 @router.post("/pre")
 async def create_pre_note(
-    body: NoteCreate,
+    body: PreNoteCreate,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -82,6 +115,10 @@ async def create_pre_note(
         training_session_id=body.training_session_id,
         coach_id=user_id,
         notes=body.notes,
+        announcements=body.announcements,
+        reminders=body.reminders,
+        focus=body.focus,
+        equipment_needed=body.equipment_needed,
     )
     db.add(instance)
     await db.commit()
@@ -92,7 +129,7 @@ async def create_pre_note(
 @router.put("/pre/{note_id}")
 async def update_pre_note(
     note_id: str,
-    body: NoteUpdate,
+    body: PreNoteUpdate,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -110,6 +147,10 @@ async def update_pre_note(
         raise UnauthorizedError("Missing permission: can_manage_notes")
 
     instance.notes = body.notes
+    instance.announcements = body.announcements
+    instance.reminders = body.reminders
+    instance.focus = body.focus
+    instance.equipment_needed = body.equipment_needed
     await db.commit()
     await db.refresh(instance)
     return _row_to_dict(instance)
@@ -136,7 +177,7 @@ async def get_post_notes(
 
 @router.post("/post")
 async def create_post_note(
-    body: NoteCreate,
+    body: PostNoteCreate,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -149,6 +190,14 @@ async def create_post_note(
         training_session_id=body.training_session_id,
         coach_id=user_id,
         notes=body.notes,
+        overall_rating=body.overall_rating,
+        effort_level=body.effort_level,
+        technique_quality=body.technique_quality,
+        positivity=body.positivity,
+        what_went_well=body.what_went_well,
+        areas_for_improvement=body.areas_for_improvement,
+        next_session_focus=body.next_session_focus,
+        individual_highlights=body.individual_highlights,
     )
     db.add(instance)
     await db.commit()
@@ -159,7 +208,7 @@ async def create_post_note(
 @router.put("/post/{note_id}")
 async def update_post_note(
     note_id: str,
-    body: NoteUpdate,
+    body: PostNoteUpdate,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -177,6 +226,14 @@ async def update_post_note(
         raise UnauthorizedError("Missing permission: can_manage_notes")
 
     instance.notes = body.notes
+    instance.overall_rating = body.overall_rating
+    instance.effort_level = body.effort_level
+    instance.technique_quality = body.technique_quality
+    instance.positivity = body.positivity
+    instance.what_went_well = body.what_went_well
+    instance.areas_for_improvement = body.areas_for_improvement
+    instance.next_session_focus = body.next_session_focus
+    instance.individual_highlights = body.individual_highlights
     await db.commit()
     await db.refresh(instance)
     return _row_to_dict(instance)
