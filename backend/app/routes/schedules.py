@@ -1,4 +1,5 @@
 """Training schedules API routes — replaces frontend direct Supabase calls."""
+from datetime import time as time_type
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
@@ -37,12 +38,22 @@ class ScheduleUpdate(BaseModel):
 
 # ── Helpers ───────────────────────────────────────────────
 
+def _parse_time(value: Optional[str]) -> Optional[time_type]:
+    """Parse a time string like '18:00' or '18:00:00' into a time object."""
+    if not value:
+        return None
+    parts = value.split(':')
+    return time_type(int(parts[0]), int(parts[1]), int(parts[2]) if len(parts) > 2 else 0)
+
+
 def _row_to_dict(row) -> dict:
     d = {}
     for col in row.__table__.columns:
         val = getattr(row, col.name)
         if hasattr(val, 'hex'):
             val = str(val)
+        elif isinstance(val, time_type):
+            val = val.strftime('%H:%M')
         d[col.name] = val
     return d
 
@@ -84,8 +95,8 @@ async def create_schedule(
     schedule = TrainingSchedule(
         squad_id=body.squad_id,
         day_of_week=body.day_of_week,
-        start_time=body.start_time,
-        end_time=body.end_time,
+        start_time=_parse_time(body.start_time),
+        end_time=_parse_time(body.end_time),
         training_type=body.training_type,
         active=body.active,
         timezone=body.timezone,
@@ -118,9 +129,9 @@ async def update_schedule(
     if body.day_of_week is not None:
         schedule.day_of_week = body.day_of_week
     if body.start_time is not None:
-        schedule.start_time = body.start_time
+        schedule.start_time = _parse_time(body.start_time)
     if body.end_time is not None:
-        schedule.end_time = body.end_time
+        schedule.end_time = _parse_time(body.end_time)
     if body.training_type is not None:
         schedule.training_type = body.training_type
     if body.active is not None:
