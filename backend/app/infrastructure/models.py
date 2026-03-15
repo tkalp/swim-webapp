@@ -417,6 +417,7 @@ class SquadInvitation(Base):
     squad_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("squads.id", ondelete="CASCADE"), nullable=False)
     invited_email: Mapped[str] = mapped_column(String(320), nullable=False)
     invited_by: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("coach.id"))
+    role: Mapped[str] = mapped_column(String(50), default="assistant")
     status: Mapped[str] = mapped_column(String(20), default="pending")
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
