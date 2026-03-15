@@ -64,9 +64,9 @@ async def list_calendar_events(
     if squad_id:
         conditions.append(CalendarEvent.squad_id == squad_id)
     if from_date:
-        conditions.append(CalendarEvent.start_date >= datetime.fromisoformat(from_date.replace("Z", "+00:00")))
+        conditions.append(CalendarEvent.end_date >= datetime.fromisoformat(from_date.replace("Z", "+00:00")))
     if to_date:
-        conditions.append(CalendarEvent.end_date <= datetime.fromisoformat(to_date.replace("Z", "+00:00")))
+        conditions.append(CalendarEvent.start_date <= datetime.fromisoformat(to_date.replace("Z", "+00:00")))
 
     if conditions:
         stmt = stmt.where(and_(*conditions))

@@ -171,7 +171,7 @@ export default function SessionsList({
         startDate = new Date(
           now.getFullYear(),
           now.getMonth(),
-          now.getDate() + (8 - currentDay)
+          now.getDate() + (currentDay === 0 ? 1 : (8 - currentDay))
         );
         endDate = new Date(
           startDate.getFullYear(),

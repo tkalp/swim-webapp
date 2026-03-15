@@ -1,6 +1,5 @@
 import os
 import chromadb
-from anthropic import Anthropic
 from typing import Optional, Dict
 from datetime import timedelta
 from app.utils import logger, log_error
@@ -9,6 +8,19 @@ COLLECTION_NAME = "swimming_workouts"
 
 # Lazy initialization of ChromaDB client
 _client = None
+
+# Lazy initialization of Anthropic client
+_anthropic_client = None
+
+
+def _get_anthropic_client():
+    global _anthropic_client
+    if _anthropic_client is None:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if api_key:
+            from anthropic import Anthropic
+            _anthropic_client = Anthropic(api_key=api_key)
+    return _anthropic_client
 
 def get_chroma_client():
     """Get or create ChromaDB client (lazy initialization)"""
@@ -348,7 +360,7 @@ def build_context(search_results: list[dict]) -> str:
 
 def generate_with_claude(prompt: str, context: str, api_key: str) -> str:
     """Generate workout using Claude"""
-    client = Anthropic(api_key=api_key)
+    client = _get_anthropic_client()
     
     full_prompt = f"""Based on the following request, generate a complete swimming workout.
 
@@ -507,8 +519,8 @@ def generate_workout_description(
     )
     
     try:
-        client = Anthropic(api_key=api_key)
-        
+        client = _get_anthropic_client()
+
         # Build context for the LLM
         context_parts = [f"Workout Name: {workout_name}"]
         if total_meters:
@@ -603,8 +615,8 @@ def generate_workout_title(
     logger.info(f"Generating workout title | raw_length={len(raw_description)}")
     
     try:
-        client = Anthropic(api_key=api_key)
-        
+        client = _get_anthropic_client()
+
         # Build context for the LLM with analysis insights
         context_parts = []
         if total_meters:

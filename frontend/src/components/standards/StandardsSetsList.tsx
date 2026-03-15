@@ -74,7 +74,7 @@ export const StandardsSetsList: React.FC<StandardsSetsListProps> = ({
     // Apply search filter
     const matchesSearch = !searchQuery || 
       set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      set.organization.toLowerCase().includes(searchQuery.toLowerCase());
+      (set.organization?.toLowerCase() ?? '').includes(searchQuery.toLowerCase());
 
     // Apply active filter
     const matchesActive = filterActive === 'all' || 
