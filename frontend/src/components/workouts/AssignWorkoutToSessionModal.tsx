@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X, Calendar, Clock, Users, CheckCircle2, Dumbbell } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 import { TrainingSession } from '@/services/sessionService'
 import { WorkoutTemplate } from '@/services/workoutTemplateService'
 import { assignWorkoutToSession } from '@/services/workoutTemplateService'
@@ -43,15 +43,10 @@ export const AssignWorkoutToSessionModal: React.FC<AssignWorkoutToSessionModalPr
     queryKey: ['coach-squads', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
-      
-      const { data, error } = await supabase
-        .from('coach_squads')
-        .select('squad_id, squads!inner(id, name)')
-        .eq('coach_id', user.id)
-      
-      if (error) throw error
-      
-      return (data?.map((item: any) => item.squads) || []) as Squad[]
+
+      const data = await apiClient.get<any[]>('/squads')
+
+      return (data || []).map((s: any) => ({ id: s.id, name: s.name })) as Squad[]
     },
     enabled: !!user?.id && isOpen,
   })
@@ -61,24 +56,22 @@ export const AssignWorkoutToSessionModal: React.FC<AssignWorkoutToSessionModalPr
     queryKey: ['unassigned-sessions', user?.id, squads.map(s => s.id)],
     queryFn: async () => {
       if (!user?.id || squads.length === 0) return []
-      
-      const squadIds = squads.map(s => s.id)
-      
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .select('*')
-        .in('squad_id', squadIds)
-        .is('workout_id', null)
-        .order('start_date', { ascending: true })
-      
-      if (error) throw error
-      
-      // Add squad names to sessions
-      const sessionsWithSquads: SessionWithSquad[] = (data || []).map(session => ({
-        ...session,
-        squad_name: squads.find(s => s.id === session.squad_id)?.name,
-      }))
-      
+
+      // Fetch sessions for all squads
+      const allSessions = await Promise.all(
+        squads.map(s => apiClient.get<any[]>(`/squads/${s.id}/sessions`))
+      )
+
+      // Flatten and filter to unassigned sessions only
+      const sessionsWithSquads: SessionWithSquad[] = allSessions
+        .flat()
+        .filter(session => !session.workout_id)
+        .map(session => ({
+          ...session,
+          squad_name: squads.find(s => s.id === session.squad_id)?.name,
+        }))
+        .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+
       return sessionsWithSquads
     },
     enabled: !!user?.id && squads.length > 0 && isOpen,

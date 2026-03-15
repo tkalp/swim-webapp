@@ -1,5 +1,5 @@
 // services/workoutTemplateService.ts
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 
 /**
  * Workout template type matching the database schema
@@ -54,20 +54,7 @@ export type UpdateWorkoutInput = Partial<{
  * Get a single workout template by ID
  */
 export async function getWorkoutTemplate(workoutId: string): Promise<WorkoutTemplate> {
-  const { data, error } = await supabase
-    .from("workout_template")
-    .select(
-      "id, name, description, total_meters, estimated_time_minutes, estimated_calories, effort_level, raw_description, json_description, created_at, create_by_coach"
-    )
-    .eq("id", workoutId)
-    .single();
-
-  if (error) {
-    console.error('Error fetching workout template:', error);
-    throw new Error(`Failed to fetch workout: ${error.message}`);
-  }
-
-  return data;
+  return apiClient.get<WorkoutTemplate>(`/workouts/${workoutId}`);
 }
 
 /**
@@ -76,29 +63,7 @@ export async function getWorkoutTemplate(workoutId: string): Promise<WorkoutTemp
 export async function createWorkoutTemplate(
   workout: CreateWorkoutInput
 ): Promise<{ id: string }> {
-  const { data, error } = await supabase
-    .from("workout_template")
-    .insert({
-      name: workout.name,
-      description: workout.description,
-      raw_description: workout.raw_description || workout.description,
-      total_meters: workout.total_meters,
-      estimated_time_minutes: workout.estimated_time_minutes,
-      estimated_calories: workout.estimated_calories,
-      effort_level: workout.effort_level,
-      create_by_coach: workout.create_by_coach,
-      json_description: workout.json_description || null,
-      visibility: workout.visibility || 'private',
-    })
-    .select("id")
-    .single();
-
-  if (error) {
-    console.error('Error creating workout template:', error);
-    throw new Error(`Failed to create workout: ${error.message}`);
-  }
-
-  return data;
+  return apiClient.post<{ id: string }>('/workouts', workout);
 }
 
 /**
@@ -109,11 +74,11 @@ export async function createWorkoutForSession(
   sessionId: string
 ): Promise<{ id: string }> {
   const newWorkout = await createWorkoutTemplate(workout);
-  
+
   if (sessionId) {
     await assignWorkoutToSession(newWorkout.id, sessionId);
   }
-  
+
   return newWorkout;
 }
 
@@ -124,15 +89,10 @@ export async function assignWorkoutToSession(
   workoutId: string,
   sessionId: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from("training_sessions")
-    .update({ workout_id: workoutId })
-    .eq("id", sessionId);
-
-  if (error) {
-    console.error('Error assigning workout to session:', error);
-    throw new Error(`Failed to assign workout to session: ${error.message}`);
-  }
+  await apiClient.post('/workouts/assign-session', {
+    workout_id: workoutId,
+    session_id: sessionId,
+  });
 }
 
 /**
@@ -142,32 +102,12 @@ export async function updateWorkoutTemplate(
   workoutId: string,
   updates: UpdateWorkoutInput
 ): Promise<WorkoutTemplate> {
-  const { data, error } = await supabase
-    .from("workout_template")
-    .update(updates)
-    .eq("id", workoutId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating workout template:', error);
-    throw new Error(`Failed to update workout: ${error.message}`);
-  }
-
-  return data;
+  return apiClient.put<WorkoutTemplate>(`/workouts/${workoutId}`, updates);
 }
 
 /**
  * Delete a workout template
  */
 export async function deleteWorkoutTemplate(workoutId: string): Promise<void> {
-  const { error } = await supabase
-    .from("workout_template")
-    .delete()
-    .eq("id", workoutId);
-
-  if (error) {
-    console.error('Error deleting workout template:', error);
-    throw new Error(`Failed to delete workout: ${error.message}`);
-  }
+  await apiClient.delete(`/workouts/${workoutId}`);
 }

@@ -46,8 +46,9 @@ export default function CreateFromScheduleModal({
   // Calculate how many sessions will be created
   const calculateSessionCount = () => {
     let count = 0;
-    const start = new Date(startDate);
-    
+    const [y, m, d] = startDate.split('-').map(Number);
+    const start = new Date(y, m - 1, d); // Local midnight — avoids UTC off-by-one
+
     for (let i = 0; i < daysToCreate; i++) {
       const currentDate = new Date(start);
       currentDate.setDate(currentDate.getDate() + i);
@@ -77,7 +78,8 @@ export default function CreateFromScheduleModal({
 
     try {
       setLoading(true);
-      await onCreateBulkSessions(schedules, new Date(startDate), daysToCreate);
+      const [y, m, d] = startDate.split('-').map(Number);
+      await onCreateBulkSessions(schedules, new Date(y, m - 1, d), daysToCreate);
 
       if (onSuccess) {
         onSuccess();

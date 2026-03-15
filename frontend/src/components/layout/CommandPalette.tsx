@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSquadsForCoach } from '@/services/squadService';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 
 interface Command {
   id: string;
@@ -55,12 +55,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       if (squads.length === 0) return [];
       try {
         const swimmerPromises = squads.map(async (squad: any) => {
-          const { data, error } = await supabase
-            .from('swimmers')
-            .select('id, first_name, last_name, date_of_birth')
-            .eq('squad_id', squad.id);
-          
-          if (error) throw error;
+          const data = await apiClient.get<any[]>(`/squads/${squad.id}/swimmers`);
           return data || [];
         });
         const results = await Promise.all(swimmerPromises);
@@ -116,7 +111,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: Sparkles,
       category: 'navigation',
       action: () => {
-        navigate('/ai-coach');
+        navigate('/tools/ai-coach');
         onClose();
       },
       keywords: ['ai', 'coach', 'generate']
@@ -153,7 +148,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: Sparkles,
       category: 'create',
       action: () => {
-        navigate('/ai-coach');
+        navigate('/tools/ai-coach');
         onClose();
       },
       keywords: ['ai', 'generate', 'create', 'workout', 'assistant']

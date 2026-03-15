@@ -29,7 +29,7 @@ import {
   Award,
   Trophy,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { apiClient } from "@/lib/apiClient";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useToast } from "@/contexts/ToastContext";
@@ -86,12 +86,7 @@ export default function AttemptsModal({
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase
-        .from("workout_result")
-        .delete()
-        .eq("id", attemptId);
-
-      if (error) throw error;
+      await apiClient.delete(`/workout-results/${attemptId}`);
 
       // Remove from local state
       setRows((prev) => prev.filter((r) => r.id !== attemptId));

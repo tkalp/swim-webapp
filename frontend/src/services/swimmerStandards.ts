@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import { TimeStandard } from '@/types/standards';
 
 /**
@@ -9,11 +9,11 @@ export function calculateSwimmerAge(dateOfBirth: string): number {
   const birthDate = new Date(dateOfBirth);
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--;
   }
-  
+
   return age;
 }
 
@@ -23,7 +23,7 @@ export function calculateSwimmerAge(dateOfBirth: string): number {
 export function timeStringToSeconds(timeString: string): number {
   const parts = timeString.split(':');
   let totalSeconds = 0;
-  
+
   if (parts.length === 3) {
     // HH:MM:SS.ms format
     totalSeconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]);
@@ -34,7 +34,7 @@ export function timeStringToSeconds(timeString: string): number {
     // SS.ms format
     totalSeconds = parseFloat(parts[0]);
   }
-  
+
   return totalSeconds;
 }
 
@@ -50,29 +50,34 @@ export async function getStandardsForEvent(
   gender: 'M' | 'F' | 'X',
   poolType: 'SCM' | 'LCM'
 ): Promise<TimeStandard[]> {
-  // Query for standards where:
-  // 1. The swimmer's age is within the age range (age_group_min <= age <= age_group_max)
-  // This handles:
-  //   - Exact age ranges (e.g., 13-14)
-  //   - "X and over" (e.g., 18-99 where swimmer is 20)
-  //   - "X and under" (e.g., 0-10 where swimmer is 8)
-  const { data, error } = await supabase
-    .from('time_standards')
-    .select('*')
-    .eq('set_id', standardsSetId)
-    .eq('distance', distance)
-    .eq('stroke', stroke.toLowerCase())
-    .eq('gender', gender)
-    .gte('age_group_max', age)  // age must be <= age_group_max (max is greater than or equal to age)
-    .lte('age_group_min', age)  // age must be >= age_group_min (min is less than or equal to age)
-    .order('standard_level', { ascending: true });
+  // Fetch all standards for this set, then filter client-side
+  // The backend endpoint returns all standards in a set
+  const allStandards = await apiClient.get<TimeStandard[]>(
+    `/time-standards/sets/${standardsSetId}/standards`
+  );
 
-  if (error) {
-    console.error('Error fetching standards:', error);
-    return [];
-  }
+  // Filter to match the event criteria:
+  // - distance matches
+  // - stroke matches (case-insensitive)
+  // - gender matches
+  // - age falls within the age range (age_group_min <= age <= age_group_max)
+  const filtered = allStandards.filter((s) => {
+    if (s.distance !== distance) return false;
+    if (s.stroke?.toLowerCase() !== stroke.toLowerCase()) return false;
+    if (s.gender !== gender) return false;
+    if (s.age_group_min != null && age < s.age_group_min) return false;
+    if (s.age_group_max != null && age > s.age_group_max) return false;
+    return true;
+  });
 
-  return data || [];
+  // Sort by standard_level ascending to match original behavior
+  filtered.sort((a, b) => {
+    const levelA = a.standard_level || '';
+    const levelB = b.standard_level || '';
+    return levelA.localeCompare(levelB);
+  });
+
+  return filtered;
 }
 
 /**
@@ -130,7 +135,7 @@ export function calculateStandardComparison(
     if (achieved && !result.achievedLevel) {
       result.achievedLevel = standard.standard_level;
     }
-    
+
     if (!achieved && !result.nextLevel) {
       result.nextLevel = standard.standard_level;
       result.nextLevelTime = standardTimeString;
@@ -149,7 +154,7 @@ export function calculateStandardComparison(
 export function formatTimeDelta(seconds: number): string {
   const absSeconds = Math.abs(seconds);
   const sign = seconds > 0 ? '+' : '-';
-  
+
   if (absSeconds < 60) {
     return `${sign}${absSeconds.toFixed(2)}s`;
   } else {
@@ -172,7 +177,7 @@ export function formatPercentageDelta(percentage: number): string {
  */
 export function mapGenderToStandards(sex?: string | null): 'M' | 'F' | 'X' {
   if (!sex) return 'X';
-  
+
   const normalized = sex.toLowerCase();
   if (normalized === 'male' || normalized === 'm') return 'M';
   if (normalized === 'female' || normalized === 'f') return 'F';
@@ -204,13 +209,13 @@ export async function getStandardTime(
   sex?: string
 ): Promise<number | null> {
   if (!sex) return null;
-  
+
   const gender = mapGenderToStandards(sex);
   if (gender === 'X') return null;
-  
+
   // SCY not commonly supported in standards, default to SCM
   const actualPoolType = poolType === 'SCY' ? 'SCM' : poolType;
-  
+
   const standards = await getStandardsForEvent(
     standardsSetId,
     distance,
@@ -219,14 +224,14 @@ export async function getStandardTime(
     gender,
     actualPoolType
   );
-  
+
   if (standards.length === 0) return null;
-  
+
   // Get the first standard (usually the fastest/highest level)
   const timeField = actualPoolType === 'SCM' ? 'scm_time' : 'lcm_time';
   const timeString = standards[0][timeField];
-  
+
   if (!timeString) return null;
-  
+
   return timeStringToSeconds(timeString);
 }

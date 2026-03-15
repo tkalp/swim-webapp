@@ -229,7 +229,7 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
             <NavLink to="/network" icon={Network}>
               Network
             </NavLink>
-            <NavLink to="/ai-coach" icon={Sparkles}>
+            <NavLink to="/tools/ai-coach" icon={Sparkles}>
               AI Coach
             </NavLink>
           </nav>
@@ -261,7 +261,7 @@ export default function GlobalNav({ onCommandPaletteOpen }: GlobalNavProps) {
           <NavLink to="/network" icon={Network}>
             Network
           </NavLink>
-          <NavLink to="/ai-coach" icon={Sparkles}>
+          <NavLink to="/tools/ai-coach" icon={Sparkles}>
             AI Coach
           </NavLink>
         </nav>

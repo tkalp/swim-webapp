@@ -6,7 +6,7 @@ import {
   deactivateSchedule,
   type CreateScheduleData
 } from '../scheduleService'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 describe('scheduleService', () => {
   beforeEach(() => {
@@ -30,16 +30,15 @@ describe('scheduleService', () => {
         created_at: '2024-01-01'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockSchedule, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockSchedule)
 
       const result = await createSchedule(createData)
 
       expect(result).toEqual(mockSchedule)
-      expect(supabase.from).toHaveBeenCalledWith('training_schedules')
+      expect(apiClient.post).toHaveBeenCalledWith('/api/training-schedules', {
+        active: true,
+        ...createData,
+      })
     })
 
     it('should throw error on creation failure', async () => {
@@ -51,13 +50,7 @@ describe('scheduleService', () => {
         training_type: 'Dryland'
       }
 
-      const mockError = { message: 'Creation failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Creation failed'))
 
       await expect(createSchedule(createData)).rejects.toThrow()
     })
@@ -76,27 +69,16 @@ describe('scheduleService', () => {
         active: true
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockUpdatedSchedule, error: null })
-      } as any)
+      vi.mocked(apiClient.put).mockResolvedValue(mockUpdatedSchedule)
 
       const result = await updateSchedule('schedule-1', updates)
 
       expect(result).toEqual(mockUpdatedSchedule)
+      expect(apiClient.put).toHaveBeenCalledWith('/api/training-schedules/schedule-1', updates)
     })
 
     it('should throw error on update failure', async () => {
-      const mockError = { message: 'Update failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.put).mockRejectedValue(new Error('Update failed'))
 
       await expect(updateSchedule('schedule-1', { start_time: '17:30' })).rejects.toThrow()
     })
@@ -104,21 +86,14 @@ describe('scheduleService', () => {
 
   describe('deleteSchedule', () => {
     it('should delete a schedule', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteSchedule('schedule-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/api/training-schedules/schedule-1')
     })
 
     it('should throw error on deletion failure', async () => {
-      const mockError = { message: 'Delete failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: mockError })
-      } as any)
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error('Delete failed'))
 
       await expect(deleteSchedule('schedule-1')).rejects.toThrow()
     })
@@ -136,17 +111,13 @@ describe('scheduleService', () => {
         active: false
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockDeactivatedSchedule, error: null })
-      } as any)
+      vi.mocked(apiClient.put).mockResolvedValue(mockDeactivatedSchedule)
 
       const result = await deactivateSchedule('schedule-1')
 
       expect(result).toEqual(mockDeactivatedSchedule)
       expect(result.active).toBe(false)
+      expect(apiClient.put).toHaveBeenCalledWith('/api/training-schedules/schedule-1', { active: false })
     })
   })
 })

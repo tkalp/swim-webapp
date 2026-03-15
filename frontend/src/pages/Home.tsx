@@ -23,7 +23,7 @@ export default function Home() {
       title: "AI Coach",
       description: "Generate custom workouts with AI assistance",
       icon: Sparkles,
-      path: "/ai-coach",
+      path: "/tools/ai-coach",
       color: "#8B5CF6",
       available: true,
     },

@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
-import { API_BASE_URL } from '@/lib/api';
+import { authenticatedFetch } from '@/lib/apiClient';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface BulkSyncJob {
   id: string;
@@ -32,25 +33,11 @@ export interface BulkSyncResponse {
   error?: string;
 }
 
-async function getAuthToken(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error('Not authenticated');
-  }
-  return session.access_token;
-}
-
 export async function startBulkSync(
   forceUpdate: boolean = false
 ): Promise<BulkSyncResponse> {
-  const token = await getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/admin/sync/bulk`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/admin/sync/bulk`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({ force_update: forceUpdate }),
   });
 
@@ -63,13 +50,9 @@ export async function startBulkSync(
 }
 
 export async function getBulkSyncStatus(jobId: string): Promise<BulkSyncJob> {
-  const token = await getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/admin/sync/bulk/${jobId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/admin/sync/bulk/${jobId}`
+  );
 
   if (!response.ok) {
     const error = await response.json();
@@ -82,15 +65,8 @@ export async function getBulkSyncStatus(jobId: string): Promise<BulkSyncJob> {
 export async function getBulkSyncFailures(
   jobId: string
 ): Promise<BulkSyncFailure[]> {
-  const token = await getAuthToken();
-
-  const response = await fetch(
-    `${API_BASE_URL}/admin/sync/bulk/${jobId}/failures`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    }
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/admin/sync/bulk/${jobId}/failures`
   );
 
   if (!response.ok) {
@@ -102,15 +78,10 @@ export async function getBulkSyncFailures(
 }
 
 export async function cancelBulkSync(jobId: string): Promise<void> {
-  const token = await getAuthToken();
-
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/admin/sync/bulk/${jobId}/cancel`,
     {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
     }
   );
 
@@ -123,19 +94,12 @@ export async function cancelBulkSync(jobId: string): Promise<void> {
 export async function getBulkSyncHistory(
   limit: number = 20
 ): Promise<BulkSyncJob[]> {
-  const token = await getAuthToken();
-
   const params = new URLSearchParams({
     limit: limit.toString(),
   });
 
-  const response = await fetch(
-    `${API_BASE_URL}/admin/sync/bulk/history?${params}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    }
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/admin/sync/bulk/history?${params}`
   );
 
   if (!response.ok) {

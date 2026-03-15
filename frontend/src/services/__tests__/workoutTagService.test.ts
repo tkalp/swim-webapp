@@ -9,7 +9,7 @@ import {
   removeTagFromWorkout,
   setWorkoutTags
 } from '../workoutTagService'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 describe('workoutTagService', () => {
   beforeEach(() => {
@@ -23,26 +23,16 @@ describe('workoutTagService', () => {
         { id: 'tag-2', coach_id: 'coach-1', name: 'Sprint', color: '#00FF00' }
       ]
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: mockTags, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue(mockTags)
 
       const result = await getCoachTags('coach-1')
 
       expect(result).toEqual(mockTags)
-      expect(supabase.from).toHaveBeenCalledWith('workout_tags')
+      expect(apiClient.get).toHaveBeenCalledWith('/coaches/coach-1/tags')
     })
 
     it('should throw error on fetch failure', async () => {
-      const mockError = { message: 'Fetch failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('Fetch failed'))
 
       await expect(getCoachTags('coach-1')).rejects.toThrow()
     })
@@ -53,38 +43,18 @@ describe('workoutTagService', () => {
       const tagData = { name: 'Technique', color: '#0000FF' }
       const mockTag = { id: 'tag-1', coach_id: 'coach-1', ...tagData, created_at: '2024-01-01' }
 
-      let callCount = 0
-      vi.mocked(supabase.from).mockImplementation(() => {
-        callCount++
-        if (callCount === 1) {
-          // First call: check for existing
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
-          } as any
-        }
-        // Second call: insert new tag
-        return {
-          insert: vi.fn().mockReturnThis(),
-          select: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ data: mockTag, error: null })
-        } as any
-      })
+      vi.mocked(apiClient.post).mockResolvedValue(mockTag)
 
       const result = await createTag('coach-1', tagData)
 
       expect(result).toEqual(mockTag)
+      expect(apiClient.post).toHaveBeenCalledWith('/coaches/coach-1/tags', tagData)
     })
 
-    it('should throw error when tag name already exists', async () => {
+    it('should throw error on creation failure', async () => {
       const tagData = { name: 'Existing', color: '#FF0000' }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { id: 'tag-1' }, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Tag with this name already exists'))
 
       await expect(createTag('coach-1', tagData)).rejects.toThrow('Tag with this name already exists')
     })
@@ -95,105 +65,66 @@ describe('workoutTagService', () => {
       const updates = { name: 'Updated Tag', color: '#FFFF00' }
       const mockUpdated = { id: 'tag-1', coach_id: 'coach-1', ...updates, updated_at: '2024-01-01' }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockUpdated, error: null })
-      } as any)
+      vi.mocked(apiClient.put).mockResolvedValue(mockUpdated)
 
       const result = await updateTag('tag-1', updates)
 
       expect(result).toEqual(mockUpdated)
+      expect(apiClient.put).toHaveBeenCalledWith('/tags/tag-1', updates)
     })
   })
 
   describe('deleteTag', () => {
     it('should delete a tag', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteTag('tag-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/tags/tag-1')
     })
   })
 
   describe('getWorkoutTags', () => {
     it('should return tags for a workout', async () => {
-      const mockData = [
-        { workout_tags: { id: 'tag-1', name: 'Endurance', color: '#FF0000' } },
-        { workout_tags: { id: 'tag-2', name: 'Sprint', color: '#00FF00' } }
+      const mockTags = [
+        { id: 'tag-1', name: 'Endurance', color: '#FF0000' },
+        { id: 'tag-2', name: 'Sprint', color: '#00FF00' }
       ]
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockData, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue(mockTags)
 
       const result = await getWorkoutTags('workout-1')
 
       expect(result).toHaveLength(2)
+      expect(apiClient.get).toHaveBeenCalledWith('/workouts/workout-1/tags')
     })
   })
 
   describe('addTagToWorkout', () => {
     it('should add a tag to a workout', async () => {
-      let callCount = 0
-      vi.mocked(supabase.from).mockImplementation(() => {
-        callCount++
-        if (callCount === 1) {
-          // First call: check existing
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
-          } as any
-        }
-        // Second call: insert
-        return {
-          insert: vi.fn().mockResolvedValue({ error: null })
-        } as any
-      })
+      vi.mocked(apiClient.post).mockResolvedValue(undefined)
 
       await expect(addTagToWorkout('workout-1', 'tag-1')).resolves.toBeUndefined()
+      expect(apiClient.post).toHaveBeenCalledWith('/workouts/workout-1/tags/tag-1')
     })
   })
 
   describe('removeTagFromWorkout', () => {
     it('should remove a tag from a workout', async () => {
-      const eqChain = {
-        eq: vi.fn().mockResolvedValue({ error: null })
-      }
-      
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnValue(eqChain)
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(removeTagFromWorkout('workout-1', 'tag-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/workouts/workout-1/tags/tag-1')
     })
   })
 
   describe('setWorkoutTags', () => {
     it('should replace all workout tags', async () => {
-      let callCount = 0
-      vi.mocked(supabase.from).mockImplementation(() => {
-        callCount++
-        if (callCount === 1) {
-          // First call: delete existing
-          return {
-            delete: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockResolvedValue({ error: null })
-          } as any
-        }
-        // Second call: insert new
-        return {
-          insert: vi.fn().mockResolvedValue({ error: null })
-        } as any
-      })
+      vi.mocked(apiClient.post).mockResolvedValue(undefined)
 
       await expect(setWorkoutTags('workout-1', ['tag-1', 'tag-2'])).resolves.toBeUndefined()
+      expect(apiClient.post).toHaveBeenCalledWith('/api/workouts/workout-1/tags/set', {
+        tag_ids: ['tag-1', 'tag-2']
+      })
     })
   })
 })

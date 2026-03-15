@@ -42,10 +42,10 @@ export default function ForgotPassword() {
         {/* Logo Section */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <img 
-              src={logo} 
-              className="h-28 w-auto drop-shadow-[0_4px_12px_rgba(49,151,167,0.3)] transition-transform hover:scale-105" 
-              alt="Aquilus Logo" 
+            <img
+              src={logo}
+              className="h-28 w-auto drop-shadow-[0_4px_12px_rgba(49,151,167,0.3)] transition-transform hover:scale-105"
+              alt="Aquilus Logo"
             />
           </div>
           <h1 className="text-3xl font-bold mb-2 bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
@@ -86,8 +86,8 @@ export default function ForgotPassword() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-linear-to-r from-primary-dark via-primary to-accent rounded-xl text-white font-semibold shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               disabled={loading}
             >
@@ -104,8 +104,8 @@ export default function ForgotPassword() {
               )}
             </button>
 
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors duration-200 pt-2"
             >
               <ArrowLeft size={18} />
@@ -127,7 +127,7 @@ export default function ForgotPassword() {
                 Please check your inbox and follow the instructions to reset your password.
               </p>
             </div>
-            <Link 
+            <Link
               to="/login"
               className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-background-secondary border border-border rounded-xl text-text-primary font-semibold transition-all duration-200 hover:bg-background-tertiary hover:border-border-light hover:scale-[1.02]"
             >

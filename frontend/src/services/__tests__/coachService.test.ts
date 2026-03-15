@@ -7,13 +7,7 @@ import {
   removeConnection,
   addCoachToSquad,
 } from '../coachService';
-import { supabase } from '@/lib/supabase';
-
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: vi.fn(),
-  },
-}));
+import { apiClient } from '@/lib/apiClient';
 
 describe('coachService', () => {
   beforeEach(() => {
@@ -21,93 +15,29 @@ describe('coachService', () => {
   });
 
   describe('getCoachConnections', () => {
-    it('should fetch accepted connections and pending requests', async () => {
-      const userId = 'user-1';
-      const mockAccepted = [
+    it('should fetch accepted connections', async () => {
+      const mockConnections = [
         {
           id: 'conn-1',
-          requester_id: userId,
+          requester_id: 'user-1',
           recipient_id: 'coach-2',
           status: 'accepted',
           created_at: '2025-01-01',
         },
       ];
-      const mockPending = [
-        {
-          id: 'conn-2',
-          requester_id: 'coach-3',
-          recipient_id: userId,
-          status: 'pending',
-          created_at: '2025-01-02',
-        },
-      ];
-      const mockCoaches = [
-        { id: 'coach-2', first_name: 'John', last_name: 'Doe' },
-        { id: 'coach-3', first_name: 'Jane', last_name: 'Smith' },
-        { id: userId, first_name: 'Me', last_name: 'Myself' },
-      ];
 
-      let callCount = 0;
-      vi.mocked(supabase.from).mockImplementation((table: string) => {
-        if (table === 'coach_connections') {
-          callCount++;
-          const isFirstCall = callCount === 1;
-          
-          if (isFirstCall) {
-            // First call: .or().eq('status', 'accepted')
-            return {
-              select: vi.fn().mockReturnValue({
-                or: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockResolvedValue({ data: mockAccepted, error: null }),
-                }),
-              }),
-            } as any;
-          } else {
-            // Second call: .eq('recipient_id', userId).eq('status', 'pending')
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockResolvedValue({ data: mockPending, error: null }),
-                }),
-              }),
-            } as any;
-          }
-        } else if (table === 'coach') {
-          return {
-            select: vi.fn().mockReturnValue({
-              in: vi.fn().mockResolvedValue({ data: mockCoaches, error: null }),
-            }),
-          } as any;
-        }
-        return {} as any;
-      });
+      vi.mocked(apiClient.get).mockResolvedValue({ connections: mockConnections });
 
-      const result = await getCoachConnections(userId);
+      const result = await getCoachConnections('user-1');
 
       expect(result.connections).toHaveLength(1);
-      expect(result.pendingRequests).toHaveLength(1);
-      expect(result.connections[0].recipient).toEqual(mockCoaches[0]);
-      expect(result.pendingRequests[0].requester).toEqual(mockCoaches[1]);
+      expect(result.connections).toEqual(mockConnections);
+      expect(result.pendingRequests).toEqual([]);
+      expect(apiClient.get).toHaveBeenCalledWith('/coach-connections/my-connections');
     });
 
     it('should handle empty results', async () => {
-      vi.mocked(supabase.from).mockImplementation((table: string) => {
-        if (table === 'coach_connections') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            or: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-            }),
-          } as any;
-        } else if (table === 'coach') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            in: vi.fn().mockResolvedValue({ data: [], error: null }),
-          } as any;
-        }
-        return {} as any;
-      });
+      vi.mocked(apiClient.get).mockResolvedValue({ connections: [] });
 
       const result = await getCoachConnections('user-1');
 
@@ -115,226 +45,112 @@ describe('coachService', () => {
       expect(result.pendingRequests).toEqual([]);
     });
 
-    it('should throw error on database failure', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        or: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } }),
-        }),
-      } as any);
+    it('should throw error on fetch failure', async () => {
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('Failed to fetch connections'));
 
-      await expect(getCoachConnections('user-1')).rejects.toEqual({ message: 'DB error' });
+      await expect(getCoachConnections('user-1')).rejects.toThrow('Failed to fetch connections');
     });
   });
 
   describe('sendConnectionRequest', () => {
     it('should send connection request successfully', async () => {
-      const mockCoaches = [{ id: 'coach-2', email: 'test@example.com' }];
-      const insertMock = vi.fn().mockResolvedValue({ error: null });
-
-      vi.mocked(supabase.from).mockImplementation((table: string) => {
-        if (table === 'coach') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({ data: mockCoaches, error: null }),
-          } as any;
-        } else if (table === 'coach_connections') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            or: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-            insert: insertMock,
-          } as any;
-        }
-        return {} as any;
+      // First call: search for coach by email
+      vi.mocked(apiClient.get).mockResolvedValue({
+        coaches: [{ id: 'coach-2', email: 'test@example.com' }],
       });
+
+      // Second call: send request
+      vi.mocked(apiClient.post).mockResolvedValue(undefined);
 
       await sendConnectionRequest('user-1', 'test@example.com');
 
-      expect(insertMock).toHaveBeenCalledWith({
-        requester_id: 'user-1',
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/coach-connections/search?email=test%40example.com'
+      );
+      expect(apiClient.post).toHaveBeenCalledWith('/coach-connections/request', {
         recipient_id: 'coach-2',
-        status: 'pending',
       });
     });
 
     it('should throw error if coach not found', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-      } as any);
+      vi.mocked(apiClient.get).mockResolvedValue({ coaches: [] });
 
       await expect(sendConnectionRequest('user-1', 'notfound@example.com'))
         .rejects.toThrow('No coach found with that email address');
-    });
-
-    it('should throw error if requesting connection to self', async () => {
-      const mockCoaches = [{ id: 'user-1', email: 'self@example.com' }];
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue({ data: mockCoaches, error: null }),
-      } as any);
-
-      await expect(sendConnectionRequest('user-1', 'self@example.com'))
-        .rejects.toThrow("You can't send a connection request to yourself");
-    });
-
-    it('should throw error if connection already pending', async () => {
-      const mockCoaches = [{ id: 'coach-2', email: 'test@example.com' }];
-      const mockExisting = [{ id: 'conn-1', status: 'pending' }];
-
-      vi.mocked(supabase.from).mockImplementation((table: string) => {
-        if (table === 'coach') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({ data: mockCoaches, error: null }),
-          } as any;
-        } else if (table === 'coach_connections') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            or: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({ data: mockExisting, error: null }),
-          } as any;
-        }
-        return {} as any;
-      });
-
-      await expect(sendConnectionRequest('user-1', 'test@example.com'))
-        .rejects.toThrow('A connection request is already pending');
-    });
-
-    it('should throw error if already connected', async () => {
-      const mockCoaches = [{ id: 'coach-2', email: 'test@example.com' }];
-      const mockExisting = [{ id: 'conn-1', status: 'accepted' }];
-
-      vi.mocked(supabase.from).mockImplementation((table: string) => {
-        if (table === 'coach') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({ data: mockCoaches, error: null }),
-          } as any;
-        } else if (table === 'coach_connections') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            or: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({ data: mockExisting, error: null }),
-          } as any;
-        }
-        return {} as any;
-      });
-
-      await expect(sendConnectionRequest('user-1', 'test@example.com'))
-        .rejects.toThrow('You are already connected with this coach');
     });
   });
 
   describe('respondToConnectionRequest', () => {
     it('should accept connection request', async () => {
-      const updateMock = vi.fn().mockResolvedValue({ error: null });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnValue({
-          eq: updateMock,
-        }),
-      } as any);
+      vi.mocked(apiClient.post).mockResolvedValue(undefined);
 
       await respondToConnectionRequest('conn-1', true);
 
-      expect(vi.mocked(supabase.from)).toHaveBeenCalledWith('coach_connections');
-      expect(updateMock).toHaveBeenCalled();
+      expect(apiClient.post).toHaveBeenCalledWith('/coach-connections/respond', {
+        connection_id: 'conn-1',
+        accept: true,
+      });
     });
 
     it('should decline connection request', async () => {
-      const updateMock = vi.fn().mockResolvedValue({ error: null });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnValue({
-          eq: updateMock,
-        }),
-      } as any);
+      vi.mocked(apiClient.post).mockResolvedValue(undefined);
 
       await respondToConnectionRequest('conn-1', false);
 
-      expect(vi.mocked(supabase.from)).toHaveBeenCalledWith('coach_connections');
-      expect(updateMock).toHaveBeenCalled();
+      expect(apiClient.post).toHaveBeenCalledWith('/coach-connections/respond', {
+        connection_id: 'conn-1',
+        accept: false,
+      });
     });
 
-    it('should throw error on database failure', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: { message: 'Update failed' } }),
-        }),
-      } as any);
+    it('should throw error on failure', async () => {
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Failed to respond'));
 
       await expect(respondToConnectionRequest('conn-1', true))
-        .rejects.toEqual({ message: 'Update failed' });
+        .rejects.toThrow('Failed to respond');
     });
   });
 
   describe('removeConnection', () => {
     it('should remove connection successfully', async () => {
-      const deleteMock = vi.fn().mockResolvedValue({ error: null });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnValue({
-          eq: deleteMock,
-        }),
-      } as any);
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined);
 
       await removeConnection('conn-1');
 
-      expect(vi.mocked(supabase.from)).toHaveBeenCalledWith('coach_connections');
-      expect(deleteMock).toHaveBeenCalled();
+      expect(apiClient.delete).toHaveBeenCalledWith('/coach-connections/conn-1');
     });
 
-    it('should throw error on database failure', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } }),
-        }),
-      } as any);
+    it('should throw error on failure', async () => {
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error('Failed to remove connection'));
 
-      await expect(removeConnection('conn-1')).rejects.toEqual({ message: 'Delete failed' });
+      await expect(removeConnection('conn-1')).rejects.toThrow('Failed to remove connection');
     });
   });
 
   describe('addCoachToSquad', () => {
     it('should add coach to squad with permissions', async () => {
-      const insertMock = vi.fn().mockResolvedValue({ error: null });
       const permissions = {
         can_manage_swimmers: true,
         can_manage_workouts: false,
       };
 
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: insertMock,
-      } as any);
+      vi.mocked(apiClient.post).mockResolvedValue(undefined);
 
       await addCoachToSquad('squad-1', 'coach-1', 'admin', 'creator-1', permissions);
 
-      expect(insertMock).toHaveBeenCalledWith({
+      expect(apiClient.post).toHaveBeenCalledWith('/api/permissions/squad-coach', {
         squad_id: 'squad-1',
         coach_id: 'coach-1',
         role: 'admin',
-        created_by: 'creator-1',
         ...permissions,
       });
     });
 
-    it('should throw error on database failure', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: { message: 'Insert failed' } }),
-      } as any);
+    it('should throw error on failure', async () => {
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Failed to add coach'));
 
       await expect(addCoachToSquad('squad-1', 'coach-1', 'member', 'creator-1', {}))
-        .rejects.toEqual({ message: 'Insert failed' });
+        .rejects.toThrow('Failed to add coach');
     });
   });
 });

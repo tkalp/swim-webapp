@@ -9,7 +9,6 @@ export type TrainingSession = {
   training_type: string
   workout_id?: string | null
   created_at?: string
-  created_by?: string | null
   is_virtual?: boolean
 }
 

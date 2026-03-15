@@ -8,7 +8,7 @@ import {
   getSessionAttendanceWithSwimmers,
   type AttendanceStatus
 } from '../attendanceService'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 describe('attendanceService', () => {
   beforeEach(() => {
@@ -27,24 +27,16 @@ describe('attendanceService', () => {
         }
       ]
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: mockAttendance, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue(mockAttendance)
 
       const result = await getAttendanceBySession('session-1')
 
       expect(result).toEqual(mockAttendance)
-      expect(supabase.from).toHaveBeenCalledWith('training_attendance')
+      expect(apiClient.get).toHaveBeenCalledWith('/api/attendance/session/session-1')
     })
 
     it('should return empty array when no attendance found', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: [], error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue([])
 
       const result = await getAttendanceBySession('session-1')
 
@@ -52,13 +44,7 @@ describe('attendanceService', () => {
     })
 
     it('should throw error on fetch failure', async () => {
-      const mockError = { message: 'Fetch failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('Failed to fetch attendance'))
 
       await expect(getAttendanceBySession('session-1')).rejects.toThrow('Failed to fetch attendance')
     })
@@ -76,15 +62,12 @@ describe('attendanceService', () => {
         }
       ]
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: mockAttendance, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue(mockAttendance)
 
       const result = await getAttendanceBySwimmer('swimmer-1')
 
       expect(result).toEqual(mockAttendance)
+      expect(apiClient.get).toHaveBeenCalledWith('/api/attendance/swimmer/swimmer-1')
     })
 
     it('should filter by date range when provided', async () => {
@@ -98,16 +81,7 @@ describe('attendanceService', () => {
         }
       ]
 
-      const gteMock = vi.fn().mockReturnThis()
-      const lteMock = vi.fn().mockReturnThis()
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        gte: gteMock,
-        lte: lteMock,
-        order: vi.fn().mockResolvedValue({ data: mockAttendance, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue(mockAttendance)
 
       const result = await getAttendanceBySwimmer('swimmer-1', {
         from: '2024-01-01',
@@ -115,18 +89,13 @@ describe('attendanceService', () => {
       })
 
       expect(result).toEqual(mockAttendance)
-      expect(gteMock).toHaveBeenCalledWith('created_at', '2024-01-01')
-      expect(lteMock).toHaveBeenCalledWith('created_at', '2024-01-31')
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/api/attendance/swimmer/swimmer-1?from_date=2024-01-01&to_date=2024-01-31'
+      )
     })
 
     it('should throw error on fetch failure', async () => {
-      const mockError = { message: 'Fetch failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('Failed to fetch swimmer attendance'))
 
       await expect(getAttendanceBySwimmer('swimmer-1')).rejects.toThrow('Failed to fetch swimmer attendance')
     })
@@ -143,25 +112,21 @@ describe('attendanceService', () => {
         created_at: '2024-01-15'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockAttendance, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockAttendance)
 
       const result = await upsertAttendance('session-1', 'swimmer-1', 'present', 'Good session')
 
       expect(result).toEqual(mockAttendance)
+      expect(apiClient.post).toHaveBeenCalledWith('/api/attendance/upsert', {
+        training_session_id: 'session-1',
+        swimmer_id: 'swimmer-1',
+        status: 'present',
+        notes: 'Good session',
+      })
     })
 
     it('should throw error on upsert failure', async () => {
-      const mockError = { message: 'Upsert failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Failed to save attendance'))
 
       await expect(upsertAttendance('session-1', 'swimmer-1', 'present')).rejects.toThrow('Failed to save attendance')
     })
@@ -191,35 +156,20 @@ describe('attendanceService', () => {
         }
       ]
 
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({ data: mockAttendance, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockAttendance)
 
       const result = await bulkUpsertAttendance('session-1', records)
 
       expect(result).toHaveLength(2)
       expect(result).toEqual(mockAttendance)
-    })
-
-    it('should return empty array when data is null', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({ data: null, error: null })
-      } as any)
-
-      const result = await bulkUpsertAttendance('session-1', [])
-
-      expect(result).toEqual([])
+      expect(apiClient.post).toHaveBeenCalledWith('/api/attendance/bulk-upsert', {
+        session_id: 'session-1',
+        records,
+      })
     })
 
     it('should throw error on bulk upsert failure', async () => {
-      const mockError = { message: 'Bulk upsert failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Failed to save attendance records'))
 
       await expect(bulkUpsertAttendance('session-1', [])).rejects.toThrow('Failed to save attendance records')
     })
@@ -227,73 +177,41 @@ describe('attendanceService', () => {
 
   describe('deleteAttendance', () => {
     it('should delete an attendance record', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteAttendance('att-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/api/attendance/att-1')
     })
 
     it('should throw error on deletion failure', async () => {
-      const mockError = { message: 'Delete failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: mockError })
-      } as any)
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error('Failed to delete attendance'))
 
       await expect(deleteAttendance('att-1')).rejects.toThrow()
     })
   })
 
   describe('getSessionAttendanceWithSwimmers', () => {
-    it('should return swimmers with attendance and summary', async () => {
-      const mockSwimmers = [
-        { id: 'swimmer-1', first_name: 'John', last_name: 'Doe' },
-        { id: 'swimmer-2', first_name: 'Jane', last_name: 'Smith' }
-      ]
+    it('should return swimmers with attendance data', async () => {
+      const mockResult = {
+        swimmers: [
+          { id: 'swimmer-1', first_name: 'John', last_name: 'Doe', status: 'present' },
+          { id: 'swimmer-2', first_name: 'Jane', last_name: 'Smith', status: null }
+        ],
+        summary: { total: 2, present: 1, late: 0, absent: 0, not_recorded: 1 }
+      }
 
-      const mockAttendance = [
-        {
-          id: 'att-1',
-          training_session_id: 'session-1',
-          swimmer_id: 'swimmer-1',
-          status: 'present',
-          created_at: '2024-01-15'
-        }
-      ]
-
-      vi.mocked(supabase.from).mockImplementation((table: string) => {
-        if (table === 'swimmers') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            order: vi.fn().mockResolvedValue({ data: mockSwimmers, error: null })
-          } as any
-        }
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockResolvedValue({ data: mockAttendance, error: null })
-        } as any
-      })
+      vi.mocked(apiClient.get).mockResolvedValue(mockResult)
 
       const result = await getSessionAttendanceWithSwimmers('session-1', 'squad-1')
 
       expect(result.swimmers).toHaveLength(2)
-      expect(result.summary.total).toBe(2)
-      expect(result.summary.present).toBe(1)
-      expect(result.summary.not_recorded).toBe(1)
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/api/attendance/session/session-1/with-swimmers?squad_id=squad-1'
+      )
     })
 
-    it('should throw error when fetching swimmers fails', async () => {
-      const mockError = { message: 'Failed to fetch swimmers', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+    it('should throw error when fetching fails', async () => {
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('Failed to fetch swimmers'))
 
       await expect(getSessionAttendanceWithSwimmers('session-1', 'squad-1')).rejects.toThrow('Failed to fetch swimmers')
     })

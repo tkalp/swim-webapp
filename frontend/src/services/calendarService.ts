@@ -1,5 +1,5 @@
 // services/calendarService.ts
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 import type { CalendarEvent, CreateCalendarEvent, UpdateCalendarEvent } from '@/types/calendar'
 
 export async function getSquadCalendarEvents(
@@ -9,17 +9,8 @@ export async function getSquadCalendarEvents(
 ): Promise<CalendarEvent[]> {
   const from = fromISO ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
   const to = toISO ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59).toISOString()
-  
-  const { data, error } = await supabase
-    .from('calendar_event')
-    .select('*')
-    .eq('squad_id', squadId)
-    .gte('start_date', from)
-    .lte('start_date', to)
-    .order('start_date')
-  
-  if (error) throw error
-  return data ?? []
+
+  return apiClient.get<CalendarEvent[]>(`/calendar-events?squad_id=${squadId}&from_date=${from}&to_date=${to}`)
 }
 
 export async function getAllCalendarEvents(
@@ -28,60 +19,29 @@ export async function getAllCalendarEvents(
 ): Promise<CalendarEvent[]> {
   const from = fromISO ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
   const to = toISO ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59).toISOString()
-  
-  const { data, error } = await supabase
-    .from('calendar_event')
-    .select('*')
-    .gte('start_date', from)
-    .lte('start_date', to)
-    .order('start_date')
-  
-  if (error) throw error
-  return data ?? []
+
+  return apiClient.get<CalendarEvent[]>(`/calendar-events?from_date=${from}&to_date=${to}`)
 }
 
 export async function getCalendarEventById(eventId: string): Promise<CalendarEvent | null> {
-  const { data, error } = await supabase
-    .from('calendar_event')
-    .select('*')
-    .eq('id', eventId)
-    .single()
-  
-  if (error) throw error
-  return data
+  try {
+    return await apiClient.get<CalendarEvent>(`/calendar-events/${eventId}`)
+  } catch {
+    return null
+  }
 }
 
 export async function createCalendarEvent(event: CreateCalendarEvent): Promise<CalendarEvent> {
-  const { data, error } = await supabase
-    .from('calendar_event')
-    .insert(event)
-    .select()
-    .single()
-  
-  if (error) throw error
-  return data
+  return apiClient.post<CalendarEvent>('/calendar-events', event)
 }
 
 export async function updateCalendarEvent(
   eventId: string,
   updates: UpdateCalendarEvent
 ): Promise<CalendarEvent> {
-  const { data, error } = await supabase
-    .from('calendar_event')
-    .update(updates)
-    .eq('id', eventId)
-    .select()
-    .single()
-  
-  if (error) throw error
-  return data
+  return apiClient.put<CalendarEvent>(`/calendar-events/${eventId}`, updates)
 }
 
 export async function deleteCalendarEvent(eventId: string): Promise<void> {
-  const { error } = await supabase
-    .from('calendar_event')
-    .delete()
-    .eq('id', eventId)
-  
-  if (error) throw error
+  await apiClient.delete(`/calendar-events/${eventId}`)
 }

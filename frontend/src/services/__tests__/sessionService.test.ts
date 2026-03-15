@@ -5,7 +5,7 @@ import {
   deleteSession,
   createSessionFromSchedule
 } from '../sessionService'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 describe('sessionService', () => {
   beforeEach(() => {
@@ -27,16 +27,12 @@ describe('sessionService', () => {
         created_at: '2024-01-01'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockSession, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockSession)
 
       const result = await createSession(createData)
 
       expect(result).toEqual(mockSession)
-      expect(supabase.from).toHaveBeenCalledWith('training_sessions')
+      expect(apiClient.post).toHaveBeenCalledWith('/training-sessions/sessions', createData)
     })
 
     it('should throw error on creation failure', async () => {
@@ -47,13 +43,7 @@ describe('sessionService', () => {
         training_type: 'Swim'
       }
 
-      const mockError = { message: 'Creation failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Creation failed'))
 
       await expect(createSession(createData)).rejects.toThrow()
     })
@@ -70,27 +60,16 @@ describe('sessionService', () => {
         training_type: 'Technique'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockUpdatedSession, error: null })
-      } as any)
+      vi.mocked(apiClient.put).mockResolvedValue(mockUpdatedSession)
 
       const result = await updateSession('session-1', updates)
 
       expect(result).toEqual(mockUpdatedSession)
+      expect(apiClient.put).toHaveBeenCalledWith('/training-sessions/sessions/session-1', updates)
     })
 
     it('should throw error on update failure', async () => {
-      const mockError = { message: 'Update failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.put).mockRejectedValue(new Error('Update failed'))
 
       await expect(updateSession('session-1', { training_type: 'Technique' })).rejects.toThrow()
     })
@@ -98,21 +77,14 @@ describe('sessionService', () => {
 
   describe('deleteSession', () => {
     it('should delete a session', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteSession('session-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/training-sessions/sessions/session-1')
     })
 
     it('should throw error on deletion failure', async () => {
-      const mockError = { message: 'Delete failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: mockError })
-      } as any)
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error('Delete failed'))
 
       await expect(deleteSession('session-1')).rejects.toThrow()
     })
@@ -141,16 +113,16 @@ describe('sessionService', () => {
         training_type: 'Swim'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockSession, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockSession)
 
       const result = await createSessionFromSchedule(mockSchedule, date, squadId)
 
       expect(result).toBeDefined()
       expect(result.training_type).toBe('Swim')
+      expect(apiClient.post).toHaveBeenCalledWith('/training-sessions/sessions', expect.objectContaining({
+        squad_id: 'squad-1',
+        training_type: 'Swim',
+      }))
     })
   })
 })

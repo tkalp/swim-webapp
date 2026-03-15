@@ -7,7 +7,7 @@ import {
   deletePrePracticeNote,
   deletePostPracticeNote
 } from '../practiceNotesService'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 describe('practiceNotesService', () => {
   beforeEach(() => {
@@ -24,24 +24,24 @@ describe('practiceNotesService', () => {
         created_at: '2024-01-15'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockNote, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue([mockNote])
 
       const result = await getPrePracticeNote('session-1')
 
       expect(result).toEqual(mockNote)
-      expect(supabase.from).toHaveBeenCalledWith('training_session_pre_practice_notes')
+      expect(apiClient.get).toHaveBeenCalledWith('/api/practice-notes/pre/session-1')
     })
 
     it('should return null when note not found', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue([])
+
+      const result = await getPrePracticeNote('session-1')
+
+      expect(result).toBeNull()
+    })
+
+    it('should return null when response is null', async () => {
+      vi.mocked(apiClient.get).mockResolvedValue(null)
 
       const result = await getPrePracticeNote('session-1')
 
@@ -49,13 +49,7 @@ describe('practiceNotesService', () => {
     })
 
     it('should throw error on fetch failure', async () => {
-      const mockError = { message: 'Fetch failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: mockError })
-      } as any)
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('Fetch failed'))
 
       await expect(getPrePracticeNote('session-1')).rejects.toThrow()
     })
@@ -71,24 +65,16 @@ describe('practiceNotesService', () => {
         created_at: '2024-01-15'
       }
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockNote, error: null })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue([mockNote])
 
       const result = await getPostPracticeNote('session-1')
 
       expect(result).toEqual(mockNote)
-      expect(supabase.from).toHaveBeenCalledWith('training_session_post_practice_notes')
+      expect(apiClient.get).toHaveBeenCalledWith('/api/practice-notes/post/session-1')
     })
 
     it('should return null when note not found', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
-      } as any)
+      vi.mocked(apiClient.get).mockResolvedValue([])
 
       const result = await getPostPracticeNote('session-1')
 
@@ -100,7 +86,6 @@ describe('practiceNotesService', () => {
     it('should create or update a pre-practice note', async () => {
       const noteData = {
         training_session_id: 'session-1',
-        focus: 'Focus on starts and turns',
         notes: 'Bring kickboards'
       }
 
@@ -112,29 +97,21 @@ describe('practiceNotesService', () => {
         updated_at: '2024-01-15'
       }
 
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: { user: { id: 'coach-1' } as any },
-        error: null
-      })
-
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockNote, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockNote)
 
       const result = await upsertPrePracticeNote(noteData)
 
       expect(result).toEqual(mockNote)
+      expect(apiClient.post).toHaveBeenCalledWith('/api/practice-notes/pre', {
+        training_session_id: 'session-1',
+        notes: 'Bring kickboards',
+      })
     })
 
-    it('should throw error when not authenticated', async () => {
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: { user: null },
-        error: { message: 'Not authenticated', name: 'AuthError', status: 401 }
-      } as any)
+    it('should throw error on upsert failure', async () => {
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('Failed to save note'))
 
-      await expect(upsertPrePracticeNote({ training_session_id: 'session-1', notes: 'Test' })).rejects.toThrow('Not authenticated')
+      await expect(upsertPrePracticeNote({ training_session_id: 'session-1', notes: 'Test' })).rejects.toThrow()
     })
   })
 
@@ -142,8 +119,7 @@ describe('practiceNotesService', () => {
     it('should create or update a post-practice note', async () => {
       const noteData = {
         training_session_id: 'session-1',
-        what_went_well: 'Swimmers showed improvement',
-        overall_rating: 8
+        notes: 'Swimmers showed improvement'
       }
 
       const mockNote = {
@@ -154,40 +130,28 @@ describe('practiceNotesService', () => {
         updated_at: '2024-01-15'
       }
 
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: { user: { id: 'coach-1' } as any },
-        error: null
-      })
-
-      vi.mocked(supabase.from).mockReturnValue({
-        upsert: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockNote, error: null })
-      } as any)
+      vi.mocked(apiClient.post).mockResolvedValue(mockNote)
 
       const result = await upsertPostPracticeNote(noteData)
 
       expect(result).toEqual(mockNote)
+      expect(apiClient.post).toHaveBeenCalledWith('/api/practice-notes/post', {
+        training_session_id: 'session-1',
+        notes: 'Swimmers showed improvement',
+      })
     })
   })
 
   describe('deletePrePracticeNote', () => {
     it('should delete a pre-practice note', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deletePrePracticeNote('note-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/api/practice-notes/pre/note-1')
     })
 
     it('should throw error on deletion failure', async () => {
-      const mockError = { message: 'Delete failed', code: '500' }
-
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: mockError })
-      } as any)
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error('Delete failed'))
 
       await expect(deletePrePracticeNote('note-1')).rejects.toThrow()
     })
@@ -195,12 +159,10 @@ describe('practiceNotesService', () => {
 
   describe('deletePostPracticeNote', () => {
     it('should delete a post-practice note', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
-      } as any)
+      vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deletePostPracticeNote('note-1')).resolves.toBeUndefined()
+      expect(apiClient.delete).toHaveBeenCalledWith('/api/practice-notes/post/note-1')
     })
   })
 })

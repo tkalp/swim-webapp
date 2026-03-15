@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { API_BASE_URL } from '@/lib/api'
-import { supabase } from '@/lib/supabase'
+import { getAccessToken, getRefreshToken, storeTokens, clearTokens } from '@/stores/authStore'
 
 // Custom error class for API errors
 export class ApiError extends Error {
@@ -24,26 +24,43 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor - inject auth token
+// Request interceptor - inject auth token from localStorage
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      // Get current session from Supabase
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.access_token) {
-        config.headers.Authorization = `Bearer ${session.access_token}`
+      const accessToken = getAccessToken()
+
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`
       }
     } catch (error) {
-      console.error('Failed to get auth session:', error)
+      console.error('Failed to get auth token:', error)
     }
-    
+
     return config
   },
   (error) => {
     return Promise.reject(error)
   }
 )
+
+// Flag to prevent multiple concurrent refresh attempts
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: any) => void
+  reject: (reason?: any) => void
+}> = []
+
+function processQueue(error: any, token: string | null = null) {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error)
+    } else {
+      promise.resolve(token)
+    }
+  })
+  failedQueue = []
+}
 
 // Response interceptor - handle errors consistently
 apiClient.interceptors.response.use(
@@ -61,17 +78,62 @@ apiClient.interceptors.response.use(
     }
 
     const { status, data } = error.response
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-    // Handle authentication errors
-    if (status === 401) {
-      // Clear session and redirect to login
-      await supabase.auth.signOut()
-      window.location.href = '/login'
-      throw new ApiError(
-        'Session expired. Please log in again.',
-        401,
-        'UNAUTHORIZED'
-      )
+    // Handle authentication errors with token refresh
+    if (status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue the request while a refresh is in progress
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return apiClient(originalRequest)
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      const refreshToken = getRefreshToken()
+
+      if (!refreshToken) {
+        isRefreshing = false
+        processQueue(new Error('No refresh token'), null)
+        clearTokens()
+        window.location.href = '/login'
+        throw new ApiError(
+          'Session expired. Please log in again.',
+          401,
+          'UNAUTHORIZED'
+        )
+      }
+
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        })
+
+        const { access_token, refresh_token: newRefreshToken } = response.data
+        storeTokens(access_token, newRefreshToken)
+
+        isRefreshing = false
+        processQueue(null, access_token)
+
+        // Retry the original request with the new token
+        originalRequest.headers.Authorization = `Bearer ${access_token}`
+        return apiClient(originalRequest)
+      } catch (refreshError) {
+        isRefreshing = false
+        processQueue(refreshError, null)
+        clearTokens()
+        window.location.href = '/login'
+        throw new ApiError(
+          'Session expired. Please log in again.',
+          401,
+          'UNAUTHORIZED'
+        )
+      }
     }
 
     // Handle forbidden errors

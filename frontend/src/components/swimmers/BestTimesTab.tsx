@@ -9,7 +9,7 @@ import {
 import GroupedBestTimesView from '@/components/swimmers/bestTimes/GroupedBestTimesView';
 import AttemptsModal from '@/components/swimmers/bestTimes/AttemptsModal';
 import AddEditWorkoutResultModal from '@/components/swimmers/bestTimes/AddEditWorkoutResultModal';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import { Activity, TrendingUp, Plus, Sparkles, HelpCircle, X, Users } from "lucide-react";
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import Modal from '@/components/ui/Modal';
@@ -168,14 +168,8 @@ export default function BestTimesTab({ swimmerId, swimmer, canManageResults }: {
   const onEditAttempt = async (attemptId: string) => {
     // Fetch the full workout result data for this attempt
     try {
-      const { data, error } = await supabase
-        .from('workout_result')
-        .select('*')
-        .eq('id', attemptId)
-        .single();
-      
-      if (error) throw error;
-      
+      const data = await apiClient.get<any>(`/workout-results/${attemptId}`);
+
       if (data) {
         setEditingResult({
           id: data.id,

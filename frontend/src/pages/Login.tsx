@@ -19,9 +19,9 @@ export default function Login() {
     e.preventDefault();
     setErr("");
     setLoading(true);
-    
+
     const { error } = await signIn(email, password);
-    
+
     if (error) {
       setErr(error.message);
       setLoading(false);
@@ -42,17 +42,17 @@ export default function Login() {
         {/* Gradient Border Wrapper */}
         <div className="relative">
           <div className="absolute -inset-px bg-linear-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-sm" />
-          
+
           <div className="relative bg-slate-900/95 backdrop-blur-xl border border-slate-800/60 rounded-3xl p-10 shadow-2xl">
             {/* Logo Section */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-6">
                 <div className="relative group">
                   <div className="absolute -inset-2 bg-linear-to-r from-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300" />
-                  <img 
-                    src={logo} 
-                    className="relative h-28 w-auto drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] transition-transform group-hover:scale-105 duration-300" 
-                    alt="Aquilus Logo" 
+                  <img
+                    src={logo}
+                    className="relative h-28 w-auto drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] transition-transform group-hover:scale-105 duration-300"
+                    alt="Aquilus Logo"
                   />
                 </div>
               </div>
@@ -102,7 +102,7 @@ export default function Login() {
 
               {/* Forgot Password Link */}
               <div className="flex justify-end">
-                <Link 
+                <Link
                   to="/forgot-password"
                   className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors duration-200 font-medium"
                 >
@@ -111,8 +111,8 @@ export default function Login() {
               </div>
 
               {/* Submit Button */}
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 variant="primary"
                 size="lg"
                 icon={<LogIn size={20} strokeWidth={2.5} />}

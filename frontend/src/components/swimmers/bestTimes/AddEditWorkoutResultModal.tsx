@@ -1,7 +1,7 @@
 // components/swimmers/bestTimes/AddEditWorkoutResultModal.tsx
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Ruler, Clock, Target } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import CustomSelect, { type Option } from '@/components/ui/CustomSelect';
 import DateInput from '@/components/ui/DateInput';
 import Modal from '@/components/ui/Modal';
@@ -91,14 +91,8 @@ export default function AddEditWorkoutResultModal({
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('workout_result')
-        .select('*')
-        .eq('id', resultId)
-        .single();
-      
-      if (error) throw error;
-      
+      const data = await apiClient.get<any>(`/workout-results/${resultId}`);
+
       if (data) {
         setFormData({
           swimmer_id: data.swimmer_id || swimmerId,
@@ -156,18 +150,9 @@ export default function AddEditWorkoutResultModal({
       };
       
       if (isEdit) {
-        const { error } = await supabase
-          .from('workout_result')
-          .update(payload)
-          .eq('id', resultId);
-        
-        if (error) throw error;
+        await apiClient.put(`/workout-results/${resultId}`, payload);
       } else {
-        const { error } = await supabase
-          .from('workout_result')
-          .insert(payload);
-        
-        if (error) throw error;
+        await apiClient.post('/workout-results', payload);
       }
       
       onSuccess?.();

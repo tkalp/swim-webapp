@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X, Search, Dumbbell, Activity, Clock, Flame, CheckCircle2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 import { WorkoutTemplate } from '@/services/workoutTemplateService'
 import { assignWorkoutToSession } from '@/services/workoutTemplateService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -35,15 +35,11 @@ export const SelectWorkoutToAssignModal: React.FC<SelectWorkoutToAssignModalProp
   const { data: sessions = [] } = useQuery({
     queryKey: ['unassigned-sessions', squadId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .select('*')
-        .eq('squad_id', squadId)
-        .is('workout_id', null)
-        .order('start_date', { ascending: true })
-      
-      if (error) throw error
-      return (data || []) as TrainingSession[]
+      const data = await apiClient.get<any[]>(`/squads/${squadId}/sessions`)
+      // Filter to unassigned sessions only
+      return (data || []).filter((s: any) => !s.workout_id).sort(
+        (a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      ) as TrainingSession[]
     },
     enabled: !!squadId && isOpen && !session,
   })
@@ -53,15 +49,9 @@ export const SelectWorkoutToAssignModal: React.FC<SelectWorkoutToAssignModalProp
     queryKey: ['coach-workouts', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
-      
-      const { data, error } = await supabase
-        .from('workout_template')
-        .select('*')
-        .eq('create_by_coach', user.id)
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-      return (data || []) as WorkoutTemplate[]
+
+      const result = await apiClient.get<any>(`/workouts/coach/${user.id}`)
+      return (result?.workouts || result || []) as WorkoutTemplate[]
     },
     enabled: !!user?.id && isOpen,
   })

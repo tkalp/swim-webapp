@@ -8,49 +8,21 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-// Mock Supabase client
-const mockSupabaseClient = {
-  auth: {
-    signInWithPassword: vi.fn(),
-    signUp: vi.fn(),
-    signOut: vi.fn(),
-    getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-    getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
-    onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
-    gt: vi.fn().mockReturnThis(),
-    gte: vi.fn().mockReturnThis(),
-    lt: vi.fn().mockReturnThis(),
-    lte: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    is: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    range: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: null, error: null }),
-    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-  })),
-  rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-  storage: {
-    from: vi.fn(() => ({
-      upload: vi.fn().mockResolvedValue({ data: null, error: null }),
-      download: vi.fn().mockResolvedValue({ data: null, error: null }),
-      remove: vi.fn().mockResolvedValue({ data: null, error: null }),
-      getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: '' } }),
-    })),
-  },
+// Mock apiClient
+const mockApiClient = {
+  get: vi.fn().mockResolvedValue(null),
+  post: vi.fn().mockResolvedValue(null),
+  put: vi.fn().mockResolvedValue(null),
+  delete: vi.fn().mockResolvedValue(null),
 }
 
-vi.mock('../lib/supabase', () => ({
-  supabase: mockSupabaseClient,
+const mockAuthenticatedFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+const mockGetAccessToken = vi.fn().mockReturnValue('mock-token')
+
+vi.mock('../lib/apiClient', () => ({
+  apiClient: mockApiClient,
+  authenticatedFetch: mockAuthenticatedFetch,
+  getAccessToken: mockGetAccessToken,
 }))
 
 // Mock Mixpanel
@@ -115,4 +87,4 @@ global.ResizeObserver = class ResizeObserver {
 } as any
 
 // Export mocks for use in tests
-export { mockSupabaseClient, mockMixpanel }
+export { mockApiClient, mockAuthenticatedFetch, mockMixpanel }

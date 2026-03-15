@@ -1,123 +1,129 @@
 // lib/apiClient.ts
-import { supabase } from '@/lib/supabase'
+import { getAccessToken, useAuthStore } from '@/stores/authStore'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 /**
- * Get authorization headers for API requests
- * Includes the JWT token from Supabase auth
+ * Get authorization headers for API requests.
+ * Reads the access token from localStorage.
  */
-export async function getAuthHeaders(): Promise<HeadersInit> {
-  const { data: { session } } = await supabase.auth.getSession()
-  
+export function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   }
-  
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`
+
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`
   }
-  
+
   return headers
 }
 
 /**
+ * Delegate token refresh to authStore so there is a single refresh path
+ * with no race condition between the store and the API client.
+ */
+async function tryRefreshToken(): Promise<boolean> {
+  return useAuthStore.getState().refreshSession()
+}
+
+/**
  * Authenticated fetch wrapper that automatically includes auth headers
+ * and handles 401 with token refresh.
  */
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const authHeaders = await getAuthHeaders()
-  
+  const authHeaders = getAuthHeaders()
+
   const response = await fetch(url, {
     ...options,
     headers: {
       ...options.headers,
-      ...authHeaders, // Auth headers last to ensure Authorization is not overridden
+      ...authHeaders,
     },
   })
-  
+
   // Handle 401 Unauthorized - token might be expired
   if (response.status === 401) {
-    // Try to refresh the session
-    const { error } = await supabase.auth.refreshSession()
-    
-    if (error) {
-      // Redirect to login if refresh fails
-      window.location.href = '/login'
+    const refreshed = await tryRefreshToken()
+
+    if (!refreshed) {
+      // Tokens are cleared by refreshSession — ProtectedRoute will redirect on next render
       throw new Error('Session expired. Please log in again.')
     }
-    
+
     // Retry the request with new token
-    const newHeaders = await getAuthHeaders()
+    const newHeaders = getAuthHeaders()
     return fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        ...newHeaders, // Auth headers last to ensure Authorization is not overridden
+        ...newHeaders,
       },
     })
   }
-  
+
   return response
 }
 
 /**
  * API client with common HTTP methods
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 export const apiClient = {
   async get<T>(path: string): Promise<T> {
-    const url = `${API_BASE_URL}${path}`;
+    const url = `${API_BASE_URL}${path}`
     const response = await authenticatedFetch(url, {
       method: 'GET',
-    });
-    
+    })
+
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`)
     }
-    
-    return response.json();
+
+    return response.json()
   },
-  
+
   async post<T>(path: string, data?: any): Promise<T> {
-    const url = `${API_BASE_URL}${path}`;
+    const url = `${API_BASE_URL}${path}`
     const response = await authenticatedFetch(url, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
-    });
-    
+    })
+
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`)
     }
-    
-    return response.json();
+
+    return response.json()
   },
-  
+
   async put<T>(path: string, data?: any): Promise<T> {
-    const url = `${API_BASE_URL}${path}`;
+    const url = `${API_BASE_URL}${path}`
     const response = await authenticatedFetch(url, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
-    });
-    
+    })
+
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`)
     }
-    
-    return response.json();
+
+    return response.json()
   },
-  
+
   async delete<T>(path: string): Promise<T> {
-    const url = `${API_BASE_URL}${path}`;
+    const url = `${API_BASE_URL}${path}`
     const response = await authenticatedFetch(url, {
       method: 'DELETE',
-    });
-    
+    })
+
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`)
     }
-    
-    return response.json();
-  }
-};
+
+    return response.json()
+  },
+}

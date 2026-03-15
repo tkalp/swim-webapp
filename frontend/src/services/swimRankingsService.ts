@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
-import { API_BASE_URL } from '@/lib/api';
+import { authenticatedFetch } from '@/lib/apiClient';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface SwimRankingsSearchResult {
   athlete_id: string;
@@ -138,32 +139,17 @@ export interface ExternalSwimmerFinaPoints {
   all_results: ExternalSwimmerBestTime[];
 }
 
-async function getAuthToken(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error('Not authenticated');
-  }
-  return session.access_token;
-}
-
 export async function searchSwimRankings(
   firstname: string,
   lastname: string
 ): Promise<SwimRankingsSearchResult[]> {
-  const token = await getAuthToken();
-  
   const params = new URLSearchParams({
     firstname,
     lastname,
   });
 
-  const response = await fetch(
-    `${API_BASE_URL}/swimrankings/search?${params}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    }
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/swimrankings/search?${params}`
   );
 
   if (!response.ok) {
@@ -176,14 +162,8 @@ export async function searchSwimRankings(
 export async function linkSwimmer(
   request: LinkSwimmerRequest
 ): Promise<LinkSwimmerResponse> {
-  const token = await getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/swimrankings/link`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/swimrankings/link`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(request),
   });
 
@@ -198,15 +178,8 @@ export async function linkSwimmer(
 export async function getSwimmerLinks(
   swimmerId: string
 ): Promise<SwimmerExternalLink[]> {
-  const token = await getAuthToken();
-
-  const response = await fetch(
-    `${API_BASE_URL}/swimrankings/swimmer/${swimmerId}/links`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    }
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/swimrankings/swimmer/${swimmerId}/links`
   );
 
   if (!response.ok) {
@@ -217,13 +190,8 @@ export async function getSwimmerLinks(
 }
 
 export async function deleteLink(linkId: string): Promise<void> {
-  const token = await getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/swimrankings/link/${linkId}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/swimrankings/link/${linkId}`, {
     method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
   });
 
   if (!response.ok) {
@@ -234,14 +202,8 @@ export async function deleteLink(linkId: string): Promise<void> {
 export async function importResults(
   request: ImportResultsRequest
 ): Promise<ImportResultsResponse> {
-  const token = await getAuthToken();
-  
-  const response = await fetch(`${API_BASE_URL}/swimrankings/import-results`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/swimrankings/import-results`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(request),
   });
 
@@ -256,14 +218,8 @@ export async function importResults(
 export async function importEventAttempts(
   request: ImportEventAttemptsRequest
 ): Promise<ImportEventAttemptsResponse> {
-  const token = await getAuthToken();
-  
-  const response = await fetch(`${API_BASE_URL}/swimrankings/fetch-event-attempts`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/swimrankings/fetch-event-attempts`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(request),
   });
 

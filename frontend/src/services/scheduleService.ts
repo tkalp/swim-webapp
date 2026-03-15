@@ -1,5 +1,5 @@
 // services/scheduleService.ts
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 
 export type TrainingSchedule = {
   id: string
@@ -29,14 +29,7 @@ export type UpdateScheduleData = Partial<Omit<CreateScheduleData, 'squad_id'>>
  * Create a new training schedule
  */
 export async function createSchedule(data: CreateScheduleData): Promise<TrainingSchedule> {
-  const { data: schedule, error } = await supabase
-    .from('training_schedules')
-    .insert([{ active: true, ...data }])
-    .select()
-    .single()
-
-  if (error) throw error
-  return schedule
+  return apiClient.post<TrainingSchedule>('/training-schedules', { active: true, ...data })
 }
 
 /**
@@ -46,27 +39,14 @@ export async function updateSchedule(
   scheduleId: string,
   updates: UpdateScheduleData
 ): Promise<TrainingSchedule> {
-  const { data: schedule, error } = await supabase
-    .from('training_schedules')
-    .update(updates)
-    .eq('id', scheduleId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return schedule
+  return apiClient.put<TrainingSchedule>(`/training-schedules/${scheduleId}`, updates)
 }
 
 /**
  * Delete a training schedule
  */
 export async function deleteSchedule(scheduleId: string): Promise<void> {
-  const { error } = await supabase
-    .from('training_schedules')
-    .delete()
-    .eq('id', scheduleId)
-
-  if (error) throw error
+  await apiClient.delete(`/training-schedules/${scheduleId}`)
 }
 
 /**

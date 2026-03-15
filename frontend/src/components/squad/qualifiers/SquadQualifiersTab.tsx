@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import { type BestTimeResult } from '@/services/workoutResultService';
 import { useSquadQualifiersOptimized } from '@/hooks/useSquadQualifiers';
 import { StandardsSelector } from '@/components/swimmers/timeStandards';
@@ -97,14 +97,11 @@ export default function SquadQualifiersTab({ squadId }: Props) {
     }
 
     // Build a single query for all needed standards
-    const { data: standards, error } = await supabase
-      .from('time_standards')
-      .select('distance, stroke, age_group_min, age_group_max, gender, standard_level, scm_time, lcm_time')
-      .eq('set_id', selectedStandardsSetId)
-      .order('standard_level', { ascending: true });
-
-    if (error) {
-      console.error('Error loading standards:', error);
+    let standards: any[];
+    try {
+      standards = await apiClient.get<any[]>(`/time-standards/sets/${selectedStandardsSetId}/standards`);
+    } catch (err) {
+      console.error('Error loading standards:', err);
       return;
     }
 

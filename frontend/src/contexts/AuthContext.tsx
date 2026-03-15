@@ -1,5 +1,4 @@
 import { createContext, useContext } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
 import { useAuthStore } from '@/stores/authStore'
 
 type CoachProfile = {
@@ -11,9 +10,32 @@ type CoachProfile = {
   email?: string
 }
 
+/**
+ * User shape for backward compatibility.
+ * Components access user.id, user.email, user.user_metadata.full_name.
+ */
+type AppUser = {
+  id: string
+  email: string
+  user_metadata: {
+    full_name?: string
+  }
+  created_at?: string
+}
+
+/**
+ * Session shape for backward compatibility.
+ * Components / services access session.access_token.
+ */
+type AppSession = {
+  access_token: string
+  refresh_token: string
+  user: AppUser
+}
+
 type AuthContextValue = {
-  session: Session | null
-  user: User | null
+  session: AppSession | null
+  user: AppUser | null
   loading: boolean
   coachProfile: CoachProfile | null
   coachLoading: boolean
@@ -21,7 +43,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<{ error?: Error }>
   signOut: () => Promise<void>
   sendPasswordResetEmail: (email: string) => Promise<{ error?: Error }>
-  updatePassword: (newPassword: string) => Promise<{ error?: Error }>
+  updatePassword: (token: string, newPassword: string) => Promise<{ error?: Error }>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)

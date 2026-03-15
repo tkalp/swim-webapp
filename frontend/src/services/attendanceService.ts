@@ -1,7 +1,6 @@
 // services/attendanceService.ts
-import { supabase } from '@/lib/supabase'
+import { apiClient, authenticatedFetch } from '@/lib/apiClient'
 import { getApiUrl } from '@/lib/api'
-import { authenticatedFetch } from '@/lib/apiClient'
 
 export type AttendanceStatus = 'present' | 'late' | 'absent'
 
@@ -39,18 +38,7 @@ export type SessionAttendanceSummary = {
  * Get attendance records for a specific training session
  */
 export async function getAttendanceBySession(sessionId: string): Promise<TrainingAttendance[]> {
-  const { data, error } = await supabase
-    .from('training_attendance')
-    .select('*')
-    .eq('training_session_id', sessionId)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching attendance:', error)
-    throw new Error(`Failed to fetch attendance: ${error.message}`)
-  }
-
-  return data || []
+  return apiClient.get<TrainingAttendance[]>(`/attendance/session/${sessionId}`)
 }
 
 /**
@@ -60,26 +48,12 @@ export async function getAttendanceBySwimmer(
   swimmerId: string,
   dateRange?: { from?: string; to?: string }
 ): Promise<TrainingAttendance[]> {
-  let query = supabase
-    .from('training_attendance')
-    .select('*')
-    .eq('swimmer_id', swimmerId)
+  const params = new URLSearchParams()
+  if (dateRange?.from) params.append('from_date', dateRange.from)
+  if (dateRange?.to) params.append('to_date', dateRange.to)
+  const qs = params.toString()
 
-  if (dateRange?.from) {
-    query = query.gte('created_at', dateRange.from)
-  }
-  if (dateRange?.to) {
-    query = query.lte('created_at', dateRange.to)
-  }
-
-  const { data, error } = await query.order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching swimmer attendance:', error)
-    throw new Error(`Failed to fetch swimmer attendance: ${error.message}`)
-  }
-
-  return data || []
+  return apiClient.get<TrainingAttendance[]>(`/attendance/swimmer/${swimmerId}${qs ? `?${qs}` : ''}`)
 }
 
 /**
@@ -92,29 +66,12 @@ export async function upsertAttendance(
   status: AttendanceStatus,
   notes?: string | null
 ): Promise<TrainingAttendance> {
-  const { data, error } = await supabase
-    .from('training_attendance')
-    .upsert(
-      {
-        training_session_id: sessionId,
-        swimmer_id: swimmerId,
-        status,
-        notes,
-      },
-      {
-        onConflict: 'training_session_id,swimmer_id',
-        ignoreDuplicates: false,
-      }
-    )
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Error upserting attendance:', error)
-    throw new Error(`Failed to save attendance: ${error.message}`)
-  }
-
-  return data
+  return apiClient.post<TrainingAttendance>('/attendance/upsert', {
+    training_session_id: sessionId,
+    swimmer_id: swimmerId,
+    status,
+    notes,
+  })
 }
 
 /**
@@ -124,112 +81,34 @@ export async function bulkUpsertAttendance(
   sessionId: string,
   attendanceRecords: Array<{ swimmer_id: string; status: AttendanceStatus; notes?: string | null }>
 ): Promise<TrainingAttendance[]> {
-  const records = attendanceRecords.map(record => ({
-    training_session_id: sessionId,
-    swimmer_id: record.swimmer_id,
-    status: record.status,
-    notes: record.notes,
-  }))
-
-  const { data, error } = await supabase
-    .from('training_attendance')
-    .upsert(records, {
-      onConflict: 'training_session_id,swimmer_id',
-      ignoreDuplicates: false,
-    })
-    .select()
-
-  if (error) {
-    console.error('Error bulk upserting attendance:', error)
-    throw new Error(`Failed to save attendance records: ${error.message}`)
-  }
-
-  return data || []
+  return apiClient.post<TrainingAttendance[]>('/attendance/bulk-upsert', {
+    session_id: sessionId,
+    records: attendanceRecords,
+  })
 }
 
 /**
  * Delete an attendance record
  */
 export async function deleteAttendance(attendanceId: string): Promise<void> {
-  const { error } = await supabase
-    .from('training_attendance')
-    .delete()
-    .eq('id', attendanceId)
-
-  if (error) {
-    console.error('Error deleting attendance:', error)
-    throw new Error(`Failed to delete attendance: ${error.message}`)
-  }
+  await apiClient.delete(`/attendance/${attendanceId}`)
 }
 
 /**
  * Get attendance summary for a session with swimmer details
  */
-export async function getSessionAttendanceWithSwimmers(sessionId: string, squadId: string) {
-  // Get all swimmers in the squad
-  const { data: swimmers, error: swimmersError } = await supabase
-    .from('swimmers')
-    .select('id, first_name, last_name')
-    .eq('squad_id', squadId)
-    .order('last_name', { ascending: true })
-
-  if (swimmersError) {
-    console.error('Error fetching swimmers:', swimmersError)
-    throw new Error(`Failed to fetch swimmers: ${swimmersError.message}`)
-  }
-
-  // Get attendance records for this session
-  const { data: attendance, error: attendanceError } = await supabase
-    .from('training_attendance')
-    .select('*')
-    .eq('training_session_id', sessionId)
-
-  if (attendanceError) {
-    console.error('Error fetching attendance:', attendanceError)
-    throw new Error(`Failed to fetch attendance: ${attendanceError.message}`)
-  }
-
-  // Map attendance to swimmers
-  const attendanceMap = new Map(
-    (attendance || []).map(a => [a.swimmer_id, a])
-  )
-
-  const swimmersWithAttendance = (swimmers || []).map(swimmer => ({
-    ...swimmer,
-    attendance: attendanceMap.get(swimmer.id) || null,
-  }))
-
-  // Calculate summary
-  const summary = {
-    total: swimmersWithAttendance.length,
-    present: attendance?.filter(a => a.status === 'present').length || 0,
-    late: attendance?.filter(a => a.status === 'late').length || 0,
-    absent: attendance?.filter(a => a.status === 'absent').length || 0,
-    not_recorded: swimmersWithAttendance.filter(s => !s.attendance).length,
-  }
-
-  return {
-    swimmers: swimmersWithAttendance,
-    summary,
-  }
+export async function getSessionAttendanceWithSwimmers(sessionId: string, squadId: string): Promise<any> {
+  return apiClient.get<any>(`/attendance/session/${sessionId}/with-swimmers?squad_id=${squadId}`)
 }
 
 /**
  * Mark all swimmers with no attendance record as absent for a session
  */
 export async function markRemainingAsAbsent(sessionId: string, squadId: string): Promise<void> {
-  const { swimmers } = await getSessionAttendanceWithSwimmers(sessionId, squadId)
-  
-  const recordsToCreate = swimmers
-    .filter(s => !s.attendance)
-    .map(s => ({
-      swimmer_id: s.id,
-      status: 'Absent' as AttendanceStatus,
-    }))
-
-  if (recordsToCreate.length > 0) {
-    await bulkUpsertAttendance(sessionId, recordsToCreate)
-  }
+  await apiClient.post('/attendance/mark-remaining-absent', {
+    session_id: sessionId,
+    squad_id: squadId,
+  })
 }
 
 // ============================================

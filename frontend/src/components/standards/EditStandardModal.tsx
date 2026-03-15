@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { TimeStandard } from '@/types/standards';
+import { apiClient } from '@/lib/apiClient';
 
 interface EditStandardModalProps {
   isOpen: boolean;
@@ -79,8 +80,6 @@ export const EditStandardModal: React.FC<EditStandardModalProps> = ({
     setSaving(true);
 
     try {
-      const { supabase } = await import('@/lib/supabase');
-      
       const updateData = {
         distance: formData.distance,
         stroke: formData.stroke,
@@ -94,14 +93,7 @@ export const EditStandardModal: React.FC<EditStandardModalProps> = ({
         equipment: formData.equipment,
       };
 
-      const { data, error: updateError } = await supabase
-        .from('time_standards')
-        .update(updateData)
-        .eq('id', standard.id)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
+      const data = await apiClient.put<TimeStandard>(`/time-standards/standards/${standard.id}`, updateData);
 
       onSuccess(data);
       onClose();

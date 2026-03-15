@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { TimeStandard } from '@/types/standards';
+import { apiClient } from '@/lib/apiClient';
 
 interface AddStandardModalProps {
   isOpen: boolean;
@@ -61,9 +62,6 @@ export const AddStandardModal: React.FC<AddStandardModalProps> = ({
     setSaving(true);
 
     try {
-      // Import supabase and create the standard
-      const { supabase } = await import('@/lib/supabase');
-      
       const standardData = {
         set_id: standardsSetId,
         distance: formData.distance,
@@ -78,13 +76,7 @@ export const AddStandardModal: React.FC<AddStandardModalProps> = ({
         equipment: formData.equipment,
       };
 
-      const { data, error: insertError } = await supabase
-        .from('time_standards')
-        .insert([standardData])
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
+      const data = await apiClient.post<TimeStandard>(`/time-standards/sets/${standardsSetId}/standards`, standardData);
 
       onSuccess(data);
       onClose();

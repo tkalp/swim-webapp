@@ -1,18 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { searchSwimRankings, linkSwimmer, getSwimmerLinks } from '../swimRankingsService'
-import { supabase } from '@/lib/supabase'
-
-// Mock global fetch
-global.fetch = vi.fn()
+import { authenticatedFetch } from '@/lib/apiClient'
 
 describe('swimRankingsService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Mock getAuthToken
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
-      data: { session: { access_token: 'mock-token' } as any },
-      error: null
-    })
   })
 
   describe('searchSwimRankings', () => {
@@ -26,22 +18,24 @@ describe('swimRankingsService', () => {
         }
       ]
 
-      vi.mocked(global.fetch).mockResolvedValue({
+      vi.mocked(authenticatedFetch).mockResolvedValue({
         ok: true,
         json: async () => mockResults
-      } as any)
+      } as Response)
 
       const result = await searchSwimRankings('John', 'Doe')
 
       expect(result).toEqual(mockResults)
-      expect(global.fetch).toHaveBeenCalled()
+      expect(authenticatedFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/swimrankings/search?firstname=John&lastname=Doe')
+      )
     })
 
     it('should throw error when search fails', async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
+      vi.mocked(authenticatedFetch).mockResolvedValue({
         ok: false,
         statusText: 'Server Error'
-      } as any)
+      } as Response)
 
       await expect(searchSwimRankings('John', 'Doe')).rejects.toThrow()
     })
@@ -62,22 +56,28 @@ describe('swimRankingsService', () => {
         link: { id: 'link-1', ...linkRequest }
       }
 
-      vi.mocked(global.fetch).mockResolvedValue({
+      vi.mocked(authenticatedFetch).mockResolvedValue({
         ok: true,
         json: async () => mockResponse
-      } as any)
+      } as Response)
 
       const result = await linkSwimmer(linkRequest)
 
       expect(result.success).toBe(true)
-      expect(global.fetch).toHaveBeenCalled()
+      expect(authenticatedFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/swimrankings/link'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(linkRequest),
+        })
+      )
     })
 
     it('should throw error when linking fails', async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
+      vi.mocked(authenticatedFetch).mockResolvedValue({
         ok: false,
         json: async () => ({ detail: 'Link failed' })
-      } as any)
+      } as Response)
 
       await expect(linkSwimmer({} as any)).rejects.toThrow()
     })
@@ -94,14 +94,17 @@ describe('swimRankingsService', () => {
         }
       ]
 
-      vi.mocked(global.fetch).mockResolvedValue({
+      vi.mocked(authenticatedFetch).mockResolvedValue({
         ok: true,
         json: async () => mockLinks
-      } as any)
+      } as Response)
 
       const result = await getSwimmerLinks('swimmer-1')
 
       expect(result).toEqual(mockLinks)
+      expect(authenticatedFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/swimrankings/swimmer/swimmer-1/links')
+      )
     })
   })
 })

@@ -5,7 +5,7 @@ import {
   type SwimmerComparisonResult,
   type HeadToHeadEvent 
 } from '@/services/squadService'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/apiClient'
 import { useQuery } from '@tanstack/react-query'
 import { formatTime } from '@/services/workoutResultService'
 import SwimmerSelect from '@/components/SwimmerSelect'
@@ -82,15 +82,8 @@ export default function SwimmerComparisonPage() {
     queryKey: ['coach-squads', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
-      
-      const { data, error } = await supabase
-        .from('coach_squads')
-        .select('squad_id, squads!inner(id, name)')
-        .eq('coach_id', user.id)
-      
-      if (error) throw error
-      
-      return (data?.map((item: any) => item.squads) || []) as Squad[]
+      const data = await apiClient.get<any[]>('/squads')
+      return (data || []).map((s: any) => ({ id: s.id, name: s.name })) as Squad[]
     },
     enabled: !!user?.id
   })
@@ -100,18 +93,10 @@ export default function SwimmerComparisonPage() {
     queryKey: ['all-swimmers', user?.id],
     queryFn: async () => {
       if (!user?.id || squads.length === 0) return []
-      
-      const squadIds = squads.map(s => s.id)
-      
-      const { data, error } = await supabase
-        .from('swimmers')
-        .select('id, first_name, last_name, date_of_birth, sex, squad_id')
-        .in('squad_id', squadIds)
-        .order('first_name')
-      
-      if (error) throw error
-      
-      return (data || []) as Swimmer[]
+      const results = await Promise.all(
+        squads.map((s: Squad) => apiClient.get<Swimmer[]>(`/squads/${s.id}/swimmers`))
+      )
+      return results.flat()
     },
     enabled: !!user?.id && squads.length > 0
   })

@@ -84,14 +84,5 @@ export const mockSchedule = {
   created_at: '2024-01-01T00:00:00Z',
 }
 
-// Helper to create mock Supabase responses
-export function mockSupabaseSuccess<T>(data: T) {
-  return { data, error: null }
-}
-
-export function mockSupabaseError(message: string) {
-  return { data: null, error: { message, code: 'TEST_ERROR' } }
-}
-
 // Wait for async updates
 export const waitForAsync = () => new Promise(resolve => setTimeout(resolve, 0))

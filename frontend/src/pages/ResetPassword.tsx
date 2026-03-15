@@ -18,14 +18,16 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
-  // Check if we have the required token
+  // Extract the reset token from URL params
   useEffect(() => {
-    const accessToken = searchParams.get("access_token") || searchParams.get("token");
-    const type = searchParams.get("type");
-    
-    if (!accessToken || type !== "recovery") {
+    const token = searchParams.get("token");
+
+    if (!token) {
       setError("Invalid or expired reset link. Please request a new password reset.");
+    } else {
+      setResetToken(token);
     }
   }, [searchParams]);
 
@@ -50,6 +52,11 @@ export default function ResetPassword() {
     setError("");
     setValidationError("");
 
+    if (!resetToken) {
+      setError("Invalid or expired reset link. Please request a new password reset.");
+      return;
+    }
+
     // Validate password
     const pwdError = validatePassword(password);
     if (pwdError) {
@@ -65,7 +72,7 @@ export default function ResetPassword() {
 
     setLoading(true);
 
-    const { error: updateError } = await updatePassword(password);
+    const { error: updateError } = await updatePassword(resetToken, password);
 
     if (updateError) {
       setError(updateError.message);
@@ -91,10 +98,10 @@ export default function ResetPassword() {
         <div className="relative z-10 w-full max-w-md bg-background-elevated/95 backdrop-blur-xl border border-border rounded-3xl p-10 shadow-2xl">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <img 
-                src={logo} 
-                className="h-28 w-auto drop-shadow-[0_4px_12px_rgba(49,151,167,0.3)] transition-transform hover:scale-105" 
-                alt="Aquilus Logo" 
+              <img
+                src={logo}
+                className="h-28 w-auto drop-shadow-[0_4px_12px_rgba(49,151,167,0.3)] transition-transform hover:scale-105"
+                alt="Aquilus Logo"
               />
             </div>
             <h1 className="text-3xl font-bold mb-2 bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
@@ -138,10 +145,10 @@ export default function ResetPassword() {
         {/* Logo Section */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <img 
-              src={logo} 
-              className="h-28 w-auto drop-shadow-[0_4px_12px_rgba(49,151,167,0.3)] transition-transform hover:scale-105" 
-              alt="Aquilus Logo" 
+            <img
+              src={logo}
+              className="h-28 w-auto drop-shadow-[0_4px_12px_rgba(49,151,167,0.3)] transition-transform hover:scale-105"
+              alt="Aquilus Logo"
             />
           </div>
           <h1 className="text-3xl font-bold mb-2 bg-linear-to-r from-primary-dark via-primary to-accent bg-clip-text text-transparent">
@@ -226,8 +233,8 @@ export default function ResetPassword() {
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-linear-to-r from-primary-dark via-primary to-accent rounded-xl text-white font-semibold shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={loading || !!error}
           >
@@ -245,7 +252,7 @@ export default function ResetPassword() {
           </button>
 
           {error && (
-            <Link 
+            <Link
               to="/forgot-password"
               className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-background-secondary border border-border rounded-xl text-text-primary font-semibold transition-all duration-200 hover:bg-background-tertiary hover:border-border-light hover:scale-[1.02]"
             >
