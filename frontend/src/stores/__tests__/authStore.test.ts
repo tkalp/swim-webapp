@@ -64,8 +64,10 @@ describe('authStore', () => {
       })
 
       // Wait for fire-and-forget fetchCoachProfile to finish so state updates are inside act
-      await waitFor(() => {
-        expect(result.current.coachLoading).toBe(false)
+      await act(async () => {
+        await waitFor(() => {
+          expect(result.current.coachProfile).not.toBeNull()
+        })
       })
 
       expect(signInResult!.error).toBeUndefined()
@@ -272,8 +274,10 @@ describe('authStore', () => {
       })
 
       // Wait for fire-and-forget fetchCoachProfile to finish so state updates are inside act
-      await waitFor(() => {
-        expect(result.current.coachLoading).toBe(false)
+      await act(async () => {
+        await waitFor(() => {
+          expect(result.current.coachProfile).not.toBeNull()
+        })
       })
 
       expect(result.current.user?.email).toBe('test@example.com')

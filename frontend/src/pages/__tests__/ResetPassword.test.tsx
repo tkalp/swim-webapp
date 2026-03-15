@@ -46,7 +46,7 @@ describe('ResetPassword', () => {
 
   it('renders new password and confirm password inputs', () => {
     renderResetPassword()
-    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^new password$/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/confirm new password/i)).toBeInTheDocument()
   })
 
