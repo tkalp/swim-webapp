@@ -37,7 +37,7 @@ describe('workoutLibraryService', () => {
       expect(result).toBeDefined()
       expect(result.workouts).toBeDefined()
       expect(result.workouts).toHaveLength(1)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/workouts/squad/squad-1?limit=20&offset=0')
+      expect(apiClient.get).toHaveBeenCalledWith('/workouts/squad/squad-1?limit=20&offset=0')
     })
 
     it('should pass custom pagination options', async () => {
@@ -47,7 +47,7 @@ describe('workoutLibraryService', () => {
 
       await getSquadWorkouts('squad-1', { limit: 10, offset: 20 })
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/workouts/squad/squad-1?limit=10&offset=20')
+      expect(apiClient.get).toHaveBeenCalledWith('/workouts/squad/squad-1?limit=10&offset=20')
     })
 
     it('should throw error when fetch fails', async () => {
@@ -80,7 +80,7 @@ describe('workoutLibraryService', () => {
 
       expect(result.workouts).toBeDefined()
       expect(result.total).toBe(1)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/workouts/coach/coach-1?limit=20&offset=0')
+      expect(apiClient.get).toHaveBeenCalledWith('/workouts/coach/coach-1?limit=20&offset=0')
     })
   })
 
@@ -109,7 +109,7 @@ describe('workoutLibraryService', () => {
       const result = await createWorkout(createData)
 
       expect(result).toEqual(mockWorkout)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/workouts', createData)
+      expect(apiClient.post).toHaveBeenCalledWith('/workouts', createData)
     })
 
     it('should throw error on creation failure', async () => {
@@ -124,7 +124,7 @@ describe('workoutLibraryService', () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteWorkout('workout-1')).resolves.toBeUndefined()
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/workouts/workout-1')
+      expect(apiClient.delete).toHaveBeenCalledWith('/workouts/workout-1')
     })
 
     it('should throw error on deletion failure', async () => {
@@ -156,7 +156,7 @@ describe('workoutLibraryService', () => {
 
       expect(result.name).toBe('Original (Copy)')
       expect(result.id).toBe('workout-2')
-      expect(apiClient.post).toHaveBeenCalledWith('/api/workouts/workout-1/duplicate')
+      expect(apiClient.post).toHaveBeenCalledWith('/workouts/workout-1/duplicate')
     })
   })
 })

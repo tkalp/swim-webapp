@@ -37,7 +37,7 @@ describe('workoutResultService', () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toEqual(mockRankings)
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/workout-results/squad/squad-1/rankings?stroke=free&activity=swim&distance=100&result_units=meters'
+        '/workout-results/squad/squad-1/rankings?stroke=free&activity=swim&distance=100&result_units=meters'
       )
     })
 
@@ -66,7 +66,7 @@ describe('workoutResultService', () => {
 
       expect(result).toEqual([50, 100, 200])
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/workout-results/squad/squad-1/available-distances?stroke=free&activity=swim&result_units=meters'
+        '/workout-results/squad/squad-1/available-distances?stroke=free&activity=swim&result_units=meters'
       )
     })
 

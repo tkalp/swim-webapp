@@ -122,7 +122,7 @@ describe('workoutTagService', () => {
       vi.mocked(apiClient.post).mockResolvedValue(undefined)
 
       await expect(setWorkoutTags('workout-1', ['tag-1', 'tag-2'])).resolves.toBeUndefined()
-      expect(apiClient.post).toHaveBeenCalledWith('/api/workouts/workout-1/tags/set', {
+      expect(apiClient.post).toHaveBeenCalledWith('/workouts/workout-1/tags/set', {
         tag_ids: ['tag-1', 'tag-2']
       })
     })

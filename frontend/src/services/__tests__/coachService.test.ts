@@ -138,7 +138,7 @@ describe('coachService', () => {
 
       await addCoachToSquad('squad-1', 'coach-1', 'admin', 'creator-1', permissions);
 
-      expect(apiClient.post).toHaveBeenCalledWith('/api/permissions/squad-coach', {
+      expect(apiClient.post).toHaveBeenCalledWith('/permissions/squad-coach', {
         squad_id: 'squad-1',
         coach_id: 'coach-1',
         role: 'admin',

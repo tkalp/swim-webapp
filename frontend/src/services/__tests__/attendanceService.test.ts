@@ -32,7 +32,7 @@ describe('attendanceService', () => {
       const result = await getAttendanceBySession('session-1')
 
       expect(result).toEqual(mockAttendance)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/attendance/session/session-1')
+      expect(apiClient.get).toHaveBeenCalledWith('/attendance/session/session-1')
     })
 
     it('should return empty array when no attendance found', async () => {
@@ -67,7 +67,7 @@ describe('attendanceService', () => {
       const result = await getAttendanceBySwimmer('swimmer-1')
 
       expect(result).toEqual(mockAttendance)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/attendance/swimmer/swimmer-1')
+      expect(apiClient.get).toHaveBeenCalledWith('/attendance/swimmer/swimmer-1')
     })
 
     it('should filter by date range when provided', async () => {
@@ -90,7 +90,7 @@ describe('attendanceService', () => {
 
       expect(result).toEqual(mockAttendance)
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/attendance/swimmer/swimmer-1?from_date=2024-01-01&to_date=2024-01-31'
+        '/attendance/swimmer/swimmer-1?from_date=2024-01-01&to_date=2024-01-31'
       )
     })
 
@@ -117,7 +117,7 @@ describe('attendanceService', () => {
       const result = await upsertAttendance('session-1', 'swimmer-1', 'present', 'Good session')
 
       expect(result).toEqual(mockAttendance)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/attendance/upsert', {
+      expect(apiClient.post).toHaveBeenCalledWith('/attendance/upsert', {
         training_session_id: 'session-1',
         swimmer_id: 'swimmer-1',
         status: 'present',
@@ -162,7 +162,7 @@ describe('attendanceService', () => {
 
       expect(result).toHaveLength(2)
       expect(result).toEqual(mockAttendance)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/attendance/bulk-upsert', {
+      expect(apiClient.post).toHaveBeenCalledWith('/attendance/bulk-upsert', {
         session_id: 'session-1',
         records,
       })
@@ -180,7 +180,7 @@ describe('attendanceService', () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteAttendance('att-1')).resolves.toBeUndefined()
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/attendance/att-1')
+      expect(apiClient.delete).toHaveBeenCalledWith('/attendance/att-1')
     })
 
     it('should throw error on deletion failure', async () => {
@@ -206,7 +206,7 @@ describe('attendanceService', () => {
 
       expect(result.swimmers).toHaveLength(2)
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/attendance/session/session-1/with-swimmers?squad_id=squad-1'
+        '/attendance/session/session-1/with-swimmers?squad_id=squad-1'
       )
     })
 

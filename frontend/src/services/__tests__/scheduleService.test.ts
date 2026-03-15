@@ -35,7 +35,7 @@ describe('scheduleService', () => {
       const result = await createSchedule(createData)
 
       expect(result).toEqual(mockSchedule)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/training-schedules', {
+      expect(apiClient.post).toHaveBeenCalledWith('/training-schedules', {
         active: true,
         ...createData,
       })
@@ -74,7 +74,7 @@ describe('scheduleService', () => {
       const result = await updateSchedule('schedule-1', updates)
 
       expect(result).toEqual(mockUpdatedSchedule)
-      expect(apiClient.put).toHaveBeenCalledWith('/api/training-schedules/schedule-1', updates)
+      expect(apiClient.put).toHaveBeenCalledWith('/training-schedules/schedule-1', updates)
     })
 
     it('should throw error on update failure', async () => {
@@ -89,7 +89,7 @@ describe('scheduleService', () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteSchedule('schedule-1')).resolves.toBeUndefined()
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/training-schedules/schedule-1')
+      expect(apiClient.delete).toHaveBeenCalledWith('/training-schedules/schedule-1')
     })
 
     it('should throw error on deletion failure', async () => {
@@ -117,7 +117,7 @@ describe('scheduleService', () => {
 
       expect(result).toEqual(mockDeactivatedSchedule)
       expect(result.active).toBe(false)
-      expect(apiClient.put).toHaveBeenCalledWith('/api/training-schedules/schedule-1', { active: false })
+      expect(apiClient.put).toHaveBeenCalledWith('/training-schedules/schedule-1', { active: false })
     })
   })
 })

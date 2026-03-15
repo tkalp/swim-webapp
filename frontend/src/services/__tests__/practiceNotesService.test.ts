@@ -29,7 +29,7 @@ describe('practiceNotesService', () => {
       const result = await getPrePracticeNote('session-1')
 
       expect(result).toEqual(mockNote)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/practice-notes/pre/session-1')
+      expect(apiClient.get).toHaveBeenCalledWith('/practice-notes/pre/session-1')
     })
 
     it('should return null when note not found', async () => {
@@ -70,7 +70,7 @@ describe('practiceNotesService', () => {
       const result = await getPostPracticeNote('session-1')
 
       expect(result).toEqual(mockNote)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/practice-notes/post/session-1')
+      expect(apiClient.get).toHaveBeenCalledWith('/practice-notes/post/session-1')
     })
 
     it('should return null when note not found', async () => {
@@ -102,7 +102,7 @@ describe('practiceNotesService', () => {
       const result = await upsertPrePracticeNote(noteData)
 
       expect(result).toEqual(mockNote)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/practice-notes/pre', {
+      expect(apiClient.post).toHaveBeenCalledWith('/practice-notes/pre', {
         training_session_id: 'session-1',
         notes: 'Bring kickboards',
       })
@@ -135,7 +135,7 @@ describe('practiceNotesService', () => {
       const result = await upsertPostPracticeNote(noteData)
 
       expect(result).toEqual(mockNote)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/practice-notes/post', {
+      expect(apiClient.post).toHaveBeenCalledWith('/practice-notes/post', {
         training_session_id: 'session-1',
         notes: 'Swimmers showed improvement',
       })
@@ -147,7 +147,7 @@ describe('practiceNotesService', () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deletePrePracticeNote('note-1')).resolves.toBeUndefined()
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/practice-notes/pre/note-1')
+      expect(apiClient.delete).toHaveBeenCalledWith('/practice-notes/pre/note-1')
     })
 
     it('should throw error on deletion failure', async () => {
@@ -162,7 +162,7 @@ describe('practiceNotesService', () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deletePostPracticeNote('note-1')).resolves.toBeUndefined()
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/practice-notes/post/note-1')
+      expect(apiClient.delete).toHaveBeenCalledWith('/practice-notes/post/note-1')
     })
   })
 })

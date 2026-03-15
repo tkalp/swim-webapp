@@ -25,7 +25,7 @@ describe('swimmerService', () => {
       const result = await getSwimmersBySquad('squad-1')
 
       expect(result).toEqual(mockSwimmers)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/squads/squad-1/swimmers')
+      expect(apiClient.get).toHaveBeenCalledWith('/squads/squad-1/swimmers')
     })
 
     it('should throw error on failure', async () => {

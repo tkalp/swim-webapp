@@ -39,7 +39,7 @@ describe('squadService', () => {
         role: 'owner',
         swimmers_count: 3
       })
-      expect(apiClient.get).toHaveBeenCalledWith('/api/squads')
+      expect(apiClient.get).toHaveBeenCalledWith('/squads')
     })
 
     it('should return empty array when no squads', async () => {
@@ -71,7 +71,7 @@ describe('squadService', () => {
       const result = await getSquadById('squad-1')
 
       expect(result).toEqual(mockSquad)
-      expect(apiClient.get).toHaveBeenCalledWith('/api/squads/squad-1')
+      expect(apiClient.get).toHaveBeenCalledWith('/squads/squad-1')
     })
 
     it('should return null when squad not found', async () => {
@@ -102,7 +102,7 @@ describe('squadService', () => {
       const result = await createSquad('coach-1', createData)
 
       expect(result).toEqual(mockSquad)
-      expect(apiClient.post).toHaveBeenCalledWith('/api/squads', {
+      expect(apiClient.post).toHaveBeenCalledWith('/squads', {
         ...createData,
         coach_id: 'coach-1'
       })
@@ -132,7 +132,7 @@ describe('squadService', () => {
       const result = await updateSquad('squad-1', updates)
 
       expect(result).toEqual(mockUpdatedSquad)
-      expect(apiClient.put).toHaveBeenCalledWith('/api/squads/squad-1', updates)
+      expect(apiClient.put).toHaveBeenCalledWith('/squads/squad-1', updates)
     })
 
     it('should throw error on update failure', async () => {
@@ -147,7 +147,7 @@ describe('squadService', () => {
       vi.mocked(apiClient.delete).mockResolvedValue(undefined)
 
       await expect(deleteSquad('squad-1')).resolves.toBeUndefined()
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/squads/squad-1')
+      expect(apiClient.delete).toHaveBeenCalledWith('/squads/squad-1')
     })
 
     it('should throw error on deletion failure', async () => {
