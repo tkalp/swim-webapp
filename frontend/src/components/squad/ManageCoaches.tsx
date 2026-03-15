@@ -8,7 +8,6 @@ import {
   getSquadCoaches,
   updateCoachPermissions,
   removeCoachFromSquad,
-  DEFAULT_PERMISSIONS,
   type CoachSquadMembership,
   type SquadPermissions,
 } from '@/services/permissionService';
@@ -81,7 +80,7 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
         selectedCoachId,
         selectedRole,
         user.id,
-        DEFAULT_PERMISSIONS[selectedRole] as Record<string, boolean>
+        {}
       );
 
       setShowAdd(false);
@@ -316,9 +315,9 @@ export function ManageCoaches({ squadId, canManage }: ManageCoachesProps) {
                     { key: 'can_manage_results', label: 'Manage Results' },
                     { key: 'can_manage_attendance', label: 'Manage Attendance' },
                     { key: 'can_manage_schedules', label: 'Manage Schedules' },
-                    { key: 'can_manage_sessions', label: 'Manage Sessions' },
                     { key: 'can_view_analytics', label: 'View Analytics' },
                     { key: 'can_manage_notes', label: 'Manage Notes' },
+                    { key: 'can_manage_squad_settings', label: 'Manage Squad Settings' },
                   ].map((perm) => (
                     <label key={perm.key} className="flex items-center gap-2 text-xs text-slate-100 cursor-pointer">
                       <input

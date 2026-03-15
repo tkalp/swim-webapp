@@ -17,7 +17,7 @@ export function SquadCoachesTab({ squadId }: SquadCoachesTabProps) {
     );
   }
 
-  const canManageCoaches = hasPermission('can_manage_coaches');
+  const canManageCoaches = hasPermission('can_manage_squad_settings');
 
   return (
     <div className="space-y-6">

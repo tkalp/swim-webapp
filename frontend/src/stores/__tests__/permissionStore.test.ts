@@ -5,21 +5,6 @@ import * as permissionService from '@/services/permissionService'
 
 vi.mock('../../services/permissionService', () => ({
   getCoachPermissions: vi.fn(),
-  DEFAULT_PERMISSIONS: {
-    owner: {
-      can_manage_swimmers: true,
-      can_manage_workouts: true,
-      can_manage_results: true,
-      can_manage_attendance: true,
-      can_manage_schedules: true,
-      can_view_analytics: true,
-      can_manage_squad_settings: true,
-      can_manage_coaches: true,
-      can_manage_sessions: true,
-      can_manage_notes: true,
-      can_view_notes: true,
-    },
-  },
 }))
 
 describe('permissionStore', () => {
@@ -51,12 +36,9 @@ describe('permissionStore', () => {
         can_manage_results: true,
         can_manage_attendance: true,
         can_manage_schedules: true,
+        can_manage_notes: true,
         can_view_analytics: true,
         can_manage_squad_settings: true,
-        can_manage_coaches: true,
-        can_manage_sessions: true,
-        can_manage_notes: true,
-        can_view_notes: true,
       }
 
       vi.mocked(permissionService.getCoachPermissions).mockResolvedValue(mockPermissions)
