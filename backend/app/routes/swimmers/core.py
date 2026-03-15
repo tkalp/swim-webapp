@@ -9,7 +9,6 @@ from sqlalchemy import select, and_, func, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.services.swimmer_service import SwimmerService
 from app.middleware.auth import get_current_user_id
 from app.middleware.authorization import get_coach_membership
 from app.domain.exceptions import UnauthorizedError
@@ -66,28 +65,33 @@ async def list_swimmers(
 ) -> List[Dict[str, Any]]:
     """Get all swimmers for the authenticated user."""
     try:
-        swimmer_service = SwimmerService()
-
         if squad_id:
             await get_coach_membership(db, user_id, squad_id)
-            result = await db.execute(
-                select(Swimmer).where(Swimmer.squad_id == squad_id)
-            )
-            swimmer_rows = result.scalars().all()
-            swimmers = [
-                {
-                    'id': str(s.id),
-                    'first_name': s.first_name,
-                    'last_name': s.last_name,
-                    'date_of_birth': s.date_of_birth.isoformat() if s.date_of_birth else None,
-                    'sex': s.sex,
-                    'created_at': s.created_at.isoformat() if s.created_at else None,
-                    'squad_id': str(s.squad_id) if s.squad_id else None,
-                }
-                for s in swimmer_rows
-            ]
+            stmt = select(Swimmer).where(Swimmer.squad_id == squad_id)
         else:
-            swimmers = swimmer_service.get_swimmers_for_user(user_id)
+            # Get all swimmers across all squads the coach belongs to
+            from app.infrastructure.models import CoachSquad
+            stmt = (
+                select(Swimmer)
+                .join(CoachSquad, CoachSquad.squad_id == Swimmer.squad_id)
+                .where(CoachSquad.coach_id == user_id)
+                .order_by(Swimmer.first_name, Swimmer.last_name)
+            )
+
+        result = await db.execute(stmt)
+        swimmer_rows = result.scalars().all()
+        swimmers = [
+            {
+                'id': str(s.id),
+                'first_name': s.first_name,
+                'last_name': s.last_name,
+                'date_of_birth': s.date_of_birth.isoformat() if s.date_of_birth else None,
+                'sex': s.sex,
+                'created_at': s.created_at.isoformat() if s.created_at else None,
+                'squad_id': str(s.squad_id) if s.squad_id else None,
+            }
+            for s in swimmer_rows
+        ]
 
         if include_stats and swimmers:
             swimmers = await _enrich_swimmers_with_stats(db, swimmers)
@@ -99,40 +103,63 @@ async def list_swimmers(
 
 @router.get("/{swimmer_id}")
 async def get_swimmer(
-    swimmer_id: int,
+    swimmer_id: str,
     include_external_link: bool = Query(False),
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get a specific swimmer by ID."""
     try:
-        swimmer_service = SwimmerService()
-        swimmer = swimmer_service.get_swimmer(
-            swimmer_id,
-            user_id=user_id,
-            include_external_link=include_external_link
-        )
-        return swimmer
+        if include_external_link:
+            stmt = (
+                select(Swimmer)
+                .options(selectinload(Swimmer.external_links))
+                .where(Swimmer.id == swimmer_id)
+            )
+        else:
+            stmt = select(Swimmer).where(Swimmer.id == swimmer_id)
+
+        result = await db.execute(stmt)
+        swimmer = result.scalar_one_or_none()
+        if not swimmer:
+            raise HTTPException(status_code=404, detail="Swimmer not found")
+
+        if swimmer.squad_id:
+            await get_coach_membership(db, user_id, str(swimmer.squad_id))
+
+        d = _row_to_dict(swimmer)
+        if include_external_link:
+            d["external_links"] = [_row_to_dict(link) for link in swimmer.external_links]
+        return d
+    except HTTPException:
+        raise
     except Exception as e:
         raise handle_service_error(e)
 
 
 @router.get("/{swimmer_id}/enhanced")
 async def get_swimmer_enhanced(
-    swimmer_id: int,
+    swimmer_id: str,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get swimmer with enhanced stats."""
     try:
-        swimmer_service = SwimmerService()
-
-        swimmer = swimmer_service.get_swimmer(
-            swimmer_id, user_id=user_id, include_external_link=True
+        result = await db.execute(
+            select(Swimmer)
+            .options(selectinload(Swimmer.external_links))
+            .where(Swimmer.id == swimmer_id)
         )
+        swimmer_row = result.scalar_one_or_none()
+        if not swimmer_row:
+            raise HTTPException(status_code=404, detail="Swimmer not found")
 
         # Verify squad membership for this swimmer
-        if swimmer.get("squad_id"):
-            await get_coach_membership(db, user_id, str(swimmer["squad_id"]))
+        if swimmer_row.squad_id:
+            await get_coach_membership(db, user_id, str(swimmer_row.squad_id))
+
+        swimmer = _row_to_dict(swimmer_row)
+        swimmer["external_links"] = [_row_to_dict(link) for link in swimmer_row.external_links]
 
         # Get last activity
         last_activity_result = await db.execute(

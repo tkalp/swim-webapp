@@ -4,9 +4,10 @@ import statistics
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.workout import WorkoutResultRepository, RaceSplitRepository
-from app.services.authorization_service import AuthorizationService
+from app.repositories.swimmer import SwimmerRepository
 from app.services.prediction.time_utils import PoolConverter
 from app.domain.value_objects.time import interval_to_seconds
+from app.domain.exceptions import UnauthorizedError
 
 
 class PerformanceService:
@@ -17,17 +18,21 @@ class PerformanceService:
         db: AsyncSession,
         workout_repo: Optional[WorkoutResultRepository] = None,
         split_repo: Optional[RaceSplitRepository] = None,
-        auth_service: Optional[AuthorizationService] = None
     ):
         self.db = db
         self.workout_repo = workout_repo or WorkoutResultRepository(db)
         self.split_repo = split_repo or RaceSplitRepository(db)
-        self.auth_service = auth_service or AuthorizationService(db=db)
+        self._swimmer_repo = SwimmerRepository(db)
 
     async def _verify_swimmer_access(self, swimmer_id: str, coach_id: Optional[str]) -> None:
+        """Verify that a coach has access to a swimmer via squad membership."""
         if not coach_id:
             return
-        await self.auth_service.verify_swimmer_ownership(swimmer_id, coach_id)
+        has_access = await self._swimmer_repo.verify_coach_access(swimmer_id, coach_id)
+        if not has_access:
+            raise UnauthorizedError(
+                f"Coach {coach_id} not authorized to access swimmer {swimmer_id}"
+            )
 
     async def get_best_times(
         self,
