@@ -7,11 +7,12 @@ from dotenv import load_dotenv
 import os
 
 from app.routes import (
-    ai_coach, workout_analysis, swimrankings, squads, workout_tags,
+    ai_coach, workout_analysis, swimrankings, workout_tags,
     coach_connections, admin, training_sessions, coaches,
     workout_ratings, workout_sharing, auth, time_standards,
     practice_notes, permissions, notifications,
     squad_crud, calendar, attendance, schedules, workouts, workout_results,
+    squad_analytics, squad_performance, squad_sync,
 )
 from app.routes.swimmers import router as swimmers_router
 from app.middleware.logging_middleware import LoggingMiddleware
@@ -104,7 +105,9 @@ app.include_router(auth.router)
 app.include_router(ai_coach.router)
 app.include_router(workout_analysis.router)
 app.include_router(swimrankings.router)
-app.include_router(squads.router)
+app.include_router(squad_analytics.router)
+app.include_router(squad_performance.router)
+app.include_router(squad_sync.router)
 app.include_router(workout_tags.router)
 app.include_router(coach_connections.router)
 app.include_router(swimmers_router)
