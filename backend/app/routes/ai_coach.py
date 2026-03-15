@@ -11,7 +11,7 @@ from app.models.schemas import (
     GenerateWorkoutTitleResponse,
     HealthResponse,
 )
-from app.services.chroma_service import (
+from app.services.ai_coach import (
     generate_workout,
     generate_workout_description,
     generate_workout_title,
