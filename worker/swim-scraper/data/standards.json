@@ -1,0 +1,35 @@
+{
+  "OQT2024": {
+    "name": "2024 Paris Olympic Qualifying Times",
+    "events": [
+      {"event": "50m Freestyle", "course": "LCM", "gender": "M", "time": "21.96"},
+      {"event": "100m Freestyle", "course": "LCM", "gender": "M", "time": "47.61"},
+      {"event": "200m Freestyle", "course": "LCM", "gender": "M", "time": "1:45.49"},
+      {"event": "400m Freestyle", "course": "LCM", "gender": "M", "time": "3:44.95"},
+      {"event": "800m Freestyle", "course": "LCM", "gender": "M", "time": "7:47.65"},
+      {"event": "1500m Freestyle", "course": "LCM", "gender": "M", "time": "14:55.70"},
+      {"event": "100m Backstroke", "course": "LCM", "gender": "M", "time": "53.33"},
+      {"event": "200m Backstroke", "course": "LCM", "gender": "M", "time": "1:56.01"},
+      {"event": "100m Breaststroke", "course": "LCM", "gender": "M", "time": "59.04"},
+      {"event": "200m Breaststroke", "course": "LCM", "gender": "M", "time": "2:08.28"},
+      {"event": "100m Butterfly", "course": "LCM", "gender": "M", "time": "51.05"},
+      {"event": "200m Butterfly", "course": "LCM", "gender": "M", "time": "1:54.23"},
+      {"event": "200m Medley", "course": "LCM", "gender": "M", "time": "1:57.10"},
+      {"event": "400m Medley", "course": "LCM", "gender": "M", "time": "4:10.47"},
+      {"event": "50m Freestyle", "course": "LCM", "gender": "F", "time": "24.69"},
+      {"event": "100m Freestyle", "course": "LCM", "gender": "F", "time": "53.41"},
+      {"event": "200m Freestyle", "course": "LCM", "gender": "F", "time": "1:56.01"},
+      {"event": "400m Freestyle", "course": "LCM", "gender": "F", "time": "4:04.42"},
+      {"event": "800m Freestyle", "course": "LCM", "gender": "F", "time": "8:25.67"},
+      {"event": "1500m Freestyle", "course": "LCM", "gender": "F", "time": "16:08.71"},
+      {"event": "100m Backstroke", "course": "LCM", "gender": "F", "time": "59.42"},
+      {"event": "200m Backstroke", "course": "LCM", "gender": "F", "time": "2:08.10"},
+      {"event": "100m Breaststroke", "course": "LCM", "gender": "F", "time": "1:06.29"},
+      {"event": "200m Breaststroke", "course": "LCM", "gender": "F", "time": "2:23.02"},
+      {"event": "100m Butterfly", "course": "LCM", "gender": "F", "time": "57.10"},
+      {"event": "200m Butterfly", "course": "LCM", "gender": "F", "time": "2:07.07"},
+      {"event": "200m Medley", "course": "LCM", "gender": "F", "time": "2:10.28"},
+      {"event": "400m Medley", "course": "LCM", "gender": "F", "time": "4:37.34"}
+    ]
+  }
+}
