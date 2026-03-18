@@ -163,7 +163,6 @@ def _enqueue_sync_task(swimmer_id: str, link: SwimmerExternalLink) -> str:
                 'swimmer_id': swimmer_id,
                 'external_link_id': str(link.id),
                 'external_id': link.external_athlete_id,
-                'limit_events': None
             }
         )
 
