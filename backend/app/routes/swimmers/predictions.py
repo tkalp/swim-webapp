@@ -296,10 +296,12 @@ def _group_results_by_event(results: list) -> dict:
                 event_display = f"{distance}m {stroke.title()} {activity.title()} {units}"
 
                 # Extract date (without time component)
-                date_only = (
-                    performed_on.split('T')[0]
-                    if 'T' in performed_on else performed_on
-                )
+                if hasattr(performed_on, 'isoformat'):
+                    date_only = performed_on.isoformat()[:10]
+                elif isinstance(performed_on, str) and 'T' in performed_on:
+                    date_only = performed_on.split('T')[0]
+                else:
+                    date_only = str(performed_on)
 
                 events_data[event_key][date_only].append({
                     'time_seconds': time_seconds,
