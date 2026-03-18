@@ -1,14 +1,33 @@
 version: '3.8'
 
 services:
+  # PostgreSQL - Primary database
+  postgres:
+    image: postgres:16-alpine
+    container_name: aquilus-postgres
+    environment:
+      POSTGRES_USER: aquilus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aquilus}
+      POSTGRES_DB: aquilus
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - aquilus-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aquilus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Frontend - Nginx serving static files
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_SUPABASE_URL=${SUPABASE_URL}
-        - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
         - VITE_API_URL=/api
         - VITE_MIXPANEL_TOKEN=${VITE_MIXPANEL_TOKEN}
     container_name: aquilus-frontend
@@ -31,20 +50,19 @@ services:
       dockerfile: Dockerfile
     container_name: aquilus-backend
     environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - DATABASE_URL=postgresql+asyncpg://aquilus:${POSTGRES_PASSWORD:-aquilus}@postgres:5432/aquilus
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - USE_OXYLABS_PROXY=${USE_OXYLABS_PROXY}
-      - OXYLABS_USERNAME=${OXYLABS_USERNAME}
-      - OXYLABS_PASSWORD=${OXYLABS_PASSWORD}
-      - OXYLABS_COUNTRY=${OXYLABS_COUNTRY}
       - REDIS_URL=redis://redis:6379/0
     expose:
       - "8000"
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
     networks:
       - aquilus-network
@@ -81,24 +99,22 @@ services:
       dockerfile: ./worker/Dockerfile
     container_name: aquilus-worker
     environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - USE_OXYLABS_PROXY=${USE_OXYLABS_PROXY}
-      - OXYLABS_USERNAME=${OXYLABS_USERNAME}
-      - OXYLABS_PASSWORD=${OXYLABS_PASSWORD}
-      - OXYLABS_COUNTRY=${OXYLABS_COUNTRY}
+      - DATABASE_URL=postgresql+asyncpg://aquilus:${POSTGRES_PASSWORD:-aquilus}@postgres:5432/aquilus
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SCRAPER_MAX_WORKERS=${SCRAPER_MAX_WORKERS}
-      - SCRAPER_MIN_DELAY=2.0
-      - SCRAPER_MAX_DELAY=4.0
+      - SWIMRANKINGS_EMAIL=${SWIMRANKINGS_EMAIL}
+      - SWIMRANKINGS_PASSWORD=${SWIMRANKINGS_PASSWORD}
+      - CHROMIUM_PATH=/usr/bin/chromium
+      - BROWSER_PROFILE_DIR=/tmp/swimrankings_profile
       - AUTO_GEN_DAYS_AHEAD=${AUTO_GEN_DAYS_AHEAD}
       - AUTO_GEN_SCHEDULE_HOUR=${AUTO_GEN_SCHEDULE_HOUR}
       - AUTO_GEN_SCHEDULE_MINUTE=${AUTO_GEN_SCHEDULE_MINUTE}
-      - MAX_WORKERS=${MAX_WORKERS}
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
     networks:
       - aquilus-network
@@ -109,4 +125,5 @@ networks:
     driver: bridge
 
 volumes:
+  postgres-data:
   redis-data:
