@@ -2,8 +2,8 @@
 Domain models and types for worker service
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Literal
+from dataclasses import dataclass
+from typing import Optional, Literal
 from datetime import datetime
 from enum import Enum
 
@@ -25,36 +25,6 @@ class SyncMode(Enum):
     PARTIAL_HISTORY = "partial_history"
     FULL_HISTORY = "full_history"
 
-
-@dataclass
-class RaceSplit:
-    """Represents a single race split"""
-    split_distance: int
-    split_time: float
-    cumulative_time: float
-    split_order: int
-
-
-@dataclass
-class AttemptData:
-    """Represents a single swimming attempt/result"""
-    time: str
-    points: int
-    date: str
-    location: str
-    meet_name: str
-    course: str
-    result_id: Optional[str] = None
-    meet_link: Optional[str] = None
-
-
-@dataclass
-class ResultWithSplits:
-    """Represents an attempt with its splits and reaction time"""
-    attempt: AttemptData
-    reaction_time: Optional[float] = None
-    splits: List[RaceSplit] = field(default_factory=list)
-    has_splits_available: Optional[bool] = None  # None=unknown, True=has splits, False=unavailable
 
 
 @dataclass
