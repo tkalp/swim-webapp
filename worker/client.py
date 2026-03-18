@@ -14,7 +14,7 @@ if _scraper_path not in sys.path:
     sys.path.insert(0, _scraper_path)
 
 from swimrankings import SwimRankings
-from worker import config
+from worker.config import WorkerConfig as config
 
 logger = logging.getLogger("client")
 
