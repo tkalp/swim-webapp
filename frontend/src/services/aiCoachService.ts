@@ -1,6 +1,6 @@
 // services/aiCoachService.ts
 
-import type { BestTimes } from '@/types/ai-coach/types';
+import type { BestTimes, Conversation, Message } from '@/types/ai-coach/types';
 import { authenticatedFetch } from '@/lib/apiClient';
 import { API_BASE_URL } from '@/lib/api';
 
@@ -98,6 +98,82 @@ export async function checkAPIHealth(): Promise<APIHealthResponse> {
     throw new Error(`API health check failed: ${response.status}`);
   }
   
+  return response.json();
+}
+
+// Conversation API functions
+
+/**
+ * List all conversations for the current user
+ */
+export async function listConversations(): Promise<Conversation[]> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/ai-coach/conversations`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to list conversations' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+/**
+ * Create a new conversation, optionally with a title
+ */
+export async function createConversation(title?: string): Promise<Conversation> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/ai-coach/conversations`, {
+    method: 'POST',
+    body: JSON.stringify({ title: title || null }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to create conversation' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch a single conversation and its message history
+ */
+export async function getConversation(id: string): Promise<{ conversation: Conversation; messages: Message[] }> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/ai-coach/conversations/${id}`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to load conversation' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+/**
+ * Delete a conversation by ID (204 No Content on success)
+ */
+export async function deleteConversation(id: string): Promise<void> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/ai-coach/conversations/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to delete conversation' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+}
+
+/**
+ * Send a message in a conversation; returns both the persisted coach message and the assistant reply
+ */
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+  metadata?: object
+): Promise<{ coach_message: Message; assistant_message: Message }> {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/ai-coach/conversations/${conversationId}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ content, metadata }),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to send message' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
   return response.json();
 }
 
