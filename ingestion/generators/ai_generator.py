@@ -27,12 +27,13 @@ FOCUSES: list[str] = [
 ]
 
 LEVELS: dict[str, str] = {
+    "development": "swimmers learning how to swim and getting into competitive swimming (8-12 years old)",
     "age_group": "competitive age-group swimmers (12-17 years old)",
     "senior": "senior/college-level competitive swimmers",
     "masters": "adult masters swimmers (fitness-oriented, mixed ability)",
 }
 
-DISTANCES: list[int] = list(range(2000, 6500, 500))  # 2000-6000 inclusive
+DISTANCES: list[int] = list(range(1500, 6500, 500))  # 2000-6000 inclusive
 
 STROKE_EMPHASIS: list[str] = [
     "freestyle-heavy",
@@ -98,6 +99,8 @@ async def _generate_one(
     prompt = _build_prompt(focus, level, level_description, distance, stroke_emphasis, unit)
 
     async with semaphore:
+        # Throttle to stay under 50 RPM API limit (~1.5s between requests)
+        await asyncio.sleep(1.5)
         try:
             response = await client.messages.create(
                 model=MODEL,
@@ -126,9 +129,9 @@ async def _generate_one(
 
 async def generate_workouts(
     count: int = 300,
-    unit: str = "yards",
+    unit: str = "meters",
     client: Optional[anthropic.AsyncAnthropic] = None,
-    max_concurrent: int = 10,
+    max_concurrent: int = 2,
 ) -> list[RawWorkout]:
     """Generate *count* AI workouts by sampling from the parameter matrix.
 

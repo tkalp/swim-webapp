@@ -32,7 +32,9 @@ def _resolve_chroma_path(ctx_param: Optional[str]) -> str:
     # Lazy import so CLI startup stays fast when dotenv isn't needed
     from dotenv import dotenv_values
 
-    env = dotenv_values(Path("backend") / ".env")
+    # Load root .env first, then backend/.env as fallback
+    env = dotenv_values(Path(".env"))
+    env.update({k: v for k, v in dotenv_values(Path("backend") / ".env").items() if k not in env})
     path = env.get("CHROMA_DB_PATH")
     if path:
         return path
@@ -43,7 +45,7 @@ def _resolve_chroma_path(ctx_param: Optional[str]) -> str:
     if path:
         return path
 
-    click.echo("Error: --chroma-path is required (or set CHROMA_DB_PATH in backend/.env)", err=True)
+    click.echo("Error: --chroma-path is required (or set CHROMA_DB_PATH in .env)", err=True)
     sys.exit(1)
 
 
@@ -79,6 +81,11 @@ def _print_stats(stats: dict[str, int]) -> None:
 @click.pass_context
 def cli(ctx: click.Context, chroma_path: Optional[str], verbose: bool) -> None:
     """Aquilus workout ingestion pipeline CLI."""
+    # Load .env files into os.environ so Anthropic SDK can find ANTHROPIC_API_KEY
+    from dotenv import load_dotenv
+    load_dotenv(Path(".env"))                  # root .env (primary)
+    load_dotenv(Path("backend") / ".env")      # backend .env (fallback, won't override)
+
     ctx.ensure_object(dict)
     ctx.obj["chroma_path_flag"] = chroma_path
     ctx.obj["verbose"] = verbose
@@ -167,10 +174,15 @@ def import_cmd(ctx: click.Context, file_path: Optional[str], dry_run: bool) -> N
 
 @cli.command()
 @click.option("--count", default=300, show_default=True, help="Number of workouts to generate.")
+@click.option("--unit", default="meters", show_default=True, type=click.Choice(["meters", "yards"]), help="Distance unit.")
+@click.option("--batch-size", default=25, show_default=True, help="Persist to ChromaDB every N workouts.")
 @click.option("--dry-run", is_flag=True, default=False, help="Run pipeline without writing to ChromaDB.")
 @click.pass_context
-def generate(ctx: click.Context, count: int, dry_run: bool) -> None:
-    """Generate AI workouts via Claude and run through the pipeline."""
+def generate(ctx: click.Context, count: int, unit: str, batch_size: int, dry_run: bool) -> None:
+    """Generate AI workouts via Claude and run through the pipeline.
+
+    Persists every --batch-size workouts so progress is not lost on crash.
+    """
     import asyncio
 
     from ingestion.generators.ai_generator import generate_workouts
@@ -178,17 +190,30 @@ def generate(ctx: click.Context, count: int, dry_run: bool) -> None:
 
     chroma_path = _resolve_chroma_path(ctx.obj["chroma_path_flag"])
 
-    click.echo(f"Generating {count} AI workouts...")
+    click.echo(f"Generating {count} AI workouts ({unit}) — persisting every {batch_size}...")
 
-    async def _run() -> dict[str, int]:
-        raw_workouts = await generate_workouts(count=count)
-        click.echo(f"Generated {len(raw_workouts)} raw workouts.")
-        if not raw_workouts:
-            return {"input": 0, "normalized": 0, "classified": 0, "added": 0, "skipped": 0, "normalize_failed": 0}
-        return await run_pipeline(raw_workouts, chroma_path, dry_run=dry_run)
+    total_stats = {"input": 0, "normalized": 0, "classified": 0, "added": 0, "skipped": 0, "normalize_failed": 0}
+    generated_so_far = 0
 
-    stats = asyncio.run(_run())
-    _print_stats(stats)
+    # Generate and persist in batches
+    while generated_so_far < count:
+        this_batch = min(batch_size, count - generated_so_far)
+        click.echo(f"\n  Batch {generated_so_far // batch_size + 1}: generating {this_batch} workouts...")
+
+        async def _run_batch() -> dict[str, int]:
+            raw = await generate_workouts(count=this_batch, unit=unit)
+            click.echo(f"    Generated {len(raw)}, running through pipeline...")
+            if not raw:
+                return {"input": 0, "normalized": 0, "classified": 0, "added": 0, "skipped": 0, "normalize_failed": 0}
+            return await run_pipeline(raw, chroma_path, dry_run=dry_run)
+
+        batch_stats = asyncio.run(_run_batch())
+        for k in total_stats:
+            total_stats[k] += batch_stats.get(k, 0)
+        generated_so_far += this_batch
+        click.echo(f"    Persisted. Total added so far: {total_stats['added']}")
+
+    _print_stats(total_stats)
 
 
 # ---------------------------------------------------------------------------

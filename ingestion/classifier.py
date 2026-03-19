@@ -154,7 +154,7 @@ async def classify_workout(
 async def classify_batch(
     workouts: list[NormalizedWorkout],
     client: AsyncAnthropic | None = None,
-    max_concurrent: int = 10,
+    max_concurrent: int = 2,
 ) -> list[WorkoutMetadata]:
     """Classify multiple workouts concurrently.
 
@@ -182,6 +182,7 @@ async def classify_batch(
 
     async def _limited(workout: NormalizedWorkout) -> WorkoutMetadata:
         async with semaphore:
+            await asyncio.sleep(1.5)  # Throttle to stay under 50 RPM API limit
             return await classify_workout(workout, client=client)
 
     return list(await asyncio.gather(*[_limited(w) for w in workouts]))
