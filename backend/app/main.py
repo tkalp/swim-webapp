@@ -13,6 +13,7 @@ from app.routes import (
     practice_notes, permissions, notifications,
     squad_crud, calendar, attendance, schedules, workouts, workout_results,
     squad_analytics, squad_performance, squad_sync,
+    coach_style,
 )
 from app.routes.swimmers import router as swimmers_router
 from app.middleware.logging_middleware import LoggingMiddleware
@@ -126,6 +127,7 @@ app.include_router(attendance.router)
 app.include_router(schedules.router)
 app.include_router(workouts.router)
 app.include_router(workout_results.router)
+app.include_router(coach_style.router)
 
 
 @app.get("/health")
