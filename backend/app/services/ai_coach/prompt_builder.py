@@ -247,3 +247,89 @@ def build_athlete_context(best_times: Optional[Dict[str, str]] = None) -> str:
         context_parts.append("\n**IMPORTANT**: Use these calculated intervals as a baseline. All intervals in the workout should be based on these paces and the athlete's actual performance level.\n")
 
     return '\n'.join(context_parts)
+
+
+# ---------------------------------------------------------------------------
+# Coach style context builders
+# ---------------------------------------------------------------------------
+
+_STYLE_LABELS = {
+    "warm_up_pattern": "Warm-up pattern",
+    "preferred_distances": "Preferred distances",
+    "interval_style": "Interval style",
+    "notation_style": "Notation style",
+    "stroke_emphasis": "Stroke emphasis",
+    "activity_mix": "Activity mix",
+    "set_structure": "Set structure",
+    "personality": "Personality",
+    "typical_volume": "Typical volume",
+    "coaching_cues": "Common coaching cues",
+}
+
+
+def build_style_context(style_profile: Optional[dict] = None) -> str:
+    """Format a pre-computed coaching style profile for the LLM prompt.
+
+    Args:
+        style_profile: Dictionary of style attributes (see _STYLE_LABELS keys).
+                       The ``coaching_cues`` value may be a list of strings.
+
+    Returns:
+        Formatted context block, or "" if the profile is None/empty.
+    """
+    if not style_profile:
+        return ""
+
+    lines = ["COACHING STYLE PROFILE:"]
+    for key, label in _STYLE_LABELS.items():
+        value = style_profile.get(key)
+        if value is None:
+            continue
+        if isinstance(value, list):
+            value = ", ".join(value)
+        lines.append(f"- {label}: {value}")
+
+    # Only the header means nothing useful was present
+    if len(lines) == 1:
+        return ""
+
+    return "\n".join(lines)
+
+
+def build_coach_notes_context(coaching_style_notes: Optional[str] = None) -> str:
+    """Wrap free-text coaching style notes for the LLM prompt.
+
+    Args:
+        coaching_style_notes: Raw notes string entered by the coach.
+
+    Returns:
+        Formatted context block, or "" if notes are None/empty.
+    """
+    if not coaching_style_notes or not coaching_style_notes.strip():
+        return ""
+
+    return f'COACH\'S STYLE NOTES:\n"{coaching_style_notes.strip()}"'
+
+
+def build_coach_examples(workouts: list[dict]) -> str:
+    """Format recent coach workouts as few-shot examples for the LLM prompt.
+
+    Args:
+        workouts: List of dicts with ``name`` and ``raw_description`` keys.
+
+    Returns:
+        Formatted example block, or "" if no workouts are provided.
+    """
+    if not workouts:
+        return ""
+
+    lines = ["RECENT WORKOUTS BY THIS COACH (match this style):"]
+    for workout in workouts:
+        name = workout.get("name", "Untitled")
+        description = workout.get("raw_description", "")
+        lines.append("---")
+        lines.append(name)
+        if description:
+            lines.append(description)
+
+    return "\n".join(lines)
