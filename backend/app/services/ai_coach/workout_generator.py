@@ -20,7 +20,7 @@ from .prompt_builder import (
     build_coach_notes_context,
     build_coach_examples,
 )
-from .client import generate_with_claude
+from .client import generate_with_claude, generate_with_claude_messages
 
 COLLECTION_NAME = "swimming_workouts"
 
@@ -316,3 +316,153 @@ async def generate_workout(
         logger.error("Failed to generate workout with Claude")
         log_error(e, context="generate_workout", num_examples=num_examples)
         raise Exception(f"Failed to generate workout: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Conversation-aware generation
+# ---------------------------------------------------------------------------
+
+async def generate_workout_with_history(
+    conversation_messages: list[dict],
+    coach_id: str | None = None,
+    db=None,
+) -> str:
+    """Generate a workout using multi-turn conversation history + two-stage retrieval.
+
+    This is the conversation-aware counterpart to ``generate_workout()``.
+    Instead of a single prompt, it receives the full conversation history
+    so Claude can handle follow-up requests like "make it harder" or
+    "swap the backstroke for butterfly".
+
+    Args:
+        conversation_messages: List of dicts with ``role`` ("coach" | "assistant")
+                               and ``content`` (str) keys from the DB conversation.
+        coach_id: Optional coach UUID for Stage 2 personalisation.
+        db: Optional async database session for Stage 2 queries.
+
+    Returns:
+        The generated workout text.
+    """
+    if not conversation_messages:
+        raise ValueError("conversation_messages must contain at least one message")
+
+    # ------------------------------------------------------------------
+    # Extract the latest user message for metadata filter / RAG query
+    # ------------------------------------------------------------------
+    latest_user_content = ""
+    for msg in reversed(conversation_messages):
+        if msg.get("role") in ("coach", "user"):
+            latest_user_content = msg["content"]
+            break
+
+    if not latest_user_content:
+        raise ValueError("No user message found in conversation history")
+
+    logger.info(
+        f"Generating workout with history | "
+        f"turns={len(conversation_messages)} | "
+        f"has_coach={bool(coach_id)} | "
+        f"latest_length={len(latest_user_content)}"
+    )
+
+    try:
+        # ------------------------------------------------------------------
+        # Stage 1: ChromaDB vector search with metadata filtering
+        # ------------------------------------------------------------------
+        logger.debug("Stage 1: Searching ChromaDB for similar workouts")
+        metadata_filter = _extract_metadata_filter(latest_user_content)
+        search_results = search_similar_workouts(
+            latest_user_content, 6, where=metadata_filter
+        )
+        global_context = build_context(search_results)
+
+        # ------------------------------------------------------------------
+        # Stage 2: Coach personalisation from PostgreSQL
+        # ------------------------------------------------------------------
+        style_section = ""
+        coach_examples_section = ""
+        coach_notes_section = ""
+
+        if coach_id and db:
+            logger.debug("Stage 2: Fetching coach style and recent workouts from DB")
+            try:
+                from app.services.coach_style_service import (
+                    get_coach_example_workouts,
+                    get_style,
+                )
+
+                style_data = await get_style(db, coach_id)
+                style_section = build_style_context(style_data.get("style_profile"))
+                coach_notes_section = build_coach_notes_context(
+                    style_data.get("coaching_style_notes")
+                )
+
+                example_workouts = await get_coach_example_workouts(
+                    db, coach_id, limit=10
+                )
+                coach_examples_section = build_coach_examples(example_workouts)
+
+                logger.info(
+                    f"Stage 2 complete | style={'yes' if style_section else 'no'} | "
+                    f"examples={len(example_workouts)} | "
+                    f"notes={'yes' if coach_notes_section else 'no'}"
+                )
+            except Exception as e:
+                logger.warning(
+                    "Stage 2 coach personalisation failed, continuing without it"
+                )
+                log_error(e, context="generate_workout_with_history_stage2", coach_id=coach_id)
+
+        # ------------------------------------------------------------------
+        # Assemble system context
+        # ------------------------------------------------------------------
+        from .prompt_builder import SWIM_COACH_SYSTEM_PROMPT
+
+        context_sections = [
+            s for s in [
+                SWIM_COACH_SYSTEM_PROMPT,
+                style_section,
+                coach_notes_section,
+                coach_examples_section,
+                global_context,
+            ]
+            if s
+        ]
+        system_context = "\n\n".join(context_sections)
+
+        # ------------------------------------------------------------------
+        # Map DB roles to Claude API roles
+        # ------------------------------------------------------------------
+        claude_messages = []
+        for msg in conversation_messages:
+            role = msg["role"]
+            # DB stores "coach" for user messages; Claude expects "user"
+            if role in ("coach", "user"):
+                claude_role = "user"
+            else:
+                claude_role = "assistant"
+            claude_messages.append({"role": claude_role, "content": msg["content"]})
+
+        # ------------------------------------------------------------------
+        # Generate with Claude multi-turn API
+        # ------------------------------------------------------------------
+        logger.info("Calling Claude messages API with conversation history")
+        workout = generate_with_claude_messages(claude_messages, system_context)
+
+        logger.info(
+            f"Workout generated with history successfully | "
+            f"workout_length={len(workout)}"
+        )
+        return workout
+
+    except ValueError:
+        raise
+
+    except Exception as e:
+        logger.error("Failed to generate workout with conversation history")
+        log_error(
+            e,
+            context="generate_workout_with_history",
+            turns=len(conversation_messages),
+        )
+        raise Exception(f"Failed to generate workout with history: {str(e)}")

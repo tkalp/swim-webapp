@@ -97,6 +97,53 @@ IMPORTANT FORMAT REQUIREMENTS:
 
 
 # ---------------------------------------------------------------------------
+# Multi-turn conversation generation
+# ---------------------------------------------------------------------------
+
+def generate_with_claude_messages(
+    conversation_messages: list[dict],
+    system_context: str,
+) -> str:
+    """Send a multi-turn conversation to Claude and return the response text.
+
+    Unlike ``generate_with_claude`` which builds a single user message,
+    this passes the actual conversation turns so Claude maintains context
+    across follow-up requests (e.g. "make it harder").
+
+    Args:
+        conversation_messages: List of dicts with ``role`` ("user" | "assistant")
+                               and ``content`` (str) keys.
+        system_context: Pre-assembled system prompt including coach style,
+                        global examples, and coaching notes.
+
+    Returns:
+        The assistant's response text.
+    """
+    client = _get_anthropic_client()
+    if client is None:
+        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+
+    logger.info(
+        f"Generating with Claude messages API | "
+        f"turns={len(conversation_messages)} | "
+        f"system_length={len(system_context)}"
+    )
+
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2000,
+            system=system_context,
+            messages=conversation_messages,
+        )
+        return message.content[0].text
+    except Exception as e:
+        logger.error("Failed to generate with Claude messages API")
+        log_error(e, context="generate_with_claude_messages")
+        raise
+
+
+# ---------------------------------------------------------------------------
 # Description generation
 # ---------------------------------------------------------------------------
 
