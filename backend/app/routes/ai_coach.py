@@ -2,6 +2,7 @@
 import asyncio
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.schemas import (
     GenerateWorkoutRequest,
     GenerateWorkoutResponse,
@@ -17,6 +18,7 @@ from app.services.ai_coach import (
     generate_workout_title,
     check_chromadb,
 )
+from app.infrastructure.db import get_db
 from app.middleware.auth import get_current_user, get_current_user_id
 from app.utils import logger, log_error
 
@@ -26,33 +28,47 @@ router = APIRouter(prefix="/ai-coach", tags=["AI Coach"])
 @router.post("/generate", response_model=GenerateWorkoutResponse)
 async def generate_workout_endpoint(
     request: GenerateWorkoutRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Generate a swimming workout using ChromaDB + Anthropic Claude
-    
+    Generate a swimming workout using two-stage retrieval + Anthropic Claude.
+
+    Stage 1: ChromaDB metadata-filtered vector search (global pool).
+    Stage 2: Coach style profile, recent workouts, coaching notes (PostgreSQL).
+
     Requires authentication. User must be logged in.
     """
     logger.info(
         f"Generating workout for user {user_id} | "
         f"has_best_times={bool(request.bestTimes)}"
     )
-    
+
     try:
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None, lambda: generate_workout(prompt=request.prompt, best_times=request.bestTimes)
+        from app.services.coach_style_service import get_coach_by_user_id
+
+        coach = await get_coach_by_user_id(db, user_id)
+        coach_id = str(coach.id) if coach else None
+
+        result = await generate_workout(
+            prompt=request.prompt,
+            best_times=request.bestTimes,
+            coach_id=coach_id,
+            db=db,
         )
 
         logger.info(f"Successfully generated workout for user {user_id}")
-        return result
-        
+        return GenerateWorkoutResponse(
+            workout=result.get("workout", ""),
+            athlete_paces=result.get("athlete_paces"),
+        )
+
     except ValueError as e:
         # Client errors (bad input)
         logger.warning(f"Invalid workout request from user {user_id}: {str(e)}")
         log_error(e, context="generate_workout", user_id=user_id, error_type="validation")
         raise HTTPException(status_code=400, detail=str(e))
-        
+
     except Exception as e:
         # Server errors
         logger.error(f"Failed to generate workout for user {user_id}")

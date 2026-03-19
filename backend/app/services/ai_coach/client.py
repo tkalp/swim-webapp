@@ -33,7 +33,15 @@ def _get_anthropic_client():
 # ---------------------------------------------------------------------------
 
 def generate_with_claude(prompt: str, context: str, api_key: str) -> str:
-    """Send a workout-generation prompt to Claude and return the response text."""
+    """Send a workout-generation prompt to Claude and return the response text.
+
+    Args:
+        prompt: The user's natural-language workout request.
+        context: Pre-assembled multi-section context (coach style, coach examples,
+                 global examples from ChromaDB, athlete pace data).
+        api_key: Anthropic API key (used only for validation; the singleton
+                 client is initialised from the env var).
+    """
     client = _get_anthropic_client()
 
     full_prompt = f"""Based on the following request, generate a complete swimming workout.
@@ -41,7 +49,7 @@ def generate_with_claude(prompt: str, context: str, api_key: str) -> str:
 USER REQUEST:
 {prompt}
 
-EXAMPLE WORKOUTS FROM DATABASE (for reference on format and structure):
+REFERENCE CONTEXT:
 {context}
 
 Generate a workout that:
@@ -51,6 +59,8 @@ Generate a workout that:
 4. Includes specific distances, intervals, and effort levels
 5. **Uses the athlete's performance data and calculated intervals to set appropriate paces**
 6. **Makes kick sets 15-25 seconds slower per 50, drill sets 10-20 seconds slower per 50 than regular swim paces**
+
+Generate a workout that matches this coach's writing style, notation, and training philosophy.
 
 IMPORTANT FORMAT REQUIREMENTS:
 - Be CONCISE - focus on the workout itself, not extensive explanations
