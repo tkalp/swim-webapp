@@ -114,6 +114,12 @@ async def create_workout(
     db.add(workout)
     await db.commit()
     await db.refresh(workout)
+
+    # Dispatch style profile recomputation if coach is set
+    if workout.create_by_coach:
+        from app.services.coach_style_service import dispatch_style_recomputation
+        dispatch_style_recomputation(str(workout.create_by_coach))
+
     return _row_to_dict(workout)
 
 
@@ -157,6 +163,12 @@ async def update_workout(
 
     await db.commit()
     await db.refresh(workout)
+
+    # Dispatch style profile recomputation if coach is set
+    if workout.create_by_coach:
+        from app.services.coach_style_service import dispatch_style_recomputation
+        dispatch_style_recomputation(str(workout.create_by_coach))
+
     return _row_to_dict(workout)
 
 
@@ -241,6 +253,12 @@ async def duplicate_workout(
 
     await db.commit()
     await db.refresh(clone)
+
+    # Dispatch style profile recomputation if coach is set
+    if clone.create_by_coach:
+        from app.services.coach_style_service import dispatch_style_recomputation
+        dispatch_style_recomputation(str(clone.create_by_coach))
+
     return _row_to_dict(clone)
 
 
