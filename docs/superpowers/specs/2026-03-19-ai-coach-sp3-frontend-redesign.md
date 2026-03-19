@@ -48,35 +48,46 @@ Three-panel layout:
 └──────────────┴─────────────────────────────────────┘
 ```
 
-- **Sidebar** (collapsible on mobile as hamburger drawer): "New Chat" button + list of past conversations, sorted by `updated_at DESC`
-- **Chat area**: messages flow top-to-bottom. New conversations show the kickoff form. Existing conversations show full message history.
-- **Input bar**: fixed at bottom, free-text with send button. Disabled during AI generation (shows loading state).
+- **Sidebar** (overlay drawer on mobile): "New Chat" button + list of past conversations, sorted by `updated_at DESC`
+- **Chat area**: messages flow top-to-bottom in a left-aligned thread (not mirrored bubbles). New conversations show the free-text input with optional structured form. Existing conversations show full message history.
+- **Input bar**: sticky bottom, free-text with send button. Disabled during AI generation (shows loading indicator reusing the existing wave animation from WorkoutOutput).
 
-## Structured Kickoff Form
+### Layout Height
 
-Shown when starting a new conversation. Once submitted, converts to the first chat message and disappears.
+The page uses `calc(100vh - 64px)` (nav height) with `overflow: hidden` and flex layout. Sidebar and chat area each have `h-full overflow-y-auto`. This prevents the chat from extending past the viewport and ensures the input bar stays anchored.
+
+### Mobile Layout
+
+On mobile, the sidebar is removed from DOM flow entirely. The page header shows the active conversation name + a "History" icon button that opens an overlay drawer (85-90% screen width). The drawer auto-closes when a conversation is selected. The input bar uses `env(safe-area-inset-bottom)` padding, and the chat area uses `overscroll-behavior: contain` to prevent keyboard collision issues.
+
+## New Conversation Flow
+
+When starting a new conversation, the **free-text input is the primary entry point** — large and prominent at the center of the empty chat area. The coach can type "3000m sprint for seniors" and hit Enter immediately.
+
+Below the input, an **"Add more context" expandable section** reveals the structured kickoff form. This is an optional enhancement, not a gate.
+
+### Structured Kickoff Form (optional)
 
 | Field | Input Type | Options | Required |
 |-------|-----------|---------|----------|
-| Training Focus | Button group (single select) | Sprint, Endurance, Technique, IM, Kick, Recovery, Race Prep | Yes |
-| Target Distance | Dropdown | 1500m–6000m in 500m increments | Yes |
-| Level | Button group | Age Group, Senior, Masters | Yes |
-| Stroke Emphasis | Button group | Freestyle, Backstroke, Breaststroke, Butterfly, IM, Mixed | No (default: Mixed) |
-| Additional Notes | Textarea | Free-text ("focus on underwater dolphins", "competition next week") | No |
+| Training Focus | Button group (single select, `role="radiogroup"`) | Sprint, Endurance, Technique, IM, Kick, Recovery, Race Prep | No |
+| Target Distance | Dropdown (`<select>`) | 1500m–6000m in 500m increments | No |
+| Level | Button group (`role="radiogroup"`) | Age Group, Senior, Masters | No |
+| Stroke Emphasis | Button group (`role="radiogroup"`) | Freestyle, Backstroke, Breaststroke, Butterfly, IM, Mixed | No (default: Mixed) |
 
-**On submit:**
-1. Build a natural-language prompt from selections (e.g., "Generate a 3000m sprint workout for senior swimmers with freestyle emphasis. Focus on underwater dolphins.")
+All fields are optional — they enrich the prompt and improve metadata filtering but aren't required. If the coach selects "Sprint" and "Senior" and types "focus on underwater kicks", the prompt becomes: "Generate a sprint workout for senior swimmers. Focus on underwater kicks."
+
+**On submit (or Enter in text input):**
+1. Build natural-language prompt by combining structured selections + free text
 2. Create a new conversation via API
 3. Send as the first message
-4. Form collapses, chat thread begins with the coach's message + AI response
+4. Form collapses, chat thread begins
 5. Structured data feeds the SP2 metadata filter for ChromaDB retrieval
-
-**"Skip to free text" link** below the form for coaches who want to type a prompt directly.
 
 ## Chat Messages
 
 ### Coach Message
-Simple text bubble with light background. Shows the coach's prompt or refinement text.
+Left-aligned, understated block. Shows the coach's prompt or refinement text. Not right-aligned "chat bubbles" — this is a coaching tool, not iMessage. The coach's messages are commands/requests, not conversation.
 
 ### AI Workout Response
 Structured card containing:
@@ -88,9 +99,11 @@ Structured card containing:
 - Cool-down
 
 Each section has:
-- Subtle "Edit" icon on hover
-- Clicking opens an inline textarea editor for that section
-- "Done" button saves the manual edit in place (no AI call)
+- **Always-visible** faint edit icon to the right of the section header (`text-slate-600`, transitions to `text-cyan-400` on hover). Not hover-only — must be visible on mobile/touch.
+- Section headers use `text-xs font-semibold text-cyan-400 uppercase tracking-wide` for scannable rhythm
+- Clicking the icon (or tapping the section on mobile) opens an inline textarea editor
+- Textarea auto-sizes to content height (no internal scroll). Has `aria-label="Edit [section name]"`
+- "Done" button saves the edit + "Cancel" button to abandon without losing AI text
 - If the coach then sends a refinement message, the AI uses the manually-edited version as the base
 
 **Quick action buttons** below the workout (only on the **latest** AI message — historical cards show no actions):
@@ -263,7 +276,7 @@ frontend/src/
 
 **`ChatMessage.tsx`** — renders either a simple coach bubble or delegates to `WorkoutCard` for assistant messages.
 
-**`WorkoutCard.tsx`** — parses workout text into sections, renders each via `WorkoutSection`, shows `QuickActions` and save button. Only the latest assistant message shows active actions.
+**`WorkoutCard.tsx`** — renders pre-parsed workout sections via `WorkoutSection`, shows `QuickActions` and save button. Only the latest assistant message shows active actions. Section parsing logic lives in a pure utility function `parseWorkoutSections(text: string): WorkoutSections` (in `utils/` or co-located) — not inside the component.
 
 **`WorkoutSection.tsx`** — displays section text with edit-on-click. Manages its own edit state (viewing vs editing).
 
@@ -297,8 +310,8 @@ The app uses a **dark-first theme** (`bg-slate-950` page background, `bg-slate-9
 - Conversation items: `hover:bg-slate-800 rounded-lg px-3 py-2`, active conversation: `bg-slate-800`
 
 ### Chat Messages
-- Coach bubbles: `bg-slate-800 text-slate-100 rounded-2xl px-4 py-3` — lighter surface than background, aligned right
-- AI workout cards: `bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl shadow-xl p-4` — consistent with app card pattern, aligned left, full width
+- Coach messages: `bg-slate-800 border border-slate-700 rounded-xl rounded-tl-sm text-slate-100 px-4 py-3` — left-aligned, understated block with subtle left-border accent `border-l-2 border-cyan-500/20`
+- AI workout cards: `bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl shadow-xl p-4` — left-aligned, full width within content column
 
 ### Quick Actions
 - Show **only on the latest AI message** — historical workout cards have no action buttons
@@ -322,6 +335,15 @@ The app uses a **dark-first theme** (`bg-slate-950` page background, `bg-slate-9
 ### Section Editing
 - Edit textarea: `bg-slate-950 border border-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 rounded-lg`
 - "Done" button: small ghost button `border border-cyan-500 text-cyan-400 text-xs`
+
+## Accessibility
+
+- **Kickoff button groups:** Use `role="radiogroup"` with `role="radio"` children and roving `tabindex` — one tab stop per group, arrow keys navigate within
+- **Distance dropdown:** Native `<select>` element (accessible by default)
+- **Section edit textareas:** `aria-label="Edit [section name]"` (e.g., "Edit Main Set")
+- **Generation loading state:** `aria-live="polite"` region announces "Generating workout, please wait"
+- **New messages:** `aria-live="polite"` on chat thread container for screen reader announcement
+- **Keyboard:** Enter sends message, Shift+Enter for newline, Escape cancels section edit
 
 ## Error Handling
 
