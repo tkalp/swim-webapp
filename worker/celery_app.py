@@ -15,7 +15,7 @@ celery_app = Celery(
     'aquilus',
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=['worker.sync_tasks']
+    include=['worker.sync_tasks', 'worker.style_tasks']
 )
 
 # Celery configuration
