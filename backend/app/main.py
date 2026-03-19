@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 
 from app.routes import (
-    ai_coach, workout_analysis, swimrankings, workout_tags,
+    ai_coach, ai_coach_conversations, workout_analysis, swimrankings, workout_tags,
     coach_connections, admin, training_sessions, coaches,
     workout_ratings, workout_sharing, auth, time_standards,
     practice_notes, permissions, notifications,
@@ -104,6 +104,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(ai_coach.router)
+app.include_router(ai_coach_conversations.router)
 app.include_router(workout_analysis.router)
 app.include_router(swimrankings.router)
 app.include_router(squad_analytics.router)
