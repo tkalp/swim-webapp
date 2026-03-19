@@ -62,6 +62,8 @@ class Coach(Base):
     role: Mapped[str] = mapped_column(String(50), default="coach")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    style_profile: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    coaching_style_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="coach")
     squad_memberships: Mapped[List["CoachSquad"]] = relationship(back_populates="coach")
@@ -319,6 +321,9 @@ class TrainingSessionPostPracticeNote(Base):
 
 class WorkoutTemplate(Base):
     __tablename__ = "workout_template"
+    __table_args__ = (
+        Index("ix_workout_template_create_by_coach", "create_by_coach"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     name: Mapped[Optional[str]] = mapped_column(Text)
