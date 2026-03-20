@@ -1,6 +1,6 @@
 // hooks/useWorkoutForm.ts
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams, useLocation } from "react-router-dom";
 import { createWorkoutForSession, getWorkoutTemplate, updateWorkoutTemplate } from '@/services/workoutTemplateService';
 import { useAuth } from '@/contexts/AuthContext';
 import { getWorkoutTags, setWorkoutTags } from '@/services/workoutTagService';
@@ -13,33 +13,41 @@ export type WorkoutFormData = {
   rawDescription: string;
   totalMeters: number;
   estimatedTimeMinutes: number;
-  estimatedCalories: number;
   effortLevel: number;
   jsonDescription: string | null;
   selectedTags: WorkoutTag[];
+  classification: string;
   visibility: 'private' | 'network' | 'public';
 };
 
 export function useWorkoutForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { workoutId } = useParams<{ workoutId: string }>();
-  
+
   const isEditMode = !!workoutId;
   const sessionId = searchParams.get("sessionId");
-  const aiWorkout = searchParams.get("aiWorkout");
+
+  // Pre-fill from AI Coach navigation state (if coming from "Save as Workout")
+  const navState = location.state as {
+    workoutText?: string;
+    coachingNotes?: string;
+    conversationId?: string;
+    messageId?: string;
+  } | null;
 
   const [formData, setFormData] = useState<WorkoutFormData>({
     name: "",
-    description: "",
-    rawDescription: aiWorkout || "",
+    description: navState?.coachingNotes ?? "",
+    rawDescription: navState?.workoutText ?? "",
     totalMeters: 0,
     estimatedTimeMinutes: 0,
-    estimatedCalories: 0,
     effortLevel: 5,
     jsonDescription: null,
     selectedTags: [],
+    classification: "",
     visibility: 'private',
   });
 
@@ -47,21 +55,20 @@ export function useWorkoutForm() {
   const [loadingWorkout, setLoadingWorkout] = useState(isEditMode);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [analysisData, setAnalysisData] = useState<any>(null);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [generatingTitle, setGeneratingTitle] = useState(false);
 
   // Load existing workout data if in edit mode
   useEffect(() => {
     if (!workoutId) return;
-    
+
     let mounted = true;
     (async () => {
       try {
         setLoadingWorkout(true);
         const workout = await getWorkoutTemplate(workoutId);
         if (!mounted) return;
-        
+
         // Load tags for this workout
         let tags: WorkoutTag[] = [];
         try {
@@ -69,17 +76,17 @@ export function useWorkoutForm() {
         } catch (e) {
           console.error("Failed to load workout tags:", e);
         }
-        
+
         setFormData({
           name: workout.name ?? "",
           description: workout.description ?? "",
           rawDescription: workout.raw_description ?? "",
           totalMeters: workout.total_meters ?? 0,
           estimatedTimeMinutes: workout.estimated_time_minutes ?? 0,
-          estimatedCalories: workout.estimated_calories ?? 0,
           effortLevel: workout.effort_level ?? 5,
           jsonDescription: workout.json_description ? JSON.stringify(workout.json_description) : null,
           selectedTags: tags,
+          classification: workout.classification ?? "",
           visibility: workout.visibility || 'private',
         });
       } catch (err: any) {
@@ -98,35 +105,6 @@ export function useWorkoutForm() {
     };
   }, [workoutId]);
 
-  // Handle analysis updates from RealtimeWorkoutAnalyzer
-  const handleAnalysisUpdate = useCallback((jsonDescription: string | null) => {
-    if (jsonDescription) {
-      try {
-        const parsed = JSON.parse(jsonDescription);
-        setAnalysisData(parsed);
-        
-        setFormData(prev => ({
-          ...prev,
-          jsonDescription,
-          totalMeters: parsed.estimate?.totalDistance || prev.totalMeters,
-          estimatedTimeMinutes: Math.round(parsed.estimate?.totalMinutes || prev.estimatedTimeMinutes),
-          estimatedCalories: parsed.estimate?.estimatedCalories || prev.estimatedCalories,
-        }));
-      } catch (e) {
-        setFormData(prev => ({
-          ...prev,
-          jsonDescription
-        }));
-      }
-    } else {
-      setAnalysisData(null);
-      setFormData(prev => ({
-        ...prev,
-        jsonDescription
-      }));
-    }
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -136,43 +114,42 @@ export function useWorkoutForm() {
       if (isEditMode && workoutId) {
         const updatedWorkout = {
           name: formData.name,
-          description: formData.description,
+          description: "",
           raw_description: formData.rawDescription,
           total_meters: formData.totalMeters,
           estimated_time_minutes: formData.estimatedTimeMinutes,
-          estimated_calories: formData.estimatedCalories,
           effort_level: formData.effortLevel,
           json_description: formData.jsonDescription ? JSON.parse(formData.jsonDescription) : null,
+          classification: formData.classification || undefined,
           visibility: formData.visibility,
         };
 
         await updateWorkoutTemplate(workoutId, updatedWorkout);
-        
+
         // Save tags
         try {
           const tagIds = formData.selectedTags.map(tag => tag.id);
           await setWorkoutTags(workoutId, tagIds);
         } catch (tagError) {
           console.error("Failed to save tags:", tagError);
-          // Don't fail the whole operation if tags fail
         }
       } else {
         const newWorkout = {
           name: formData.name,
-          description: formData.description || formData.rawDescription.slice(0, 500),
+          description: "",
           raw_description: formData.rawDescription,
           total_meters: formData.totalMeters,
           estimated_time_minutes: formData.estimatedTimeMinutes,
-          estimated_calories: formData.estimatedCalories,
+          estimated_calories: 0,
           effort_level: formData.effortLevel,
           create_by_coach: user?.id || "",
           json_description: formData.jsonDescription ? JSON.parse(formData.jsonDescription) : null,
+          classification: formData.classification || undefined,
           visibility: formData.visibility,
         };
-        
 
         const result = await createWorkoutForSession(newWorkout, sessionId || "");
-        
+
         // Save tags for the newly created workout
         if (result?.id && formData.selectedTags.length > 0) {
           try {
@@ -180,7 +157,6 @@ export function useWorkoutForm() {
             await setWorkoutTags(result.id, tagIds);
           } catch (tagError) {
             console.error("Failed to save tags:", tagError);
-            // Don't fail the whole operation if tags fail
           }
         }
       }
@@ -211,14 +187,14 @@ export function useWorkoutForm() {
     try {
       setGeneratingDescription(true);
       setError("");
-      
+
       const response = await generateWorkoutDescription({
         workout_name: formData.name,
         raw_description: formData.rawDescription,
         total_meters: formData.totalMeters || undefined,
         effort_level: formData.effortLevel || undefined,
       });
-      
+
       setFormData(prev => ({
         ...prev,
         description: response.description,
@@ -239,26 +215,24 @@ export function useWorkoutForm() {
     try {
       setGeneratingTitle(true);
       setError("");
-      
-      // Parse analysis data if available
+
       let analysisData = null;
       if (formData.jsonDescription) {
         try {
           const parsed = JSON.parse(formData.jsonDescription);
-          // Extract analysis from versioned format or use directly
           analysisData = parsed.analysis || parsed;
         } catch (e) {
           console.warn("Failed to parse analysis data", e);
         }
       }
-      
+
       const response = await generateWorkoutTitle({
         raw_description: formData.rawDescription,
         total_meters: formData.totalMeters || undefined,
         effort_level: formData.effortLevel || undefined,
         analysis: analysisData,
       });
-      
+
       setFormData(prev => ({
         ...prev,
         name: response.title,
@@ -280,12 +254,10 @@ export function useWorkoutForm() {
     error,
     setError,
     success,
-    analysisData,
     isEditMode,
     isValid,
     handleSubmit,
     handleCancel,
-    handleAnalysisUpdate,
     generateDescription,
     generatingDescription,
     generateTitle,

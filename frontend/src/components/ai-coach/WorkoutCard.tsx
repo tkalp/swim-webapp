@@ -1,15 +1,19 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Save, CheckCircle } from 'lucide-react';
+import Markdown from 'react-markdown';
 import { WorkoutSection } from './WorkoutSection';
 import { QuickActions } from './QuickActions';
 import { parseWorkoutSections } from '@/utils/parseWorkoutSections';
+import { splitWorkoutText, stripMarkdown, stripNotesHeader } from '@/utils/cleanWorkoutText';
 import type { WorkoutSections as WorkoutSectionsType } from '@/types/ai-coach/types';
 
 interface WorkoutCardProps {
   content: string;
   isLatest: boolean;
   savedTitle?: string;
-  onSave?: () => void;
+  conversationId?: string;
+  messageId?: string;
   onQuickAction?: (action: string) => void;
   onEditSection?: (sections: WorkoutSectionsType) => void;
 }
@@ -25,19 +29,15 @@ export function WorkoutCard({
   content,
   isLatest,
   savedTitle,
-  onSave,
+  conversationId,
+  messageId,
   onQuickAction,
   onEditSection,
 }: WorkoutCardProps) {
+  const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(!!savedTitle);
+  const [savedName, setSavedName] = useState(savedTitle || '');
   const sections = parseWorkoutSections(content);
-
-  const handleSave = async () => {
-    if (onSave) {
-      onSave();
-      setIsSaved(true);
-    }
-  };
 
   const handleSectionEdit = (key: string, newContent: string) => {
     if (onEditSection) {
@@ -45,12 +45,27 @@ export function WorkoutCard({
     }
   };
 
+  const handleSaveAsWorkout = () => {
+    const { workout, notes } = splitWorkoutText(content);
+    const cleanedWorkout = stripMarkdown(workout);
+    const coachingNotes = notes ? stripNotesHeader(notes) : '';
+
+    navigate('/workouts/create', {
+      state: {
+        workoutText: cleanedWorkout,
+        coachingNotes,
+        conversationId,
+        messageId,
+      },
+    });
+  };
+
   const renderSections = () => {
     if (sections.raw) {
       return (
-        <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
-          {sections.raw}
-        </pre>
+        <div className="text-sm text-slate-300 leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:text-slate-200 prose-strong:text-slate-100 prose-code:text-cyan-300 prose-code:bg-slate-800 prose-code:px-1 prose-code:rounded">
+          <Markdown>{sections.raw}</Markdown>
+        </div>
       );
     }
 
@@ -85,7 +100,7 @@ export function WorkoutCard({
           <div className="flex items-center gap-3">
             {!isSaved ? (
               <button
-                onClick={handleSave}
+                onClick={handleSaveAsWorkout}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-500 text-white text-sm font-medium hover:from-cyan-500 hover:to-cyan-400 transition-all"
               >
                 <Save className="h-4 w-4" />
@@ -94,7 +109,7 @@ export function WorkoutCard({
             ) : (
               <span className="flex items-center gap-2 text-sm text-emerald-400">
                 <CheckCircle className="h-4 w-4" />
-                {savedTitle ? `Saved as "${savedTitle}"` : 'Saved'}
+                {savedName ? `Saved as "${savedName}"` : 'Saved'}
               </span>
             )}
           </div>
@@ -109,6 +124,7 @@ export function WorkoutCard({
           </span>
         </div>
       )}
+
     </div>
   );
 }
