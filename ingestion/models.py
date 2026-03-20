@@ -21,6 +21,7 @@ class TrainingFocus(str, Enum):
     RECOVERY = "recovery"
     RACE_PREP = "race_prep"
     MIXED = "mixed"
+    KICK = "kick"
 
 
 class EnergyZone(str, Enum):

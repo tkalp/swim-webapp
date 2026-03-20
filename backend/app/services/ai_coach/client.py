@@ -87,7 +87,7 @@ IMPORTANT FORMAT REQUIREMENTS:
 - Total distance and brief key focus is fine at the top"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=2000,
         system=SWIM_COACH_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": full_prompt}],

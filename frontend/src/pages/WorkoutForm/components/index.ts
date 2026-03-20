@@ -4,4 +4,3 @@ export { ErrorAlert } from '@/pages/WorkoutForm/components/ErrorAlert';
 export { WorkoutNameInput } from '@/pages/WorkoutForm/components/WorkoutNameInput';
 export { WorkoutDescriptionTextarea } from '@/pages/WorkoutForm/components/WorkoutDescriptionTextarea';
 export { EffortLevelSlider } from '@/pages/WorkoutForm/components/EffortLevelSlider';
-export { EditMetricModal } from '@/pages/WorkoutForm/components/EditMetricModal';

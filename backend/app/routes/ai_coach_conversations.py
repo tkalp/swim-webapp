@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,7 @@ from app.services.conversation_service import (
     get_conversation_with_messages,
     list_conversations,
     update_conversation_title,
+    update_message_metadata,
 )
 from app.utils import logger, log_error
 
@@ -31,6 +32,10 @@ class CreateConversationRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     content: str
     metadata: Optional[dict] = None
+
+
+class UpdateMessageMetadataRequest(BaseModel):
+    metadata: dict
 
 
 # ---------------------------------------------------------------------------
@@ -158,3 +163,23 @@ async def send_message_endpoint(
         "coach_message": coach_message,
         "assistant_message": assistant_message,
     }
+
+
+@router.patch("/{conversation_id}/messages/{message_id}")
+async def patch_message_metadata(
+    conversation_id: str,
+    message_id: str,
+    request: UpdateMessageMetadataRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Update metadata on a specific message (e.g. saved_workout_id after saving)."""
+    coach = await get_coach_by_user_id(db, user_id)
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    conversation = await get_conversation_with_messages(db, str(coach.id), conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return await update_message_metadata(db, conversation_id, message_id, request.metadata)

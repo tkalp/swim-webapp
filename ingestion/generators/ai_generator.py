@@ -24,6 +24,7 @@ FOCUSES: list[str] = [
     "IM",
     "recovery",
     "race_prep",
+    "fun"
 ]
 
 LEVELS: dict[str, str] = {
@@ -42,6 +43,7 @@ STROKE_EMPHASIS: list[str] = [
     "butterfly-heavy",
     "IM",
     "mixed",
+    "kick-heavy",
 ]
 
 # Total combinations: 6 focuses * 3 levels * 9 distances * 6 strokes = 972

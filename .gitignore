@@ -10,3 +10,12 @@ jobs/
 
 runs/
 migrations/
+
+**/.claude
+**/docs
+
+*.sqlite3
+*.bin
+*.pickle
+
+**/package-lock.json

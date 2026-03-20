@@ -118,6 +118,7 @@ async def get_conversation_with_messages(
         "messages": [
             {
                 "id": str(msg.id),
+                "conversation_id": str(msg.conversation_id),
                 "role": msg.role,
                 "content": msg.content,
                 "metadata": msg.message_metadata,
@@ -191,10 +192,39 @@ async def add_message(
 
     return {
         "id": str(message.id),
+        "conversation_id": str(message.conversation_id),
         "role": message.role,
         "content": message.content,
         "metadata": message.message_metadata,
         "created_at": message.created_at.isoformat(),
+    }
+
+
+async def update_message_metadata(
+    db: AsyncSession, conversation_id: str, message_id: str, metadata_update: dict
+) -> dict:
+    """Merge metadata_update into an existing message's metadata."""
+    msg_id = uuid.UUID(message_id)
+    conv_id = uuid.UUID(conversation_id)
+
+    stmt = select(AICoachMessage).where(
+        AICoachMessage.id == msg_id,
+        AICoachMessage.conversation_id == conv_id,
+    )
+    result = await db.execute(stmt)
+    message = result.scalar_one_or_none()
+    if not message:
+        raise NotFoundError(f"Message {message_id} not found")
+
+    existing = message.message_metadata or {}
+    existing.update(metadata_update)
+    message.message_metadata = existing
+    await db.commit()
+    await db.refresh(message)
+
+    return {
+        "id": str(message.id),
+        "message_metadata": message.message_metadata,
     }
 
 

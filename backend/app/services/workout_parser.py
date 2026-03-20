@@ -152,18 +152,40 @@ class WorkoutParser:
             r'^any\s+stroke,\s+very\s+relaxed'
         ]
     
+    def _preprocess_text(self, text: str) -> str:
+        """Strip markdown formatting before parsing."""
+        # Remove bold markers: **text** → text
+        text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+        # Remove italic markers: *text* → text
+        text = re.sub(r'(?<!\*)\*(?!\*)([^*]+)\*(?!\*)', r'\1', text)
+        # Remove heading markers: # Header → Header
+        text = re.sub(r'^#{1,3}\s+', '', text, flags=re.MULTILINE)
+        return text
+
     def extract_sets(self, workout_text: str) -> List[Dict]:
         """Extract all sets from workout text"""
         if not workout_text or pd.isna(workout_text):
             return []
-            
+
         sets = []
-        
+
+        # Pre-process: strip markdown formatting
+        workout_text = self._preprocess_text(workout_text)
+
         # First, check for round-based patterns and expand them
         expanded_text = self._expand_round_patterns(workout_text)
-        
+
         lines = expanded_text.split('\n')
-        
+
+        # Track round multiplier for "N rounds of:" lines
+        current_round_multiplier = 1
+
+        # Section header patterns that reset round multiplier
+        section_header_pattern = re.compile(
+            r'(?:warm\s*-?\s*up|main\s*set|cool\s*-?\s*down|pre\s*-?\s*set)',
+            re.IGNORECASE
+        )
+
         i = 0
         while i < len(lines):
             line = lines[i].strip()
@@ -172,7 +194,20 @@ class WorkoutParser:
             if not line:
                 i += 1
                 continue
-            
+
+            # Reset round multiplier on section headers
+            if section_header_pattern.search(line):
+                current_round_multiplier = 1
+
+            # Detect "N rounds of:" / "N rounds:" lines
+            round_mult_match = re.match(
+                r'^\s*(\d+)\s+rounds?\s*(?:of\s*)?:?\s*$', line, re.IGNORECASE
+            )
+            if round_mult_match:
+                current_round_multiplier = int(round_mult_match.group(1))
+                i += 1
+                continue
+
             # Check for explicit rest instructions (e.g., "10:00 Rest", "2:00 rest")
             rest_match = re.match(r'(\d+):(\d+)\s+rest\b', line, re.IGNORECASE)
             if rest_match:
@@ -229,7 +264,6 @@ class WorkoutParser:
             if self._is_non_swimming_activity(line):
                 i += 1
                 continue
-                continue
                 
             # Check for traditional set patterns (e.g., "4 x 100")
             set_matches = re.findall(self.set_pattern, line, re.IGNORECASE)
@@ -237,7 +271,10 @@ class WorkoutParser:
             if set_matches:
                 for reps, distance in set_matches:
                     reps, distance = int(reps), int(distance)
-                    
+
+                    # Apply round multiplier if active
+                    reps = reps * current_round_multiplier
+
                     # Check if distance is in yards and convert to meters
                     if re.search(r'\byards?\b', line, re.IGNORECASE):
                         distance = int(distance * 0.9144)  # Convert yards to meters
@@ -329,7 +366,8 @@ class WorkoutParser:
                     standalone_match = re.match(self.standalone_pattern, line)
                     if standalone_match:
                         distance = int(standalone_match.group(1))
-                        
+                        standalone_reps = 1 * current_round_multiplier
+
                         # Check for breakdown following this standalone distance (indented or pattern-based)
                         breakdown_lines = []
                         j = i + 1
@@ -338,10 +376,10 @@ class WorkoutParser:
                             if next_line.strip() == "":
                                 j += 1
                                 continue
-                            
+
                             # Check if line is indented (starts with tab or spaces)
                             is_indented = next_line.startswith(('\t', '    ', '  '))
-                            
+
                             # Check if line matches breakdown patterns (even if not indented)
                             next_line_stripped = next_line.strip()
                             is_breakdown_pattern = (
@@ -349,16 +387,16 @@ class WorkoutParser:
                                 re.match(r'^(?:odds?|evens?)(?:\s|$)', next_line_stripped, re.IGNORECASE) or
                                 re.match(r'^[-–]\s*\d+', next_line_stripped)  # Match dash-prefixed distances
                             )
-                            
+
                             if is_indented or is_breakdown_pattern:
                                 breakdown_lines.append(next_line_stripped)
                                 j += 1
                             else:
                                 break
-                        
+
                         # If we found breakdown lines, parse them
                         if breakdown_lines:
-                            breakdown_sets = self._parse_indented_breakdown(1, distance, line, breakdown_lines)
+                            breakdown_sets = self._parse_indented_breakdown(standalone_reps, distance, line, breakdown_lines)
                             sets.extend(breakdown_sets)
                             i = j  # Skip past the breakdown lines (don't increment again)
                         elif '(' in line and ')' in line:
@@ -369,11 +407,26 @@ class WorkoutParser:
                             sets.extend(self._parse_dash_breakdown(distance, line))
                             i += 1
                         else:
-                            set_info = self._create_set_info(1, distance, line)
+                            set_info = self._create_set_info(standalone_reps, distance, line)
                             sets.append(set_info)
                             i += 1
                     else:
-                        i += 1
+                        # Prose-style fallback: "200 Free easy", "300 choice", "400 pull"
+                        prose_match = re.match(r'^\s*(\d{2,5})\s+([A-Za-z].*)', line)
+                        if prose_match:
+                            distance = int(prose_match.group(1))
+                            if 25 <= distance <= 10000:
+                                description = prose_match.group(2)
+                                prose_reps = 1 * current_round_multiplier
+                                set_info = self._create_set_info(prose_reps, distance, line)
+                                set_info['stroke'] = self.identify_stroke(description)
+                                set_info['activity'] = self.identify_activity(description)
+                                sets.append(set_info)
+                                i += 1
+                            else:
+                                i += 1
+                        else:
+                            i += 1
                         
         return sets
     

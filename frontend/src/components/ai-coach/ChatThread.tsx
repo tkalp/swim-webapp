@@ -6,7 +6,6 @@ import type { Message, WorkoutSections } from '@/types/ai-coach/types';
 interface ChatThreadProps {
   messages: Message[];
   isGenerating: boolean;
-  onSave?: () => void;
   onQuickAction?: (action: string) => void;
   onEditSection?: (sections: WorkoutSections) => void;
 }
@@ -14,7 +13,6 @@ interface ChatThreadProps {
 export function ChatThread({
   messages,
   isGenerating,
-  onSave,
   onQuickAction,
   onEditSection,
 }: ChatThreadProps) {
@@ -41,7 +39,6 @@ export function ChatThread({
               key={message.id}
               message={message}
               isLatest={isLastAssistant}
-              onSave={isLastAssistant ? onSave : undefined}
               onQuickAction={isLastAssistant ? onQuickAction : undefined}
               onEditSection={isLastAssistant ? onEditSection : undefined}
             />

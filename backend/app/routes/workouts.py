@@ -29,6 +29,7 @@ class WorkoutCreate(BaseModel):
     effort_level: Optional[int] = None
     json_description: Optional[dict] = None
     create_by_coach: Optional[str] = None
+    classification: Optional[str] = None
     visibility: str = "private"
 
 
@@ -41,6 +42,7 @@ class WorkoutUpdate(BaseModel):
     estimated_calories: Optional[int] = None
     effort_level: Optional[int] = None
     json_description: Optional[dict] = None
+    classification: Optional[str] = None
     visibility: Optional[str] = None
 
 
@@ -109,6 +111,7 @@ async def create_workout(
         effort_level=body.effort_level,
         json_description=body.json_description,
         create_by_coach=body.create_by_coach,
+        classification=body.classification,
         visibility=body.visibility,
     )
     db.add(workout)

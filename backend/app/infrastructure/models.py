@@ -333,6 +333,7 @@ class WorkoutTemplate(Base):
     estimated_time_minutes: Mapped[Optional[float]] = mapped_column(Float)
     estimated_calories: Mapped[Optional[int]] = mapped_column(Integer)
     effort_level: Mapped[Optional[int]] = mapped_column(Integer)
+    classification: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     json_description: Mapped[Optional[dict]] = mapped_column(JSONB)
     create_by_coach: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("coach.id"))
     visibility: Mapped[str] = mapped_column(String(20), default="private")

@@ -50,6 +50,8 @@ _TRAINING_FOCUS_ALIASES: dict[str, str] = {
     "general": "mixed",
     "varied": "mixed",
     "all": "mixed",
+    # kick
+    "kick": "kick"
 }
 
 _ENERGY_ZONE_ALIASES: dict[str, str] = {

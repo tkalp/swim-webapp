@@ -90,25 +90,25 @@ def _sync_single_swimmer(
         row = db_service.session.execute(stmt).first()
         last_sync = row[0] if row and row[0] else None
 
-        if last_sync is not None:
-            if last_sync.tzinfo is None:
-                last_sync = last_sync.replace(tzinfo=timezone.utc)
-            age_hours = (now - last_sync).total_seconds() / 3600
-            if age_hours < WorkerConfig.SYNC_FRESHNESS_HOURS:
-                logger.info(
-                    f"Skipping swimmer {swimmer_id} — synced {age_hours:.1f}h ago "
-                    f"(freshness window: {WorkerConfig.SYNC_FRESHNESS_HOURS}h)"
-                )
-                return SyncResult(
-                    swimmer_id=swimmer_id,
-                    external_link_id=external_link_id,
-                    events_processed=0,
-                    results_imported=0,
-                    results_skipped=0,
-                    errors=0,
-                    success=True,
-                    error_message="Skipped (recently synced)",
-                )
+        # if last_sync is not None:
+        #     if last_sync.tzinfo is None:
+        #         last_sync = last_sync.replace(tzinfo=timezone.utc)
+        #     age_hours = (now - last_sync).total_seconds() / 3600
+        #     if age_hours < WorkerConfig.SYNC_FRESHNESS_HOURS:
+        #         logger.info(
+        #             f"Skipping swimmer {swimmer_id} — synced {age_hours:.1f}h ago "
+        #             f"(freshness window: {WorkerConfig.SYNC_FRESHNESS_HOURS}h)"
+        #         )
+        #         return SyncResult(
+        #             swimmer_id=swimmer_id,
+        #             external_link_id=external_link_id,
+        #             events_processed=0,
+        #             results_imported=0,
+        #             results_skipped=0,
+        #             errors=0,
+        #             success=True,
+        #             error_message="Skipped (recently synced)",
+        #         )
 
     # ── Mark in_progress ─────────────────────────────────────────────────────
     db_service.update_sync_status(

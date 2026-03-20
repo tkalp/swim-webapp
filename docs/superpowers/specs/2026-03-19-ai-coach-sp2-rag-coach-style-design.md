@@ -26,7 +26,7 @@ Stage 1: Global Pool (ChromaDB)
     |
     v
 Stage 2: Coach's Personal Context (PostgreSQL)
-    - 3 most recent saved workouts
+    - 10 most recent saved workouts
     - Pre-computed style profile (JSONB on coach table)
     - Optional free-text coaching style notes
     |

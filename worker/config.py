@@ -28,7 +28,7 @@ class WorkerConfig:
     CF_TIMEOUT: int = int(os.getenv("CF_TIMEOUT", "90"))
 
     # Sync freshness — results synced within this window are skipped
-    SYNC_FRESHNESS_HOURS: int = int(os.getenv("SYNC_FRESHNESS_HOURS", "48"))
+    SYNC_FRESHNESS_HOURS: int = int(os.getenv("SYNC_FRESHNESS_HOURS", "1"))
 
     @classmethod
     def validate(cls) -> None:

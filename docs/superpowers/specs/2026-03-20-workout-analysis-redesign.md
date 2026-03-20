@@ -134,13 +134,13 @@ After receiving the LLM output, the backend computes:
 ### Validation Rules
 
 - **Strict enums** for all categorical fields:
-  - `stroke`: freestyle, backstroke, breaststroke, butterfly, im, choice, mixed
-  - `activity`: swim, kick, pull, drill, mixed
+  - `stroke`: freestyle, backstroke, breaststroke, butterfly, im, choice
+  - `activity`: swim, kick, pull, drill
   - `energy_zone`: en1, en2, en3, en4, sprint
   - `equipment`: fins, paddles, buoy, snorkel, band, board, parachute, tempo_trainer
 - **Arithmetic verification**: `total_meters` must equal `sum(reps * distance)` across all sets. If the LLM returns a `totals` block, it is cross-checked against the server-computed value. Server arithmetic always wins.
 - **Determinism**: `temperature=0` to ensure identical input produces identical output.
-- Invalid enum values are mapped to nearest valid value or `mixed` as fallback.
+- Invalid enum values are mapped to the nearest valid value. For ambiguous strokes, default to `choice`. For ambiguous activities, default to `swim`.
 
 ### Error Handling & Fallback
 
@@ -158,7 +158,7 @@ Duration estimation stays **rule-based** (not LLM) using pace tables from the ex
 
 - Base pace per 100m by stroke and activity type
 - Energy zones affect pacing: sprint sets use faster base pace, EN1 uses slower recovery pace
-- `mixed` stroke uses the average of all stroke paces (same handling as `choice`)
+- `choice` stroke uses the average of all stroke paces
 - Interval-based timing when `@` notation is present (total time = interval × reps, rest is embedded)
 - Default rest between sets (90s) when no interval specified
 
@@ -247,7 +247,7 @@ The existing regex parser is improved to handle the most common format variation
    - **Name**: Auto-generated via existing `POST /ai-coach/generate-title` endpoint
    - **Workout text**: Cleaned (markdown stripped for display, raw preserved for storage)
    - **Metrics card**: Pre-analyzed (LLM parse runs immediately when modal opens)
-   - **Classification**: Manual dropdown (Sprint, Endurance, Technique, IM, Recovery, Race Prep, Mixed)
+   - **Classification**: Manual dropdown (Sprint, Endurance, Technique, IM, Recovery, Race Prep)
    - **Effort level**: Slider (1-10)
    - **Tags**: Tag selector (existing component)
    - **Visibility**: Toggle (private/network/public)
@@ -308,7 +308,7 @@ Icons from `public/images/`:
 - `butterfly.png` → butterfly
 - `im.png` → im
 - `dives.png` → not used for workouts
-- `choice` / `mixed` → Lucide fallback icon (e.g. `Waves` or `Shuffle`)
+- `choice` → Lucide fallback icon (e.g. `Waves` or `Shuffle`)
 
 ### Key Changes from Current Page
 

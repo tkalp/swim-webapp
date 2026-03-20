@@ -4,7 +4,6 @@ import type { Message, WorkoutSections } from '@/types/ai-coach/types';
 interface ChatMessageProps {
   message: Message;
   isLatest: boolean;
-  onSave?: () => void;
   onQuickAction?: (action: string) => void;
   onEditSection?: (sections: WorkoutSections) => void;
 }
@@ -12,7 +11,6 @@ interface ChatMessageProps {
 export function ChatMessage({
   message,
   isLatest,
-  onSave,
   onQuickAction,
   onEditSection,
 }: ChatMessageProps) {
@@ -34,7 +32,8 @@ export function ChatMessage({
           content={message.content}
           isLatest={isLatest}
           savedTitle={message.metadata?.saved_workout_title}
-          onSave={onSave}
+          conversationId={message.conversation_id}
+          messageId={message.id}
           onQuickAction={isLatest ? onQuickAction : undefined}
           onEditSection={isLatest ? onEditSection : undefined}
         />

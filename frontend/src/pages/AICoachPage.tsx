@@ -1,151 +1,119 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Sparkles } from 'lucide-react'
-import { useAICoach } from '@/hooks/useAICoach'
-import TemplateSelector from '@/components/ai-coach/TemplateSelector'
-import WorkoutOutput from '@/components/ai-coach/WorkoutOutput'
-import PromptTips from '@/components/ai-coach/PromptTips'
-import BestTimesInput from '@/components/ai-coach/BestTimesInput'
-import type { BestTimes } from '@/types/ai-coach/types'
+import { useState, useCallback } from 'react';
+import { History } from 'lucide-react';
+import { useAICoach } from '@/hooks/useAICoach';
+import { ConversationSidebar } from '@/components/ai-coach/ConversationSidebar';
+import { ChatThread } from '@/components/ai-coach/ChatThread';
+import { ChatInput } from '@/components/ai-coach/ChatInput';
+import { KickoffForm } from '@/components/ai-coach/KickoffForm';
+import type { KickoffParams, WorkoutSections } from '@/types/ai-coach/types';
 
 export default function AICoachPage() {
-  const [prompt, setPrompt] = useState('')
-  const [bestTimes, setBestTimes] = useState<BestTimes>({})
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const {
-    loading,
-    error,
-    currentWorkout,
-    generate,
-    clearError,
-  } = useAICoach()
+    conversations,
+    activeConversationId,
+    messages,
+    isGenerating,
+    selectConversation,
+    deleteConversation,
+    sendMessage,
+    startNewChat,
+  } = useAICoach();
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return
-    clearError()
-    await generate(prompt, bestTimes)
-  }
+  const hasMessages = messages.length > 0;
 
-  const handleSave = () => {
-    if (!currentWorkout) return
+  const handleKickoff = useCallback(async (prompt: string, params?: KickoffParams) => {
+    try {
+      await sendMessage(prompt, params ? { kickoff_params: params } : undefined);
+    } catch (err) {
+      console.error('Failed to start conversation:', err);
+    }
+  }, [sendMessage]);
 
-    const text = `AI SWIM COACH - GENERATED WORKOUT
-Generated: ${new Date(currentWorkout.timestamp).toLocaleString()}
+  const handleSendMessage = useCallback(async (content: string) => {
+    try {
+      await sendMessage(content);
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    }
+  }, [sendMessage]);
 
-REQUEST:
-${currentWorkout.prompt}
+  const handleQuickAction = useCallback(async (action: string) => {
+    const actionMessages: Record<string, string> = {
+      harder: 'Make this workout harder — increase intensity, shorter rest intervals, or add more challenging sets.',
+      easier: 'Make this workout easier — reduce intensity, longer rest intervals, or simplify the sets.',
+      'add-kick': 'Add a dedicated kick set to this workout.',
+      'add-drill': 'Add drill work to this workout for technique improvement.',
+      shorten: 'Shorten this workout while keeping the key elements.',
+      lengthen: 'Lengthen this workout — add more volume while maintaining the focus.',
+    };
 
-${'='.repeat(80)}
+    const message = actionMessages[action];
+    if (message) {
+      try {
+        await sendMessage(message);
+      } catch (err) {
+        console.error('Failed to send quick action:', err);
+      }
+    }
+  }, [sendMessage]);
 
-${currentWorkout.workout}`
-
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `workout_${Date.now()}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleCopy = () => {
-    if (!currentWorkout) return
-    navigator.clipboard.writeText(currentWorkout.workout)
-  }
+  const handleEditSection = useCallback((_sections: WorkoutSections) => {
+    // Section editing will update the message metadata in a future iteration
+    // For now, the edit is visual-only within the WorkoutSection component
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Error Toast */}
-      {error && (
-        <div className="fixed top-6 right-6 max-w-md bg-slate-900/90 backdrop-blur-xl border border-red-500 rounded-xl p-4 shadow-2xl z-50 animate-in slide-in-from-right duration-300">
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <div className="font-semibold text-red-400 text-sm mb-1">Error</div>
-              <p className="text-gray-300 text-sm leading-relaxed">{error}</p>
-            </div>
-            <button 
-              className="text-gray-400 hover:text-white transition-colors duration-200"
-              onClick={clearError}
-            >
-              ×
-            </button>
-          </div>
+    <div className="flex h-[calc(100vh-64px)] bg-slate-950 overflow-hidden">
+      {/* Sidebar */}
+      <ConversationSidebar
+        conversations={conversations}
+        activeId={activeConversationId}
+        onSelect={selectConversation}
+        onNew={startNewChat}
+        onDelete={deleteConversation}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      {/* Main chat area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-slate-800 bg-slate-900">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-slate-400 hover:text-slate-200"
+            aria-label="Open conversation history"
+          >
+            <History className="h-5 w-5" />
+          </button>
+          <h1 className="text-sm font-medium text-slate-200 truncate">
+            {activeConversationId
+              ? conversations.find((c) => c.id === activeConversationId)?.title || 'AI Coach'
+              : 'AI Coach'}
+          </h1>
         </div>
-      )}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Left Column - Input */}
-          <div className="w-full lg:w-1/2 space-y-6">
-            {/* Main Input Card */}
-            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-8 shadow-xl shadow-black/20 hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-3">Describe Your Workout</h2>
-                <p className="text-gray-400 text-base leading-relaxed">
-                  Be specific about level, distance, focus, and any special requirements
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                <TemplateSelector onSelect={setPrompt} />
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                    Custom Prompt
-                  </label>
-                  <div className="relative">
-                    <textarea
-                      className="w-full h-32 px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 resize-none focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300"
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Describe your ideal workout... (e.g., 'Create a 3000 yard sprint workout for competitive swimmers with focus on underwater kicks and starts')"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1 active:translate-y-0 disabled:transform-none"
-                  onClick={handleGenerate}
-                  disabled={loading || !prompt.trim()}
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Generating Workout...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={20} />
-                      <span>Generate Workout</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Best Times Input */}
-            <div className="animate-in fade-in slide-in-from-bottom duration-500 delay-100">
-              <BestTimesInput bestTimes={bestTimes} onChange={setBestTimes} />
-            </div>
-            
-            {/* Tips */}
-            <div className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
-              <PromptTips />
-            </div>
-          </div>
-
-          {/* Right Column - Output */}
-          <div className="w-full lg:w-1/2 animate-in fade-in slide-in-from-right duration-500 delay-300">
-            <WorkoutOutput
-              workout={currentWorkout}
-              loading={loading}
-              onSave={handleSave}
-              onCopy={handleCopy}
+        {/* Chat content */}
+        {hasMessages || isGenerating ? (
+          <>
+            <ChatThread
+              messages={messages}
+              isGenerating={isGenerating}
+              onQuickAction={handleQuickAction}
+              onEditSection={handleEditSection}
             />
-          </div>
-        </div>
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={isGenerating}
+              placeholder="Refine this workout or ask for changes..."
+            />
+          </>
+        ) : (
+          <KickoffForm onSubmit={handleKickoff} disabled={isGenerating} />
+        )}
       </div>
     </div>
-  )
+  );
 }

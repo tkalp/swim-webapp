@@ -8,12 +8,14 @@ AI-powered swim performance analytics platform for competitive swim coaches. Pro
 aquilus-webapp/
 ├── frontend/          # React + TypeScript (Vite)
 ├── backend/           # FastAPI (Python)
-├── worker/            # Celery background tasks
+├── worker/            # Celery background tasks + swim-scraper
 ├── jobs/              # Data scraping/sync scripts (gitignored)
 ├── terraform/         # Infrastructure (DigitalOcean)
 ├── nginx/             # Reverse proxy config
 ├── migrations/        # Database migrations (gitignored)
-└── run.sh             # Local dev startup (both servers)
+├── run.sh             # Local dev startup (backend + frontend)
+├── run-all.sh         # Local dev startup (backend + frontend + Celery worker)
+└── AGENTS.md          # Agent registry and usage guide
 ```
 
 ## Quick Start
@@ -45,7 +47,7 @@ Backend requires a Python venv at `backend/.venv`. Frontend uses npm. Both need 
 - **Migrations:** Alembic (`backend/alembic/`)
 - **Task queue:** Celery + Redis
 - **AI:** Anthropic Claude SDK + ChromaDB (vector embeddings)
-- **Web scraping:** BeautifulSoup + Playwright (SwimRankings.net)
+- **Web scraping:** DrissionPage (SwimRankings.net via `worker/swim-scraper/`)
 - **Data:** Pandas, Pydantic v2
 
 ### Infrastructure
@@ -199,7 +201,21 @@ docker compose up -d         # Detached mode
 - `migrations/` is also gitignored
 - The prediction service is heavily modularized (12 files in `services/prediction/`)
 - Tools live under `/tools/*` — AI Coach at `/tools/ai-coach`, Comparison at `/tools/comparison`, Standards at `/tools/standards`. Legacy paths (`/ai-coach`, `/comparison`, `/time-standards`) redirect to `/tools/*` equivalents.
-- SwimRankings integration uses Oxylabs proxy for web scraping reliability
+- SwimRankings integration uses DrissionPage (Chromium automation) to bypass Cloudflare Turnstile — see `worker/swim-scraper/`
 - Celery worker has memory limits (1GB max, 512MB reserved) — see docker-compose.yml
 - Frontend has both `lib/apiClient.ts` (axios) and `lib/api.ts` — prefer `apiClient.ts`
 - Admin access is a hardcoded email check (`is_admin` flag or email string comparison in the auth middleware/admin routes), not a database role — there is no admin role table
+
+## Agents
+
+See `AGENTS.md` for full agent documentation.
+
+6 specialized agents in `.claude/agents/`:
+- **backend-engineer** (opus) — FastAPI, services, Celery tasks, Python backend
+- **database-architect** (sonnet) — schema, migrations, queries, PostgreSQL, RLS
+- **ai-engineer** (opus) — LLM integration, RAG, Claude API, vector search
+- **react-native-engineer** (sonnet) — React Native mobile components
+- **ui-designer** (sonnet) — visual design, layout, Tailwind, aesthetics
+- **code-cleanup-expert** (sonnet) — refactoring, dead code, test coverage
+
+Agents work with superpowers skills: skills handle process (brainstorming, planning, TDD, debugging), agents handle domain expertise (implementation). When adding new agents, update both `AGENTS.md` and this section.

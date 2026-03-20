@@ -52,7 +52,17 @@ async def list_squads(
     db: AsyncSession = Depends(get_db),
 ):
     """List squads for authenticated coach. Joins CoachSquad for role, counts swimmers."""
-    # Get squads the user belongs to via coach_squads
+    from app.infrastructure.models import Coach
+
+    # Look up the coach record for this user (user_id != coach_id)
+    coach_result = await db.execute(
+        select(Coach).where(Coach.user_id == user_id)
+    )
+    coach = coach_result.scalar_one_or_none()
+    if not coach:
+        return []
+
+    # Get squads the coach belongs to via coach_squads
     swimmer_count_subq = (
         select(func.count(Swimmer.id))
         .where(Swimmer.squad_id == Squad.id)
@@ -70,7 +80,7 @@ async def list_squads(
             swimmer_count_subq.label("swimmers_count"),
         )
         .join(CoachSquad, CoachSquad.squad_id == Squad.id)
-        .where(CoachSquad.coach_id == user_id)
+        .where(CoachSquad.coach_id == coach.id)
     )
     rows = result.all()
 

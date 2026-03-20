@@ -79,8 +79,8 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
-    expose:
-      - "6379"
+    ports:
+      - "6379:6379"
     restart: unless-stopped
     networks:
       - aquilus-network
