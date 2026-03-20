@@ -13,6 +13,7 @@ from app.infrastructure.db import get_db
 from app.infrastructure.models import BulkSyncJob, BulkSyncFailure as BulkSyncFailureModel
 from app.middleware.auth import get_current_user
 from app.celery_app import celery_app
+from app.tasks.backfill_workout_analysis import run_backfill
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -330,3 +331,10 @@ async def cancel_bulk_sync(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel job: {str(e)}"
         )
+
+
+@router.post("/backfill-workout-analysis")
+async def trigger_backfill(current_user: dict = Depends(require_admin)):
+    """Backfill json_description for workouts missing analysis. Admin only."""
+    summary = await run_backfill()
+    return {"success": True, "summary": summary}

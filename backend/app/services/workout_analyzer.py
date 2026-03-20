@@ -3,8 +3,9 @@ Workout Analyzer Module
 Handles analysis and breakdown calculations for swimming workouts
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from .workout_parser import WorkoutParser
+from app.utils import logger
 
 
 class WorkoutTimeEstimator:
@@ -423,3 +424,117 @@ class WorkoutAnalyzer:
             base_analysis['superset_sets'] = superset_count
         
         return base_analysis
+
+    # ============================================================================
+    # V2 Analysis (LLM primary, regex fallback)
+    # ============================================================================
+
+    async def analyze_workout_v2(self, workout_text: str) -> dict[str, Any]:
+        """Analyze workout: LLM parser (primary) -> regex (fallback) -> totals -> duration."""
+        from .workout_llm_parser import parse_workout_with_llm
+        from .workout_totals import compute_totals
+
+        parser_used = "llm"
+        try:
+            parsed = await parse_workout_with_llm(workout_text)
+        except Exception as e:
+            logger.warning(f"LLM parser failed, falling back to regex: {e}")
+            parsed = self._regex_fallback(workout_text)
+            parser_used = "regex"
+
+        totals = compute_totals(parsed.get("sections", []))
+        time_est = self._estimate_duration(parsed.get("sections", []))
+
+        return {
+            "parser_used": parser_used,
+            "sections": parsed.get("sections", []),
+            **totals,
+            "estimated_duration_minutes": time_est["total_minutes"],
+            "rest_time_minutes": time_est["rest_minutes"],
+        }
+
+    def _regex_fallback(self, workout_text: str) -> dict[str, Any]:
+        """Parse with regex and convert to the sections format."""
+        sets = self.parser.extract_sets(workout_text)
+        converted_sets: list[dict[str, Any]] = []
+        for s in sets:
+            converted_sets.append({
+                "reps": s.get("reps", 1),
+                "distance": s.get("unit_distance", s.get("distance", 0)),
+                "stroke": s.get("stroke", "choice"),
+                "activity": s.get("activity", "swim"),
+                "energy_zone": s.get("energy_zone", "en2"),
+                "interval": "",
+                "equipment": s.get("equipment", []),
+                "notes": "",
+            })
+        if converted_sets:
+            return {"sections": [{"name": "Full Workout", "sets": converted_sets}]}
+        return {"sections": []}
+
+    def _estimate_duration(self, sections: list[dict]) -> dict[str, float]:
+        """Estimate duration in minutes from parsed sections.
+
+        For sets WITH an interval: total = interval × reps (rest is baked in).
+        For sets WITHOUT an interval: total = inferred pace × reps.
+        Explicit rest lines (e.g. "2:00 rest") are added on top.
+
+        Returns dict with total_minutes and rest_minutes (explicit rest only).
+        """
+        set_seconds: float = 0
+        explicit_rest_seconds: float = 0
+
+        for section in sections:
+            rounds = max(1, int(section.get("rounds", 1) or 1))
+            section_seconds: float = 0
+
+            for s in section.get("sets", []):
+                reps = s.get("reps", 1)
+                distance = s.get("distance", 0)
+                stroke = s.get("stroke", "freestyle")
+                activity = s.get("activity", "swim")
+                interval_str = s.get("interval", "")
+
+                if interval_str:
+                    # Interval given: total = interval × reps
+                    try:
+                        clean = interval_str.replace("@", "").strip()
+                        parts = clean.split(":")
+                        if len(parts) == 2:
+                            interval_secs = int(parts[0]) * 60 + int(parts[1])
+                        else:
+                            interval_secs = int(parts[0])
+                        section_seconds += interval_secs * reps
+                    except (ValueError, IndexError):
+                        # Bad format — infer from pace
+                        section_seconds += self.estimator.estimate_swim_time(distance, stroke, activity) * reps
+                else:
+                    # No interval — infer from pace tables
+                    section_seconds += self.estimator.estimate_swim_time(distance, stroke, activity) * reps
+
+            # Multiply by rounds for compound sections
+            set_seconds += section_seconds * rounds
+
+            # Explicit rest periods (e.g. "2:00 rest") — per round
+            for r in section.get("rest_seconds", []):
+                explicit_rest_seconds += r * rounds
+
+        total = set_seconds + explicit_rest_seconds
+        return {
+            "total_minutes": round(total / 60, 1),
+            "rest_minutes": round(explicit_rest_seconds / 60, 1),
+        }
+
+    @staticmethod
+    def _default_rest_for_distance(distance: int) -> int:
+        """Return default rest seconds between reps based on distance."""
+        if distance <= 25:
+            return 10
+        elif distance <= 50:
+            return 15
+        elif distance <= 100:
+            return 20
+        elif distance <= 200:
+            return 30
+        else:
+            return 45

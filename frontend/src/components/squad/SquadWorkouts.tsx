@@ -23,6 +23,7 @@ import {
   duplicateWorkout,
   type WorkoutTemplate,
 } from '@/services/workoutLibraryService';
+import { stripMarkdown } from '@/utils/cleanWorkoutText';
 
 type Props = {
   squadId: string;
@@ -324,7 +325,7 @@ export default function SquadWorkouts({ squadId, canManage }: Props) {
 
               {/* Description Preview */}
               <p className="text-sm text-slate-400 mb-4 line-clamp-2">
-                {workout.raw_description}
+                {stripMarkdown(workout.raw_description)}
               </p>
 
               {/* Workout Breakdown Mini Chart */}

@@ -104,7 +104,11 @@ When generating workouts:
 10. **ESSENTIAL**: Always make kick, drill, and pull sets significantly slower than swim paces:
     - Kick sets: 15-25 seconds slower per 50 than swim pace
     - Drill sets: 10-20 seconds slower per 50 than swim pace
-    - Pull sets: 5-10 seconds slower per 50 than swim pace"""
+    - Pull sets: 5-10 seconds slower per 50 than swim pace
+11. **CRITICAL — VERIFY TOTAL METERS**: After writing the workout, add up every set (reps × distance, including all rounds of compound sets). The sum MUST match the target distance. If it doesn't, adjust set counts before finalizing. Show the per-section totals in the section headers (e.g. "WARM-UP: 600 meters"). Common mistakes to avoid:
+    - Forgetting to count compound set rounds (4x [2x75 + 1x50] = 4 × 200 = 800m, not 200m)
+    - Miscounting alternating sets (8x50 odds/evens = 400m total, not 800m)
+    - Warm-up + Main + Cool-down must add up to the target"""
 
 
 # ---------------------------------------------------------------------------

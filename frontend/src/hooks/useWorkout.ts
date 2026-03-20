@@ -11,6 +11,7 @@ export type Workout = {
   effortLevel: number;
   rawDescription: string;
   jsonDescription?: any;
+  classification?: string;
   createdAt: string;
   createByCoach: string;
 };
@@ -25,6 +26,7 @@ function convertToWorkout(data: any): Workout {
     effortLevel: data.effort_level,
     rawDescription: data.raw_description,
     jsonDescription: data.json_description,
+    classification: data.classification,
     createdAt: data.created_at,
     createByCoach: data.create_by_coach,
     description: data.description,
